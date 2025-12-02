@@ -230,6 +230,49 @@
       animation: spin .85s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    /* === FINAL UI FIX FOR PERFECT ALIGNMENT === */
+
+/* Remove extra margin from Choices.js wrapper */
+.choices {
+  margin-bottom: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Make Choices inner identical to input-box */
+.choices__inner {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 6px 10px !important;
+  border: 1px solid #d3d7e3 !important;
+  border-radius: 6px !important;
+  background: white !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  font-size: 13px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Remove padding at bottom of dropdown */
+.choices__list--single {
+  padding: 0 !important;
+}
+
+/* Make the dropdown arrow align identically */
+.choices[data-type*="select-one"]::after {
+  top: 14px !important;
+  right: 12px !important;
+}
+
+/* Ensure container boxes are truly equal width */
+.row-flex > div {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
   </style>
 </head>
 
