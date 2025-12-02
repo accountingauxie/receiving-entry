@@ -25,7 +25,7 @@
     input, select, textarea, .choices__inner { transition: all 0.18s ease; }
     input:hover, select:hover, textarea:hover, .choices__inner:hover { border-color: #b9c4d0 !important; }
 
-    @keyframes spin { 0% {transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+    @keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
 
     .top-bar {
       height: 50px;
@@ -58,9 +58,10 @@
       align-items:end;
     }
 
+    /* SUMMARY BOX – sekarang 3 kolom per baris, tanpa Currency & ETA */
     .summary-grid {
       display:grid;
-      grid-template-columns:repeat(4,minmax(150px,1fr));
+      grid-template-columns: repeat(3, minmax(150px,1fr));
       gap:18px;background:#f5f7ff;
       border:1px solid #dde4ff;border-radius:6px;
       padding:12px;margin-bottom:16px;
@@ -79,7 +80,7 @@
     .notes-label { font-size:13px;font-weight:600;margin-top:18px; }
     textarea { width:100%;height:110px;padding:8px;border:1px solid #d0d7df;border-radius:6px;background:#f9fafb;resize:vertical; }
 
-    .actions-row { margin-top:22px;display:flex;justify-content:flex-end;gap:12px; }
+    .actions-row { margin-top:22px;display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap; }
     .submit-btn {
       background:#0f80d9;color:#fff;padding:9px 24px;border-radius:6px;
       font-size:13px;font-weight:600;cursor:pointer;border:none;
@@ -146,11 +147,6 @@
       </div>
 
       <div>
-        <div class="summary-label">Currency</div>
-        <div class="summary-value" id="summaryCurrency">—</div>
-      </div>
-
-      <div>
         <div class="summary-label">Total Ordered</div>
         <div class="summary-value" id="summaryTotalOrdered">—</div>
       </div>
@@ -163,11 +159,6 @@
       <div>
         <div class="summary-label">Total Remaining</div>
         <div class="summary-value" id="summaryTotalRemaining">—</div>
-      </div>
-
-      <div>
-        <div class="summary-label">ETA</div>
-        <div class="summary-value" id="summaryEta">—</div>
       </div>
     </div>
 
@@ -194,16 +185,18 @@
     <textarea id="notes"></textarea>
 
     <div class="actions-row">
-      <button class="secondary-btn" onclick="reloadPO()">Reload PO</button>
-      <button class="submit-btn" onclick="submitReceiving()">Submit Receiving</button>
+      <button class="secondary-btn" type="button" onclick="reloadPO()">Reload PO</button>
+      <button class="submit-btn" type="button" onclick="submitReceiving()">Submit Receiving</button>
     </div>
 
   </div>
 </div>
 
 <script>
-  // GANTI DENGAN URL WEB APP SCRIPT KAMU
-  const SCRIPT_URL = "YOUR_WEB_APP_URL";
+  // =========================================
+  //  GANTI INI DENGAN URL WEB APP SCRIPT KAMU
+  // =========================================
+  const SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
 
   let poList = [];
   let currentPO = null;
@@ -211,11 +204,12 @@
   function showLoading(){ loadingOverlay.style.display="flex"; }
   function hideLoading(){ loadingOverlay.style.display="none"; }
 
+  // ---------- AUTO RECEIVING ID ----------
   async function loadNextReceivingId() {
     try {
       const res = await fetch(`${SCRIPT_URL}?action=getlastreceivingid`);
       const data = await res.json();
-      const lastId = data.lastId;
+      const lastId = data.lastId || null;
 
       const today = new Date();
       const yy = String(today.getFullYear()).slice(2);
@@ -227,13 +221,19 @@
         return;
       }
 
-      const seq = parseInt(lastId.substring(7)) + 1;
+      const seq = parseInt(lastId.substring(7), 10) + 1;
       receivingId.value = prefix + String(seq).padStart(7,"0");
     } catch(e){
-      console.log(e);
+      console.error(e);
+      // fallback
+      const today = new Date();
+      const yy = String(today.getFullYear()).slice(2);
+      const mm = String(today.getMonth()+1).padStart(2,"0");
+      receivingId.value = `RCV${yy}${mm}0000001`;
     }
   }
 
+  // ---------- LOAD PO LIST ----------
   async function loadPOList() {
     const res = await fetch(`${SCRIPT_URL}?action=getpolist`);
     poList = await res.json();
@@ -243,7 +243,7 @@
     poList.forEach(p => {
       const opt = document.createElement("option");
       opt.value = p.poNumber;
-      opt.textContent = `${p.poNumber} — ${p.supplier}`;
+      opt.textContent = `${p.poNumber} — ${p.supplier || ""}`;
       poNumberSelect.appendChild(opt);
     });
 
@@ -252,36 +252,41 @@
     poNumberSelect.addEventListener("change",()=>loadPODetail(poNumberSelect.value));
   }
 
+  // ---------- SUMMARY ----------
   function renderSummary(h) {
     summarySupplier.textContent = h.supplier || "-";
     summaryDate.textContent = h.poDate || "-";
     summaryStatus.textContent = h.status || "-";
-    summaryCurrency.textContent = h.currency || "-";
     summaryTotalOrdered.textContent = h.totalOrdered ?? "-";
     summaryTotalReceived.textContent = h.totalReceived ?? "-";
     summaryTotalRemaining.textContent = h.totalRemaining ?? "-";
-    summaryEta.textContent = h.eta || "-";
   }
 
+  // ---------- PO DETAIL ----------
   async function loadPODetail(poNo) {
     showLoading();
     try {
-      const res = await fetch(`${SCRIPT_URL}?action=getpodetail&poNumber=${poNo}`);
+      const res = await fetch(`${SCRIPT_URL}?action=getpodetail&poNumber=${encodeURIComponent(poNo)}`);
       currentPO = await res.json();
 
       renderSummary(currentPO.header);
       renderPOLines(currentPO.lines);
     } catch(e){
-      console.log(e);
+      console.error(e);
       tableError.style.display="block";
     } finally {
       hideLoading();
     }
   }
 
+  // ---------- RENDER LINES ----------
   function renderPOLines(lines){
     tableBody.innerHTML = "";
-    tableError.style.display = lines?.length ? "none" : "block";
+    if (!lines || !lines.length) {
+      tableError.style.display="block";
+      return;
+    }
+    tableError.style.display="none";
 
     lines.forEach((ln,i)=>{
       const ordered = parseFloat(ln.orderedQty)||0;
@@ -289,29 +294,31 @@
       const remain = Math.max(ordered-received,0);
 
       const tr=document.createElement("tr");
+      tr.dataset.rowIndex = ln.rowIndex; // untuk update Qty di sheet
+
       tr.innerHTML=`
         <td class="row-handle">⋮⋮</td>
         <td>
-          <div style="font-weight:600">${ln.itemCode}</div>
-          <div style="font-size:11px;color:#6b7280">${ln.description}</div>
+          <div class="item-main" style="font-weight:600">${ln.itemCode || ""}</div>
+          <div class="item-desc" style="font-size:11px;color:#6b7280">${ln.description || ""}</div>
         </td>
-        <td><input class="table-input" value="${ordered}" readonly></td>
-        <td><input class="table-input" value="${received}" readonly></td>
+        <td><input class="table-input ordered" value="${ordered}" readonly></td>
+        <td><input class="table-input received" value="${received}" readonly></td>
         <td><input class="table-input remaining" value="${remain}" readonly></td>
         <td><input type="number" class="table-input qty-receipt" value="${remain}" min="0"></td>
-        <td><input class="table-input" value="${ln.uom||''}" readonly></td>
+        <td><input class="table-input uom" value="${ln.uom || ""}" readonly></td>
         <td class="delete-btn" onclick="this.closest('tr').remove()">🗑</td>
       `;
       tableBody.appendChild(tr);
     });
 
-    tableBody.querySelectorAll(".qty-receipt").forEach(i=>{
-      i.addEventListener("input",e=>{
+    tableBody.querySelectorAll(".qty-receipt").forEach(input=>{
+      input.addEventListener("input",e=>{
         const tr=e.target.closest("tr");
         const remaining=parseFloat(tr.querySelector(".remaining").value)||0;
         let val=parseFloat(e.target.value)||0;
-        if(val>remaining) val=remaining;
         if(val<0) val=0;
+        if(val>remaining) val=remaining;
         e.target.value=val;
       });
     });
@@ -323,52 +330,68 @@
     if(poNumberSelect.value) loadPODetail(poNumberSelect.value);
   }
 
+  // ---------- VALIDATION ----------
   function validateForm(){
-    if(!receivingDate.value) return "Receiving Date required";
-    if(!poNumberSelect.value) return "PO Number required";
+    if(!receivingDate.value) return "Receiving Date required.";
+    if(!poNumberSelect.value) return "PO Number required.";
+
+    const rows = Array.from(document.querySelectorAll("#tableBody tr"));
+    if(!rows.length) return "No line items to receive.";
 
     let hasQty=false;
-    document.querySelectorAll(".qty-receipt").forEach(q=>{
-      if(parseFloat(q.value)>0) hasQty=true;
-    });
-    return hasQty ? null : "At least one Qty must be > 0";
+    for(const r of rows){
+      const qty=parseFloat(r.querySelector(".qty-receipt").value)||0;
+      const remaining=parseFloat(r.querySelector(".remaining").value)||0;
+      if(qty>0) hasQty=true;
+      if(qty>remaining+1e-9) return "Qty This Receipt cannot exceed Remaining.";
+    }
+    if(!hasQty) return "At least one line must have Qty This Receipt > 0.";
+    return null;
   }
 
+  // ---------- SUBMIT ----------
   function submitReceiving(){
     const err=validateForm();
     if(err){ alert(err); return; }
 
     showLoading();
 
-    const lines = Array.from(document.querySelectorAll("#tableBody tr")).map(r=>{
+    const rows = Array.from(document.querySelectorAll("#tableBody tr"));
+    const linesPayload = rows.map(r=>{
       return {
-        itemCode: r.cells[1].children[0].textContent,
-        description: r.cells[1].children[1].textContent,
-        orderedQty: r.cells[2].children[0].value,
-        receivedToDate: r.cells[3].children[0].value,
-        qtyThisReceipt: r.cells[4].nextElementSibling.value,
-        uom: r.cells[6].children[0].value
+        rowIndex: r.dataset.rowIndex,
+        itemCode: r.querySelector(".item-main").textContent,
+        description: r.querySelector(".item-desc").textContent,
+        orderedQty: r.querySelector(".ordered").value,
+        receivedToDate: r.querySelector(".received").value,
+        qtyThisReceipt: r.querySelector(".qty-receipt").value,
+        uom: r.querySelector(".uom").value
       };
     });
 
-    const payload={
-      receivingId:receivingId.value,
-      receivingDate:receivingDate.value,
-      poNumber:poNumberSelect.value,
-      notes:notes.value,
-      header:currentPO.header,
-      lines:lines
+    const payload = {
+      receivingId: receivingId.value,
+      receivingDate: receivingDate.value,
+      poNumber: poNumberSelect.value,
+      notes: notes.value,
+      header: currentPO ? currentPO.header : {},
+      lines: linesPayload
     };
 
-    fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)})
+    fetch(SCRIPT_URL,{
+      method:"POST",
+      body:JSON.stringify(payload)
+    })
       .then(res=>res.json())
       .then(r=>{
         hideLoading();
         if(r.status==="success"){
-          alert("Saved successfully!");
+          alert("Receiving saved.\nReceiving ID: "+payload.receivingId);
           loadNextReceivingId();
           reloadPO();
-        } else alert("Error: "+r.message);
+        } else {
+          alert("Error: "+(r.message || "Unknown error"));
+        }
       })
       .catch(err=>{
         hideLoading();
@@ -376,14 +399,18 @@
       });
   }
 
+  // ---------- INIT ----------
   window.addEventListener("DOMContentLoaded",async()=>{
     showLoading();
-
     const t=new Date();
     receivingDate.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
 
-    await Promise.all([loadNextReceivingId(),loadPOList()]);
-
+    try {
+      await Promise.all([loadNextReceivingId(),loadPOList()]);
+    } catch(e){
+      console.error(e);
+      alert("Error initialising page. Please check SCRIPT_URL.");
+    }
     hideLoading();
   });
 </script>
