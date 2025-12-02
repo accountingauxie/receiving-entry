@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Receiving Entry</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Choices.js -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
   <!-- Sortable -->
@@ -18,114 +18,217 @@
       padding: 0;
       background: #f5f7fa;
       font-family: "Segoe UI", Roboto, sans-serif;
-      font-size: 13px;
       color: #333;
+      font-size: 13px;
     }
 
     .top-bar {
-      height: 50px;
+      height: 54px;
       display: flex;
       align-items: center;
       padding: 0 48px;
       background: #ffffff;
-      border-bottom: 1px solid #e1e4e8;
+      border-bottom: 1px solid #e3e6ea;
     }
 
-    .brand-main { font-size:17px;font-weight:600;margin-right:6px;letter-spacing:0.08em; }
-    .brand-sub { font-size:13px;color:#7a8699; }
+    .brand-main { font-size: 18px; font-weight: 600; margin-right: 6px; }
+    .brand-sub { font-size: 13px; color: #7a8699; }
 
-    .page { max-width:1120px;margin:32px auto;padding:0 16px; }
-    .card { background:#fff;border-radius:8px;box-shadow:0 0 0 1px rgba(15,23,42,.04),0 14px 30px rgba(15,23,42,.08);padding:24px 26px; }
-    .card-title { font-size:20px;font-weight:600;color:#1f2933;margin-bottom:18px; }
+    .page {
+      max-width: 1280px;
+      margin: 32px auto;
+      padding: 0 22px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 32px 40px;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04), 
+                  0 14px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .card-title {
+      font-size: 21px;
+      font-weight: 600;
+      color: #1f2933;
+      margin-bottom: 24px;
+    }
 
     .row-flex {
-      display:grid;
-      grid-template-columns: minmax(160px,1fr) minmax(220px,1.2fr) minmax(210px,1.1fr);
-      gap:24px;margin-bottom:18px;
-      align-items:end;
+      display: grid;
+      grid-template-columns: 240px 300px 220px;
+      gap: 26px;
+      margin-bottom: 26px;
+      align-items: end;
     }
 
-    label { font-size:12.5px;font-weight:600;color:#4a5568;margin-bottom:4px;display:block; }
-
-    .input-box, .table-input, .choices__inner {
-      height:30px !important;min-height:30px !important;
-      padding:5px 8px !important;font-size:12.5px !important;
-      border:1px solid #d0d7df !important;border-radius:5px !important;
-      background:#f9fafb !important;box-sizing:border-box;
+    label {
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: block;
+      color: #4a5568;
     }
 
+    .input-box, .choices__inner {
+      height: 34px !important;
+      min-height: 34px !important;
+      padding: 7px 10px !important;
+      background: #f9fafb !important;
+      border: 1px solid #cfd7e3 !important;
+      border-radius: 6px !important;
+      font-size: 13px !important;
+    }
+
+    /* Summary Section */
     .summary-grid {
-      display:grid;
-      grid-template-columns: repeat(3, minmax(150px,1fr));
-      gap:18px;background:#f5f7ff;
-      border:1px solid #dde4ff;border-radius:6px;
-      padding:12px;margin-bottom:16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      background: #f5f7ff;
+      border: 1px solid #dde4ff;
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin-bottom: 24px;
     }
-    .summary-label { font-size:11.5px;font-weight:600;color:#5a6478; }
-    .summary-value { font-size:12.5px;font-weight:500; }
-    .summary-muted { color:#6b7280;font-style:italic; }
 
-    /***************************************************
-     * FINAL TABLE LAYOUT (NO OVERFLOW)
-     ***************************************************/
+    .summary-label { font-size: 12px; font-weight: 600; color: #55627a; }
+    .summary-value { font-size: 13px; font-weight: 500; }
+    .summary-muted { color: #888; font-style: italic; }
+
+    /*****************************
+      TABLE WRAPPER (NO OVERFLOW)
+    ******************************/
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 10px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      border: 1px solid #e3e6ea;
-      background: #fff;
-      table-layout: fixed; /* prevents overflow */
-      border-radius: 6px;
+      background: white;
+      border: 1px solid #dce3ef;
+      border-radius: 8px;
+      table-layout: auto; 
     }
 
-    th, td {
-      padding: 6px;
+    th {
+      background: #eef2f7;
+      padding: 8px;
+      font-weight: 600;
       font-size: 12.5px;
-      border-bottom: 1px solid #f0f0f0;
-      overflow-wrap: break-word;
-      word-break: break-word;
-      vertical-align: top;
+      color: #445;
+      border-bottom: 1px solid #dce3ef;
+      text-align: left;
+      white-space: nowrap;
     }
 
-    th { background:#edf0f5; }
+    td {
+      padding: 7px;
+      border-bottom: 1px solid #f1f3f6;
+      vertical-align: top;
+      overflow-wrap: break-word;
+    }
 
-    /* Column widths */
-    th:nth-child(1), td:nth-child(1) { width: 35px; }   /* drag */
-    th:nth-child(2), td:nth-child(2) { width: 90px; }   /* PO Number */
-    th:nth-child(3), td:nth-child(3) { width: 140px; }  /* KPC */
-    th:nth-child(4), td:nth-child(4) { width: auto; }   /* Description expands */
-    th:nth-child(5), td:nth-child(5) { width: 90px; }
-    th:nth-child(6), td:nth-child(6) { width: 90px; }
-    th:nth-child(7), td:nth-child(7) { width: 90px; }
-    th:nth-child(8), td:nth-child(8) { width: 120px; }
-    th:nth-child(9), td:nth-child(9) { width: 60px; }
+    /* Column width controls */
+    th:nth-child(1), td:nth-child(1) { width: 30px; }
+    th:nth-child(2), td:nth-child(2) { width: 100px; }
+    th:nth-child(3), td:nth-child(3) { width: 150px; }
+    th:nth-child(4), td:nth-child(4) { width: 350px; } /* Description bigger */
+    th:nth-child(5), td:nth-child(5),
+    th:nth-child(6), td:nth-child(6),
+    th:nth-child(7), td:nth-child(7),
+    th:nth-child(8), td:nth-child(8) { width: 110px; }
+    th:nth-child(9), td:nth-child(9) { width: 50px; }
     th:nth-child(10), td:nth-child(10) { width: 35px; }
 
-    .row-handle { cursor:grab;text-align:center;color:#999;font-size:13px; }
-    .delete-btn { color:#cc1f2f;cursor:pointer;font-size:14px;text-align:center; }
+    .table-input {
+      width: 100%;
+      padding: 6px 6px;
+      border: 1px solid #cfd7e3;
+      border-radius: 5px;
+      background: #ffffff;
+      font-size: 12.5px;
+    }
 
-    textarea { width:100%;height:110px;padding:8px;border:1px solid #d0d7df;border-radius:6px;background:#f9fafb;resize:vertical; }
+    .row-handle { cursor: grab; color: #aaa; text-align: center; }
+    .delete-btn { cursor: pointer; color: #d22; text-align: center; font-size: 14px; }
 
-    .actions-row { margin-top:22px;display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap; }
+    /* Notes */
+    textarea {
+      width: 100%;
+      height: 120px;
+      border-radius: 8px;
+      border: 1px solid #cfd7e3;
+      padding: 10px;
+      font-size: 13px;
+      background: #f9fafb;
+      resize: vertical;
+      margin-top: 6px;
+    }
+
+    /* Buttons */
+    .actions-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
     .submit-btn {
-      background:#0f80d9;color:#fff;padding:9px 24px;border-radius:6px;
-      font-size:13px;font-weight:600;cursor:pointer;border:none;
+      background: #0077e4;
+      padding: 10px 26px;
+      border-radius: 6px;
+      border: none;
+      color: white;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
     }
-    .secondary-btn { background:#e9eef8;border:1px solid #cfd6e5;padding:8px 16px;border-radius:6px;cursor:pointer; }
 
-    #loadingOverlay { position:fixed;inset:0;background:rgba(255,255,255,.75);display:none;align-items:center;justify-content:center;z-index:9999; }
+    .secondary-btn {
+      background: #ecf1f8;
+      border: 1px solid #cfd7e3;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    /* Overlay */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
     .loading-spinner {
-      width:42px;height:42px;border-radius:50%;
-      border:5px solid #dae6f4;border-top-color:#2b6be8;
-      animation:spin .85s linear infinite;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 5px solid #d0d7e2;
+      border-top-color: #1a73e8;
+      animation: spin .85s linear infinite;
     }
-    @keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
 
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 
 <body>
 
-<div id="loadingOverlay"><div class="loading-spinner"></div></div>
+<div id="loadingOverlay">
+  <div class="loading-spinner"></div>
+</div>
 
 <div class="top-bar">
   <span class="brand-main">UXILIUM</span>
@@ -136,10 +239,11 @@
   <div class="card">
     <div class="card-title">Receiving Entry (Based on PO - Purchase Coil)</div>
 
+    <!-- Header Inputs -->
     <div class="row-flex">
       <div>
         <label>Receiving Date</label>
-        <input type="date" id="receivingDate" class="input-box">
+        <input type="date" id="receivingDate" class="input-box" />
       </div>
 
       <div>
@@ -149,71 +253,73 @@
 
       <div>
         <label>Receiving ID</label>
-        <input type="text" id="receivingId" class="input-box" readonly>
+        <input type="text" id="receivingId" class="input-box" readonly />
       </div>
     </div>
 
+    <!-- Summary -->
     <div class="summary-grid">
       <div>
         <div class="summary-label">Supplier</div>
-        <div class="summary-value" id="summarySupplier">
-          <span class="summary-muted">Select INV</span>
-        </div>
+        <div class="summary-value" id="summarySupplier">-</div>
       </div>
 
       <div>
         <div class="summary-label">Invoice Date</div>
-        <div class="summary-value" id="summaryDate">—</div>
+        <div class="summary-value" id="summaryDate">-</div>
       </div>
 
       <div>
         <div class="summary-label">Status</div>
-        <div class="summary-value" id="summaryStatus">—</div>
+        <div class="summary-value" id="summaryStatus">-</div>
       </div>
 
       <div>
         <div class="summary-label">Total Ordered</div>
-        <div class="summary-value" id="summaryTotalOrdered">—</div>
+        <div class="summary-value" id="summaryTotalOrdered">-</div>
       </div>
 
       <div>
         <div class="summary-label">Total Received</div>
-        <div class="summary-value" id="summaryTotalReceived">—</div>
+        <div class="summary-value" id="summaryTotalReceived">-</div>
       </div>
 
       <div>
         <div class="summary-label">Total Remaining</div>
-        <div class="summary-value" id="summaryTotalRemaining">—</div>
+        <div class="summary-value" id="summaryTotalRemaining">-</div>
       </div>
     </div>
 
-    <!-- TABLE -->
-    <table>
-      <thead>
-        <tr>
-          <th></th>
-          <th>PO Number</th>
-          <th>KPC</th>
-          <th>Description</th>
-          <th>Ordered</th>
-          <th>Received</th>
-          <th>Remaining</th>
-          <th>Qty This Receipt</th>
-          <th>UoM</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
+    <!-- TABLE SECTION -->
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>PO Number</th>
+            <th>KPC</th>
+            <th>Description</th>
+            <th>Ordered</th>
+            <th>Received</th>
+            <th>Remaining</th>
+            <th>Qty This Receipt</th>
+            <th>UoM</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
 
-    <div class="notes-label" style="margin-top:18px;">Additional Notes</div>
+    <!-- Notes -->
+    <label style="margin-top:20px;">Additional Notes</label>
     <textarea id="notes"></textarea>
 
+    <!-- Actions -->
     <div class="actions-row">
       <button class="secondary-btn" onclick="reloadINV()">Reload INV</button>
       <button class="submit-btn" onclick="submitReceiving()">Submit Receiving</button>
     </div>
-
   </div>
 </div>
 
@@ -226,27 +332,20 @@ function showLoading(){ loadingOverlay.style.display="flex"; }
 function hideLoading(){ loadingOverlay.style.display="none"; }
 
 async function loadNextReceivingId() {
-  try {
-    const res = await fetch(`${SCRIPT_URL}?action=getlastreceivingid`);
-    const data = await res.json();
-    const lastId = data.lastId || null;
+  const res = await fetch(`${SCRIPT_URL}?action=getlastreceivingid`);
+  const data = await res.json();
+  const lastId = data.lastId;
 
-    const t = new Date();
-    const yy = String(t.getFullYear()).slice(2);
-    const mm = String(t.getMonth()+1).padStart(2,"0");
-    const prefix = `RCV${yy}${mm}`;
+  const t = new Date();
+  const yy = String(t.getFullYear()).slice(2);
+  const mm = String(t.getMonth()+1).padStart(2,"0");
+  const prefix = `RCV${yy}${mm}`;
 
-    if (!lastId || !lastId.startsWith(prefix)) {
-      receivingId.value = prefix + "0000001";
-    } else {
-      const seq = parseInt(lastId.substring(7), 10) + 1;
-      receivingId.value = prefix + String(seq).padStart(7,"0");
-    }
-  } catch(e){
-    const t = new Date();
-    const yy = String(t.getFullYear()).slice(2);
-    const mm = String(t.getMonth()+1).padStart(2,"0");
-    receivingId.value = `RCV${yy}${mm}0000001`;
+  if (!lastId || !lastId.startsWith(prefix)) {
+    receivingId.value = prefix + "0000001";
+  } else {
+    const seq = parseInt(lastId.substring(7),10)+1;
+    receivingId.value = prefix + String(seq).padStart(7,"0");
   }
 }
 
@@ -254,50 +353,50 @@ async function loadInvList(){
   const res = await fetch(`${SCRIPT_URL}?action=getinvlist`);
   const invList = await res.json();
 
-  invSelect.innerHTML = "<option value='' disabled selected>— Select INV —</option>";
+  invSelect.innerHTML = "<option selected disabled>— Select INV —</option>";
 
-  invList.forEach(inv => {
-    const opt = document.createElement("option");
-    opt.value = inv.invNumber;
-    opt.textContent = inv.invNumber;
+  invList.forEach(inv=>{
+    const opt=document.createElement("option");
+    opt.value=inv.invNumber;
+    opt.textContent=inv.invNumber;
     invSelect.appendChild(opt);
   });
 
   new Choices(invSelect,{searchEnabled:true,itemSelectText:"",shouldSort:false});
+
   invSelect.addEventListener("change",()=>loadInvDetail(invSelect.value));
 }
 
-function renderSummary(h) {
+function renderSummary(h){
   summarySupplier.textContent = h.supplier || "-";
-  summaryDate.textContent = h.invoiceDate || "-";
-  summaryStatus.textContent = h.status || "-";
-  summaryTotalOrdered.textContent = h.totalOrdered;
-  summaryTotalReceived.textContent = h.totalReceived;
+  summaryDate.textContent     = h.invoiceDate || "-";
+  summaryStatus.textContent   = h.status || "-";
+  summaryTotalOrdered.textContent   = h.totalOrdered;
+  summaryTotalReceived.textContent  = h.totalReceived;
   summaryTotalRemaining.textContent = h.totalRemaining;
 }
 
-async function loadInvDetail(invNumber) {
+async function loadInvDetail(invNumber){
   showLoading();
-  try {
-    const res = await fetch(`${SCRIPT_URL}?action=getinvdetail&invNumber=${encodeURIComponent(invNumber)}`);
-    currentINV = await res.json();
-    renderSummary(currentINV.header);
-    renderLines(currentINV.lines);
-  } finally { hideLoading(); }
+  const res = await fetch(`${SCRIPT_URL}?action=getinvdetail&invNumber=${encodeURIComponent(invNumber)}`);
+  currentINV = await res.json();
+  renderSummary(currentINV.header);
+  renderLines(currentINV.lines);
+  hideLoading();
 }
 
 function renderLines(lines){
-  tableBody.innerHTML = "";
+  tableBody.innerHTML="";
 
   lines.forEach(ln=>{
     const tr=document.createElement("tr");
-    tr.dataset.rowIndex = ln.rowIndex;
+    tr.dataset.rowIndex=ln.rowIndex;
 
-    tr.innerHTML=`
+    tr.innerHTML = `
       <td class="row-handle">⋮⋮</td>
       <td>${ln.poNumber}</td>
-      <td><div style="font-weight:600">${ln.kpc}</div></td>
-      <td><div style="white-space:normal;line-height:1.3">${ln.description}</div></td>
+      <td><strong>${ln.kpc}</strong></td>
+      <td>${ln.description}</td>
       <td><input class="table-input" value="${ln.orderedQty}" readonly></td>
       <td><input class="table-input" value="${ln.receivedToDate}" readonly></td>
       <td><input class="table-input remaining" value="${ln.remainingQty}" readonly></td>
@@ -309,15 +408,14 @@ function renderLines(lines){
     tableBody.appendChild(tr);
   });
 
-  tableBody.querySelectorAll(".qty-receipt").forEach(input=>{
-    input.addEventListener("input",e=>{
-      const tr=e.target.closest("tr");
-      const remaining=parseFloat(tr.querySelector(".remaining").value)||0;
-      let val=parseFloat(e.target.value)||0;
-      if(val<0) val=0;
-      if(val>remaining) val=remaining;
-      e.target.value=val;
-    });
+  // LIMIT input
+  document.querySelectorAll(".qty-receipt").forEach(x=>{
+    x.addEventListener("input",e=>{
+      const row=e.target.closest("tr");
+      const rem=row.querySelector(".remaining").value;
+      if(+e.target.value > +rem) e.target.value = rem;
+      if(+e.target.value < 0) e.target.value = 0;
+    })
   });
 
   Sortable.create(tableBody,{handle:".row-handle",animation:150});
@@ -328,74 +426,74 @@ function reloadINV(){
 }
 
 function validateForm(){
-  if(!receivingDate.value) return "Receiving Date required.";
-  if(!invSelect.value) return "Inv Number required.";
+  if(!receivingDate.value) return "Receiving Date required";
+  if(!invSelect.value) return "Inv Number required";
 
-  const rows=Array.from(document.querySelectorAll("#tableBody tr"));
-  if(!rows.length) return "No line items.";
+  const rows=[...document.querySelectorAll("#tableBody tr")];
+  if(rows.length===0) return "No line items found";
 
-  let valid=false;
+  let hasQty=false;
   for(const r of rows){
-    const qty=parseFloat(r.querySelector(".qty-receipt").value)||0;
-    const rem=parseFloat(r.querySelector(".remaining").value)||0;
-    if(qty>rem) return "Qty cannot exceed Remaining.";
-    if(qty>0) valid=true;
+    const qty=r.querySelector(".qty-receipt").value;
+    const rem=r.querySelector(".remaining").value;
+    if(+qty>+rem) return "Qty cannot exceed remaining";
+    if(+qty>0) hasQty=true;
   }
 
-  return valid?null:"At least one item must have Qty > 0.";
+  if(!hasQty) return "At least 1 line must have Qty > 0";
+  return null;
 }
 
 function submitReceiving(){
   const err=validateForm();
-  if(err){ alert(err); return; }
-
+  if(err) return alert(err);
   showLoading();
 
-  const rows=Array.from(document.querySelectorAll("#tableBody tr"));
-  const payloadLines = rows.map(r=>({
-    rowIndex:r.dataset.rowIndex,
-    poNumber:r.children[1].textContent.trim(),
-    kpc:r.children[2].textContent.trim(),
-    description:r.children[3].textContent.trim(),
-    orderedQty:r.children[4].children[0].value,
-    receivedToDate:r.children[5].children[0].value,
-    remainingQty:r.children[6].children[0].value,
-    qtyThisReceipt:r.children[7].children[0].value,
-    uom:"m"
+  const payloadLines=[...document.querySelectorAll("#tableBody tr")].map(r=>({
+    rowIndex: r.dataset.rowIndex,
+    poNumber: r.children[1].textContent.trim(),
+    kpc: r.children[2].textContent.trim(),
+    description: r.children[3].textContent.trim(),
+    orderedQty: r.children[4].children[0].value,
+    receivedToDate: r.children[5].children[0].value,
+    remainingQty: r.children[6].children[0].value,
+    qtyThisReceipt: r.children[7].children[0].value,
+    uom: "m"
   }));
 
-  const payload = {
-    receivingId:receivingId.value,
-    receivingDate:receivingDate.value,
-    invNumber:invSelect.value,
-    header:currentINV?currentINV.header:{},
-    notes:notes.value,
-    lines:payloadLines
+  const payload={
+    receivingId: receivingId.value,
+    receivingDate: receivingDate.value,
+    invNumber: invSelect.value,
+    header: currentINV.header,
+    notes: notes.value,
+    lines: payloadLines
   };
 
   fetch(SCRIPT_URL,{
     method:"POST",
     body:JSON.stringify(payload)
   })
-  .then(r=>r.json())
-  .then(res=>{
-    hideLoading();
-    if(res.status==="success"){
-      alert("Receiving saved.\nReceiving ID: "+payload.receivingId);
-      loadNextReceivingId();
-      reloadINV();
-    } else {
-      alert("Error: "+res.message);
-    }
-  })
-  .catch(err=>{
-    hideLoading();
-    alert("Submit failed: "+err);
-  });
+    .then(r=>r.json())
+    .then(res=>{
+      hideLoading();
+      if(res.status==="success"){
+        alert("Saved. Receiving ID: "+payload.receivingId);
+        loadNextReceivingId();
+        reloadINV();
+      } else {
+        alert("Error: "+res.message);
+      }
+    })
+    .catch(err=>{
+      hideLoading();
+      alert("Submit failed: "+err);
+    });
 }
 
 window.addEventListener("DOMContentLoaded",async()=>{
   showLoading();
+
   const t=new Date();
   receivingDate.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
 
