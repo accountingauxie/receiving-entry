@@ -67,7 +67,19 @@
 
     table { width:100%;border-collapse:collapse;border:1px solid #e3e6ea;background:#fff;border-radius:6px; }
     th { background:#edf0f5;font-size:12.5px;padding:6px;border-bottom:1px solid #e1e4e9;text-align:left; }
-    td { font-size:12px;padding:4px;border-bottom:1px solid #f3f4f6; }
+    td { font-size:12px;padding:4px;border-bottom:1px solid #f3f4f6;vertical-align:top; }
+
+    /* KPC column width */
+    th:nth-child(3), td:nth-child(3) {
+      width: 18%;
+    }
+
+    /* Description column width */
+    th:nth-child(4), td:nth-child(4) {
+      width: 28%;
+      white-space: normal !important;
+      line-height: 1.3;
+    }
 
     .row-handle { cursor:grab;text-align:center;color:#999;font-size:13px; }
     .delete-btn { color:#cc1f2f;cursor:pointer;font-size:14px;text-align:center; }
@@ -161,7 +173,8 @@
         <tr>
           <th></th>
           <th>PO Number</th>
-          <th>Item</th>
+          <th>KPC</th>
+          <th>Description</th>
           <th>Ordered</th>
           <th>Received</th>
           <th>Remaining</th>
@@ -187,212 +200,228 @@
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtG8vlcyBSfWl501-0HDO-iDozbyjihWf-n8IGmbgWZxQZWEzMzqhJXqmDtqXw8JB2YA/exec";
 
+let currentINV = null;
 
+function showLoading(){ loadingOverlay.style.display="flex"; }
+function hideLoading(){ loadingOverlay.style.display="none"; }
 
-  let currentINV = null;
+/* Load Receiving ID */
+async function loadNextReceivingId() {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=getlastreceivingid`);
+    const data = await res.json();
+    const lastId = data.lastId || null;
 
-  function showLoading(){ loadingOverlay.style.display="flex"; }
-  function hideLoading(){ loadingOverlay.style.display="none"; }
+    const today = new Date();
+    const yy = String(today.getFullYear()).slice(2);
+    const mm = String(today.getMonth()+1).padStart(2,"0");
+    const prefix = `RCV${yy}${mm}`;
 
-  async function loadNextReceivingId() {
-    try {
-      const res = await fetch(`${SCRIPT_URL}?action=getlastreceivingid`);
-      const data = await res.json();
-      const lastId = data.lastId || null;
-
-      const today = new Date();
-      const yy = String(today.getFullYear()).slice(2);
-      const mm = String(today.getMonth()+1).padStart(2,"0");
-      const prefix = `RCV${yy}${mm}`;
-
-      if (!lastId || !lastId.startsWith(prefix)) {
-        receivingId.value = prefix + "0000001";
-        return;
-      }
-
-      const seq = parseInt(lastId.substring(7), 10) + 1;
-      receivingId.value = prefix + String(seq).padStart(7,"0");
-    } catch(e){
-      console.error(e);
-      const today = new Date();
-      const yy = String(today.getFullYear()).slice(2);
-      const mm = String(today.getMonth()+1).padStart(2,"0");
-      receivingId.value = `RCV${yy}${mm}0000001`;
+    if (!lastId || !lastId.startsWith(prefix)) {
+      receivingId.value = prefix + "0000001";
+      return;
     }
+
+    const seq = parseInt(lastId.substring(7), 10) + 1;
+    receivingId.value = prefix + String(seq).padStart(7,"0");
+
+  } catch(e){
+    console.error(e);
+    const today = new Date();
+    const yy = String(today.getFullYear()).slice(2);
+    const mm = String(today.getMonth()+1).padStart(2,"0");
+    receivingId.value = `RCV${yy}${mm}0000001`;
   }
+}
 
-  async function loadInvList(){
-    const res = await fetch(`${SCRIPT_URL}?action=getinvlist`);
-    const invList = await res.json();
+/* Load INV list */
+async function loadInvList(){
+  const res = await fetch(`${SCRIPT_URL}?action=getinvlist`);
+  const invList = await res.json();
 
-    invSelect.innerHTML = "<option value='' disabled selected>— Select INV —</option>";
+  invSelect.innerHTML = "<option value='' disabled selected>— Select INV —</option>";
 
-    invList.forEach(inv => {
-      const opt = document.createElement("option");
-      opt.value = inv.invNumber;
-      opt.textContent = inv.invNumber;
-      invSelect.appendChild(opt);
-    });
-
-    new Choices(invSelect,{searchEnabled:true,itemSelectText:"",shouldSort:false});
-
-    invSelect.addEventListener("change",()=>loadInvDetail(invSelect.value));
-  }
-
-  function renderSummary(h) {
-    summarySupplier.textContent = h.supplier || "-";
-    summaryDate.textContent = h.invoiceDate || "-";
-    summaryStatus.textContent = h.status || "-";
-    summaryTotalOrdered.textContent = h.totalOrdered ?? "-";
-    summaryTotalReceived.textContent = h.totalReceived ?? "-";
-    summaryTotalRemaining.textContent = h.totalRemaining ?? "-";
-  }
-
-  async function loadInvDetail(invNumber) {
-    showLoading();
-    try {
-      const res = await fetch(`${SCRIPT_URL}?action=getinvdetail&invNumber=${encodeURIComponent(invNumber)}`);
-      currentINV = await res.json();
-
-      renderSummary(currentINV.header);
-      renderLines(currentINV.lines);
-    } catch(e){
-      console.error(e);
-      alert("Error loading invoice detail.");
-    } finally {
-      hideLoading();
-    }
-  }
-
-  function renderLines(lines){
-    tableBody.innerHTML = "";
-    lines.forEach(ln=>{
-      const tr=document.createElement("tr");
-
-      tr.dataset.rowIndex = ln.rowIndex;
-
-      const ord = ln.orderedQty || 0;
-      const rec = ln.receivedToDate || 0;
-      const rem = ln.remainingQty || 0;
-
-      tr.innerHTML=`
-        <td class="row-handle">⋮⋮</td>
-        <td>${ln.poNumber}</td>
-        <td>
-          <div style="font-weight:600">${ln.kpc}</div>
-          <div style="font-size:11px;color:#6b7280">${ln.description}</div>
-        </td>
-        <td><input class="table-input" value="${ord}" readonly></td>
-        <td><input class="table-input" value="${rec}" readonly></td>
-        <td><input class="table-input remaining" value="${rem}" readonly></td>
-        <td><input type="number" class="table-input qty-receipt" value="${rem}" min="0"></td>
-        <td><input class="table-input" value="m" readonly></td>
-        <td class="delete-btn" onclick="this.closest('tr').remove()">🗑</td>
-      `;
-
-      tableBody.appendChild(tr);
-    });
-
-    tableBody.querySelectorAll(".qty-receipt").forEach(input=>{
-      input.addEventListener("input",e=>{
-        const tr=e.target.closest("tr");
-        const remaining=parseFloat(tr.querySelector(".remaining").value)||0;
-        let val=parseFloat(e.target.value)||0;
-        if(val<0) val=0;
-        if(val>remaining) val=remaining;
-        e.target.value=val;
-      });
-    });
-
-    Sortable.create(tableBody,{handle:".row-handle",animation:150});
-  }
-
-  function reloadINV(){
-    if(invSelect.value) loadInvDetail(invSelect.value);
-  }
-
-  function validateForm(){
-    if(!receivingDate.value) return "Receiving Date required.";
-    if(!invSelect.value) return "Inv Number required.";
-
-    const rows = Array.from(document.querySelectorAll("#tableBody tr"));
-    if(!rows.length) return "No line items found.";
-
-    let hasQty=false;
-    for(const r of rows){
-      const qty=parseFloat(r.querySelector(".qty-receipt").value)||0;
-      const remaining=parseFloat(r.querySelector(".remaining").value)||0;
-      if(qty>0) hasQty=true;
-      if(qty>remaining) return "Qty cannot exceed Remaining.";
-    }
-    if(!hasQty) return "At least one item must have Qty > 0.";
-
-    return null;
-  }
-
-  function submitReceiving(){
-    const err=validateForm();
-    if(err){ alert(err); return; }
-
-    showLoading();
-
-    const rows = Array.from(document.querySelectorAll("#tableBody tr"));
-    const payloadLines = rows.map(r=>({
-      rowIndex: r.dataset.rowIndex,
-      poNumber: r.children[1].textContent.trim(),
-      kpc: r.children[2].children[0].textContent.trim(),
-      description: r.children[2].children[1].textContent.trim(),
-      orderedQty: r.children[3].children[0].value,
-      receivedToDate: r.children[4].children[0].value,
-      remainingQty: r.children[5].children[0].value,
-      qtyThisReceipt: r.children[6].children[0].value,
-      uom: "m"
-    }));
-
-    const payload = {
-      receivingId: receivingId.value,
-      receivingDate: receivingDate.value,
-      invNumber: invSelect.value,
-      header: currentINV ? currentINV.header : {},
-      notes: notes.value,
-      lines: payloadLines
-    };
-
-    fetch(SCRIPT_URL,{
-      method:"POST",
-      body:JSON.stringify(payload)
-    })
-      .then(res=>res.json())
-      .then(r=>{
-        hideLoading();
-        if(r.status==="success"){
-          alert("Receiving saved.\nReceiving ID: "+payload.receivingId);
-          loadNextReceivingId();
-          reloadINV();
-        } else {
-          alert("Error: "+(r.message || "Unknown error"));
-        }
-      })
-      .catch(err=>{
-        hideLoading();
-        alert("Submit failed: "+err);
-      });
-  }
-
-  window.addEventListener("DOMContentLoaded",async()=>{
-    showLoading();
-
-    const t=new Date();
-    receivingDate.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
-
-    try {
-      await Promise.all([loadNextReceivingId(),loadInvList()]);
-    } catch(e){
-      console.error(e);
-      alert("Error initializing page. Check SCRIPT_URL.");
-    }
-    hideLoading();
+  invList.forEach(inv => {
+    const opt = document.createElement("option");
+    opt.value = inv.invNumber;
+    opt.textContent = inv.invNumber;
+    invSelect.appendChild(opt);
   });
+
+  new Choices(invSelect,{searchEnabled:true,itemSelectText:"",shouldSort:false});
+
+  invSelect.addEventListener("change",()=>loadInvDetail(invSelect.value));
+}
+
+/* Render Summary */
+function renderSummary(h) {
+  summarySupplier.textContent = h.supplier || "-";
+  summaryDate.textContent = h.invoiceDate || "-";
+  summaryStatus.textContent = h.status || "-";
+  summaryTotalOrdered.textContent = h.totalOrdered ?? "-";
+  summaryTotalReceived.textContent = h.totalReceived ?? "-";
+  summaryTotalRemaining.textContent = h.totalRemaining ?? "-";
+}
+
+/* Load INV detail */
+async function loadInvDetail(invNumber) {
+  showLoading();
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=getinvdetail&invNumber=${encodeURIComponent(invNumber)}`);
+    currentINV = await res.json();
+
+    renderSummary(currentINV.header);
+    renderLines(currentINV.lines);
+
+  } catch(e){
+    console.error(e);
+    alert("Error loading invoice detail.");
+  } finally {
+    hideLoading();
+  }
+}
+
+/* Render table lines */
+function renderLines(lines){
+  tableBody.innerHTML = "";
+
+  lines.forEach(ln=>{
+    const tr=document.createElement("tr");
+    tr.dataset.rowIndex = ln.rowIndex;
+
+    const ord = ln.orderedQty || 0;
+    const rec = ln.receivedToDate || 0;
+    const rem = ln.remainingQty || 0;
+
+    tr.innerHTML=`
+      <td class="row-handle">⋮⋮</td>
+      <td>${ln.poNumber}</td>
+
+      <td><div style="font-weight:600">${ln.kpc}</div></td>
+
+      <td>
+        <div style="white-space:normal;font-size:12px;line-height:1.3;">
+          ${ln.description}
+        </div>
+      </td>
+
+      <td><input class="table-input" value="${ord}" readonly></td>
+      <td><input class="table-input" value="${rec}" readonly></td>
+      <td><input class="table-input remaining" value="${rem}" readonly></td>
+
+      <td><input type="number" class="table-input qty-receipt" value="${rem}" min="0"></td>
+
+      <td><input class="table-input" value="m" readonly></td>
+
+      <td class="delete-btn" onclick="this.closest('tr').remove()">🗑</td>
+    `;
+
+    tableBody.appendChild(tr);
+  });
+
+  /* Prevent qty exceeding remaining */
+  tableBody.querySelectorAll(".qty-receipt").forEach(input=>{
+    input.addEventListener("input",e=>{
+      const tr=e.target.closest("tr");
+      const remaining=parseFloat(tr.querySelector(".remaining").value)||0;
+      let val=parseFloat(e.target.value)||0;
+      if(val<0) val=0;
+      if(val>remaining) val=remaining;
+      e.target.value=val;
+    });
+  });
+
+  Sortable.create(tableBody,{handle:".row-handle",animation:150});
+}
+
+function reloadINV(){
+  if(invSelect.value) loadInvDetail(invSelect.value);
+}
+
+/* Validation */
+function validateForm(){
+  if(!receivingDate.value) return "Receiving Date required.";
+  if(!invSelect.value) return "Inv Number required.";
+
+  const rows = Array.from(document.querySelectorAll("#tableBody tr"));
+  if(!rows.length) return "No line items found.";
+
+  let hasQty=false;
+  for(const r of rows){
+    const qty=parseFloat(r.querySelector(".qty-receipt").value)||0;
+    const remaining=parseFloat(r.querySelector(".remaining").value)||0;
+    if(qty>0) hasQty=true;
+    if(qty>remaining) return "Qty cannot exceed Remaining.";
+  }
+  if(!hasQty) return "At least one item must have Qty > 0.";
+
+  return null;
+}
+
+/* Submit */
+function submitReceiving(){
+  const err=validateForm();
+  if(err){ alert(err); return; }
+
+  showLoading();
+
+  const rows = Array.from(document.querySelectorAll("#tableBody tr"));
+  const payloadLines = rows.map(r=>({
+    rowIndex: r.dataset.rowIndex,
+    poNumber: r.children[1].textContent.trim(),
+    kpc: r.children[2].textContent.trim(),
+    description: r.children[3].textContent.trim(),
+    orderedQty: r.children[4].children[0].value,
+    receivedToDate: r.children[5].children[0].value,
+    remainingQty: r.children[6].children[0].value,
+    qtyThisReceipt: r.children[7].children[0].value,
+    uom: "m"
+  }));
+
+  const payload = {
+    receivingId: receivingId.value,
+    receivingDate: receivingDate.value,
+    invNumber: invSelect.value,
+    header: currentINV ? currentINV.header : {},
+    notes: notes.value,
+    lines: payloadLines
+  };
+
+  fetch(SCRIPT_URL,{
+    method:"POST",
+    body:JSON.stringify(payload)
+  })
+    .then(res=>res.json())
+    .then(r=>{
+      hideLoading();
+      if(r.status==="success"){
+        alert("Receiving saved.\nReceiving ID: "+payload.receivingId);
+        loadNextReceivingId();
+        reloadINV();
+      } else {
+        alert("Error: "+(r.message || "Unknown error"));
+      }
+    })
+    .catch(err=>{
+      hideLoading();
+      alert("Submit failed: "+err);
+    });
+}
+
+window.addEventListener("DOMContentLoaded",async()=>{
+  showLoading();
+
+  const t=new Date();
+  receivingDate.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+
+  try {
+    await Promise.all([loadNextReceivingId(),loadInvList()]);
+  } catch(e){
+    console.error(e);
+    alert("Error initializing page. Check SCRIPT_URL.");
+  }
+  hideLoading();
+});
 </script>
 
 </body>
