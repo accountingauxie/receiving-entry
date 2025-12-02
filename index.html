@@ -13,6 +13,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
   <style>
+    /*******************************************
+     * BASE PAGE STYLE
+     *******************************************/
     body {
       margin: 0;
       padding: 0;
@@ -31,8 +34,16 @@
       border-bottom: 1px solid #e3e6ea;
     }
 
-    .brand-main { font-size: 18px; font-weight: 600; margin-right: 6px; }
-    .brand-sub { font-size: 13px; color: #7a8699; }
+    .brand-main {
+      font-size: 18px;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+
+    .brand-sub {
+      font-size: 13px;
+      color: #7a8699;
+    }
 
     .page {
       max-width: 1280px;
@@ -40,12 +51,16 @@
       padding: 0 22px;
     }
 
+    /*******************************************
+     * CARD
+     *******************************************/
     .card {
       background: #ffffff;
       border-radius: 10px;
       padding: 32px 40px;
-      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.04), 
-                  0 14px 30px rgba(15,23,42,0.08);
+      box-shadow: 
+        0 0 0 1px rgba(15, 23, 42, 0.04),
+        0 14px 30px rgba(15,23,42,0.08);
     }
 
     .card-title {
@@ -55,9 +70,12 @@
       margin-bottom: 24px;
     }
 
+    /*******************************************
+     * GRID FOR INPUTS
+     *******************************************/
     .row-flex {
       display: grid;
-      grid-template-columns: 240px 300px 220px;
+      grid-template-columns: 240px 280px 220px;
       gap: 26px;
       margin-bottom: 26px;
       align-items: end;
@@ -71,8 +89,10 @@
       color: #4a5568;
     }
 
-    /* Minimal input */
-    .input-box, .choices__inner {
+    /*******************************************
+     * MINIMAL INPUTS (text, date)
+     *******************************************/
+    .input-box {
       height: 30px !important;
       min-height: 30px !important;
       padding: 5px 8px !important;
@@ -80,8 +100,53 @@
       border: 1px solid #d4d7dd !important;
       border-radius: 5px !important;
       font-size: 13px !important;
+      box-sizing: border-box;
     }
 
+    /*******************************************
+     * FIX CHOICES.JS DROPDOWN (MINIMALIST)
+     *******************************************/
+    .choices__inner {
+      height: 30px !important;
+      min-height: 30px !important;
+      padding: 3px 8px !important;
+      background: #ffffff !important;
+      border: 1px solid #d4d7dd !important;
+      border-radius: 5px !important;
+      font-size: 13px !important;
+      display: flex !important;
+      align-items: center !important;
+      box-shadow: none !important;
+    }
+
+    .choices__list--single {
+      padding: 0 !important;
+    }
+
+    .choices__placeholder {
+      opacity: 0.6 !important;
+    }
+
+    .choices__list--dropdown {
+      border-radius: 5px !important;
+      border: 1px solid #d4d7dd !important;
+      margin-top: 2px !important;
+      font-size: 13px !important;
+    }
+
+    .choices__list--dropdown .choices__item {
+      padding: 6px 10px !important;
+      font-size: 13px !important;
+    }
+
+    .choices[data-type*="select-one"]::after {
+      top: 12px !important;
+      right: 10px !important;
+    }
+
+    /*******************************************
+     * SUMMARY SECTION
+     *******************************************/
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -93,21 +158,30 @@
       margin-bottom: 24px;
     }
 
-    .summary-label { font-size: 12px; font-weight: 600; color: #55627a; }
-    .summary-value { font-size: 13px; font-weight: 500; }
-    .summary-muted { color: #888; font-style: italic; }
+    .summary-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #55627a;
+    }
 
-    /* Table wrapper */
+    .summary-value {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /*******************************************
+     * TABLE + WRAPPER
+     *******************************************/
     .table-wrapper {
       width: 100%;
       overflow-x: auto;
-      padding-bottom: 10px;
+      padding-bottom: 4px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
+      background: #ffffff;
       border: 1px solid #dce3ef;
       border-radius: 8px;
       table-layout: auto;
@@ -131,8 +205,10 @@
       overflow-wrap: break-word;
     }
 
-    /* Column width presets */
-    th:nth-child(1), td:nth-child(1) { width: 30px; }
+    /*******************************************
+     * COLUMN WIDTHS (balanced + clean)
+     *******************************************/
+    th:nth-child(1), td:nth-child(1) { width: 30px; text-align:center; }
     th:nth-child(2), td:nth-child(2) { width: 100px; }
     th:nth-child(3), td:nth-child(3) { width: 150px; }
     th:nth-child(4), td:nth-child(4) { width: 350px; }
@@ -141,8 +217,11 @@
     th:nth-child(7), td:nth-child(7),
     th:nth-child(8), td:nth-child(8) { width: 120px; }
     th:nth-child(9), td:nth-child(9) { width: 65px; }
-    th:nth-child(10), td:nth-child(10) { width: 35px; }
+    th:nth-child(10), td:nth-child(10) { width: 36px; text-align:center; }
 
+    /*******************************************
+     * INPUT INSIDE TABLE
+     *******************************************/
     .table-input {
       width: 100%;
       padding: 6px 6px;
@@ -150,6 +229,7 @@
       border-radius: 5px;
       background: #fff;
       font-size: 12.5px;
+      box-sizing: border-box;
     }
 
     .readonly-field {
@@ -159,9 +239,22 @@
       cursor: default !important;
     }
 
-    .row-handle { cursor: grab; color: #aaa; text-align: center; }
-    .delete-btn { cursor: pointer; color: #d22; text-align: center; font-size: 14px; }
+    .row-handle {
+      cursor: grab;
+      color: #aaa;
+      text-align: center;
+    }
 
+    .delete-btn {
+      cursor: pointer;
+      color: #d22;
+      text-align: center;
+      font-size: 15px;
+    }
+
+    /*******************************************
+     * NOTES + BUTTONS
+     *******************************************/
     textarea {
       width: 100%;
       height: 120px;
@@ -201,6 +294,9 @@
       font-size: 13px;
     }
 
+    /*******************************************
+     * LOADING OVERLAY
+     *******************************************/
     #loadingOverlay {
       position: fixed;
       inset: 0;
@@ -220,57 +316,17 @@
       animation: spin .85s linear infinite;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
-    /* FIX Choices.js to look like normal minimal dropdown */
-.choices__inner {
-  height: 30px !important;
-  min-height: 30px !important;
-  padding: 3px 8px !important;
-  display: flex !important;
-  align-items: center !important;
-  background: #ffffff !important;
-  border: 1px solid #d4d7dd !important;
-  border-radius: 5px !important;
-  font-size: 13px !important;
-  box-shadow: none !important;
-}
-
-.choices__list.choices__list--single {
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-.choices__placeholder {
-  opacity: 0.6 !important;
-}
-
-.choices__list--dropdown {
-  border-radius: 5px !important;
-  border: 1px solid #d4d7dd !important;
-  margin-top: 2px !important;
-}
-
-.choices__list--dropdown .choices__item {
-  padding: 6px 10px !important;
-  font-size: 13px !important;
-}
-
-.choices[data-type*="select-one"] .choices__inner {
-  padding-bottom: 0 !important;
-}
-
-.choices[data-type*="select-one"]::after {
-  top: 12px !important;
-  right: 10px !important;
-  border-color: #666 transparent transparent transparent !important;
-}
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
   </style>
 </head>
-
 <body>
 
-<div id="loadingOverlay"><div class="loading-spinner"></div></div>
+<div id="loadingOverlay">
+  <div class="loading-spinner"></div>
+</div>
 
 <div class="top-bar">
   <span class="brand-main">UXILIUM</span>
@@ -281,6 +337,7 @@
   <div class="card">
     <div class="card-title">Receiving Entry (Based on PO - Purchase Coil)</div>
 
+    <!-- Header Inputs -->
     <div class="row-flex">
       <div>
         <label>Receiving Date</label>
@@ -298,15 +355,35 @@
       </div>
     </div>
 
+    <!-- Summary -->
     <div class="summary-grid">
-      <div><div class="summary-label">Supplier</div><div id="summarySupplier" class="summary-value">-</div></div>
-      <div><div class="summary-label">Invoice Date</div><div id="summaryDate" class="summary-value">-</div></div>
-      <div><div class="summary-label">Status</div><div id="summaryStatus" class="summary-value">-</div></div>
-      <div><div class="summary-label">Total Ordered</div><div id="summaryTotalOrdered" class="summary-value">-</div></div>
-      <div><div class="summary-label">Total Received</div><div id="summaryTotalReceived" class="summary-value">-</div></div>
-      <div><div class="summary-label">Total Remaining</div><div id="summaryTotalRemaining" class="summary-value">-</div></div>
+      <div>
+        <div class="summary-label">Supplier</div>
+        <div id="summarySupplier" class="summary-value">-</div>
+      </div>
+      <div>
+        <div class="summary-label">Invoice Date</div>
+        <div id="summaryDate" class="summary-value">-</div>
+      </div>
+      <div>
+        <div class="summary-label">Status</div>
+        <div id="summaryStatus" class="summary-value">-</div>
+      </div>
+      <div>
+        <div class="summary-label">Total Ordered</div>
+        <div id="summaryTotalOrdered" class="summary-value">-</div>
+      </div>
+      <div>
+        <div class="summary-label">Total Received</div>
+        <div id="summaryTotalReceived" class="summary-value">-</div>
+      </div>
+      <div>
+        <div class="summary-label">Total Remaining</div>
+        <div id="summaryTotalRemaining" class="summary-value">-</div>
+      </div>
     </div>
 
+    <!-- Table -->
     <div class="table-wrapper">
       <table>
         <thead>
@@ -327,202 +404,267 @@
       </table>
     </div>
 
+    <!-- Notes -->
     <label style="margin-top:20px;">Additional Notes</label>
     <textarea id="notes"></textarea>
 
+    <!-- Actions -->
     <div class="actions-row">
       <button class="secondary-btn" onclick="reloadINV()">Reload INV</button>
       <button class="submit-btn" onclick="submitReceiving()">Submit Receiving</button>
     </div>
-
   </div>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtG8vlcyBSfWl501-0HDO-iDozbyjihWf-n8IGmbgWZxQZWEzMzqhJXqmDtqXw8JB2YA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtG8vlcyBSfWl501-0HDO-iDozbyjihWf-n8IGmbgWZxQZWEzMzqhJXqmDtqXw8JB2YA/exec";
 
-let currentINV = null;
+  let currentINV = null;
 
-function showLoading(){ loadingOverlay.style.display="flex"; }
-function hideLoading(){ loadingOverlay.style.display="none"; }
-
-async function loadNextReceivingId() {
-  const res = await fetch(`${SCRIPT_URL}?action=getlastreceivingid`);
-  const data = await res.json();
-  const t = new Date();
-  const yy = String(t.getFullYear()).slice(2);
-  const mm = String(t.getMonth()+1).padStart(2,"0");
-  const prefix = `RCV${yy}${mm}`;
-  const lastId = data.lastId;
-
-  if (!lastId || !lastId.startsWith(prefix)) {
-    receivingId.value = prefix + "0000001";
-  } else {
-    const seq = parseInt(lastId.substring(7),10)+1;
-    receivingId.value = prefix + String(seq).padStart(7,"0");
-  }
-}
-
-async function loadInvList(){
-  const res = await fetch(`${SCRIPT_URL}?action=getinvlist`);
-  const list = await res.json();
-
-  invSelect.innerHTML = `<option disabled selected>— Select INV —</option>`;
-
-  list.forEach(inv=>{
-    const o=document.createElement("option");
-    o.value=o.textContent=inv.invNumber;
-    invSelect.appendChild(o);
-  });
-
-  new Choices(invSelect,{
-    searchEnabled:true,
-    itemSelectText:"",
-    shouldSort:false
-  });
-
-  invSelect.addEventListener("change",()=>loadInvDetail(invSelect.value));
-}
-
-function renderSummary(h){
-  summarySupplier.textContent = h.supplier || "-";
-  summaryDate.textContent = h.invoiceDate || "-";
-  summaryStatus.textContent = h.status || "-";
-  summaryTotalOrdered.textContent = h.totalOrdered;
-  summaryTotalReceived.textContent = h.totalReceived;
-  summaryTotalRemaining.textContent = h.totalRemaining;
-}
-
-async function loadInvDetail(inv){
-  showLoading();
-  const res = await fetch(`${SCRIPT_URL}?action=getinvdetail&invNumber=${encodeURIComponent(inv)}`);
-  currentINV = await res.json();
-  renderSummary(currentINV.header);
-  renderLines(currentINV.lines);
-  hideLoading();
-}
-
-function renderLines(lines){
-  tableBody.innerHTML="";
-
-  lines.forEach(ln=>{
-    const tr=document.createElement("tr");
-    tr.dataset.rowIndex = ln.rowIndex;
-
-    tr.innerHTML = `
-      <td class="row-handle">⋮⋮</td>
-      <td>${ln.poNumber}</td>
-      <td><strong>${ln.kpc}</strong></td>
-
-      <td>${ln.description}</td>
-
-      <td><input class="table-input readonly-field" value="${ln.orderedQty}" readonly></td>
-      <td><input class="table-input readonly-field" value="${ln.receivedToDate}" readonly></td>
-      <td><input class="table-input readonly-field remaining" value="${ln.remainingQty}" readonly></td>
-
-      <td><input type="number" class="table-input qty-receipt" value="${ln.remainingQty}" min="0"></td>
-      <td><input class="table-input readonly-field" value="Meter" readonly></td>
-
-      <td class="delete-btn">🗑</td>
-    `;
-
-    tableBody.appendChild(tr);
-  });
-
-  // Input limit
-  document.querySelectorAll(".qty-receipt").forEach(x=>{
-    x.addEventListener("input",e=>{
-      const row=e.target.closest("tr");
-      const rem=row.querySelector(".remaining").value;
-      if(+e.target.value > +rem) e.target.value = rem;
-      if(+e.target.value < 0) e.target.value = 0;
-    });
-  });
-
-  Sortable.create(tableBody,{handle:".row-handle",animation:150});
-}
-
-function reloadINV(){
-  if(invSelect.value) loadInvDetail(invSelect.value);
-}
-
-function validateForm(){
-  if(!receivingDate.value) return "Receiving Date required.";
-  if(!invSelect.value) return "Inv Number required.";
-
-  const rows=[...document.querySelectorAll("#tableBody tr")];
-  if(rows.length===0) return "No line items found.";
-
-  let ok=false;
-  for(const r of rows){
-    const qty = +r.querySelector(".qty-receipt").value;
-    const rem = +r.querySelector(".remaining").value;
-    if(qty > rem) return "Qty cannot exceed remaining.";
-    if(qty > 0) ok=true;
+  function showLoading() {
+    loadingOverlay.style.display = "flex";
   }
 
-  return ok ? null : "At least one line must have Qty > 0";
-}
+  function hideLoading() {
+    loadingOverlay.style.display = "none";
+  }
 
-function submitReceiving(){
-  const err=validateForm();
-  if(err) return alert(err);
+  /*************************************************
+   * Receiving ID
+   *************************************************/
+  async function loadNextReceivingId() {
+    try {
+      const res = await fetch(`${SCRIPT_URL}?action=getlastreceivingid`);
+      const data = await res.json();
+      const lastId = data.lastId;
 
-  showLoading();
+      const t = new Date();
+      const yy = String(t.getFullYear()).slice(2);
+      const mm = String(t.getMonth() + 1).padStart(2, "0");
+      const prefix = `RCV${yy}${mm}`;
 
-  const rows=[...document.querySelectorAll("#tableBody tr")];
-
-  const payloadLines = rows.map(r=>({
-    rowIndex: r.dataset.rowIndex,
-    poNumber: r.children[1].textContent.trim(),
-    kpc: r.children[2].textContent.trim(),
-    description: r.children[3].textContent.trim(),
-    orderedQty: r.children[4].children[0].value,
-    receivedToDate: r.children[5].children[0].value,
-    remainingQty: r.children[6].children[0].value,
-    qtyThisReceipt: r.children[7].children[0].value,
-    uom: "Meter"
-  }));
-
-  const payload = {
-    receivingId: receivingId.value,
-    receivingDate: receivingDate.value,
-    invNumber: invSelect.value,
-    header: currentINV.header,
-    notes: notes.value,
-    lines: payloadLines
-  };
-
-  fetch(SCRIPT_URL,{
-    method:"POST",
-    body:JSON.stringify(payload)
-  })
-  .then(r=>r.json())
-  .then(res=>{
-    hideLoading();
-    if(res.status==="success"){
-      alert("Receiving saved.\nReceiving ID: "+payload.receivingId);
-      loadNextReceivingId();
-      reloadINV();
-    } else {
-      alert("Error: "+res.message);
+      if (!lastId || !lastId.startsWith(prefix)) {
+        receivingId.value = prefix + "0000001";
+      } else {
+        const seq = parseInt(lastId.substring(7), 10) + 1;
+        receivingId.value = prefix + String(seq).padStart(7, "0");
+      }
+    } catch (e) {
+      // fallback
+      const t = new Date();
+      const yy = String(t.getFullYear()).slice(2);
+      const mm = String(t.getMonth() + 1).padStart(2, "0");
+      receivingId.value = `RCV${yy}${mm}0000001`;
     }
-  })
-  .catch(err=>{
+  }
+
+  /*************************************************
+   * Load INV list
+   *************************************************/
+  async function loadInvList() {
+    const res = await fetch(`${SCRIPT_URL}?action=getinvlist`);
+    const list = await res.json();
+
+    invSelect.innerHTML = `<option disabled selected>— Select INV —</option>`;
+
+    list.forEach(inv => {
+      const o = document.createElement("option");
+      o.value = inv.invNumber;
+      o.textContent = inv.invNumber;
+      invSelect.appendChild(o);
+    });
+
+    new Choices(invSelect, {
+      searchEnabled: true,
+      itemSelectText: "",
+      shouldSort: false
+    });
+
+    invSelect.addEventListener("change", () => loadInvDetail(invSelect.value));
+  }
+
+  /*************************************************
+   * Summary Rendering
+   *************************************************/
+  function renderSummary(h) {
+    summarySupplier.textContent = h.supplier || "-";
+    summaryDate.textContent = h.invoiceDate || "-";
+    summaryStatus.textContent = h.status || "-";
+    summaryTotalOrdered.textContent = h.totalOrdered;
+    summaryTotalReceived.textContent = h.totalReceived;
+    summaryTotalRemaining.textContent = h.totalRemaining;
+  }
+
+  /*************************************************
+   * Load INV detail
+   *************************************************/
+  async function loadInvDetail(inv) {
+    try {
+      showLoading();
+      const res = await fetch(
+        `${SCRIPT_URL}?action=getinvdetail&invNumber=${encodeURIComponent(inv)}`
+      );
+      currentINV = await res.json();
+      renderSummary(currentINV.header);
+      renderLines(currentINV.lines);
+    } catch (e) {
+      alert("Error loading invoice detail.");
+      console.error(e);
+    } finally {
+      hideLoading();
+    }
+  }
+
+  /*************************************************
+   * Render table lines
+   *************************************************/
+  function renderLines(lines) {
+    tableBody.innerHTML = "";
+
+    lines.forEach(ln => {
+      const tr = document.createElement("tr");
+      tr.dataset.rowIndex = ln.rowIndex;
+
+      tr.innerHTML = `
+        <td class="row-handle">⋮⋮</td>
+        <td>${ln.poNumber}</td>
+        <td><strong>${ln.kpc}</strong></td>
+        <td>${ln.description}</td>
+
+        <td><input class="table-input readonly-field" value="${ln.orderedQty}" readonly></td>
+        <td><input class="table-input readonly-field" value="${ln.receivedToDate}" readonly></td>
+        <td><input class="table-input readonly-field remaining" value="${ln.remainingQty}" readonly></td>
+
+        <td><input type="number" class="table-input qty-receipt" value="${ln.remainingQty}" min="0"></td>
+        <td><input class="table-input readonly-field" value="Meter" readonly></td>
+
+        <td class="delete-btn">🗑</td>
+      `;
+
+      tableBody.appendChild(tr);
+    });
+
+    // limit Qty This Receipt
+    document.querySelectorAll(".qty-receipt").forEach(input => {
+      input.addEventListener("input", e => {
+        const row = e.target.closest("tr");
+        const rem = parseFloat(row.querySelector(".remaining").value) || 0;
+        let val = parseFloat(e.target.value) || 0;
+        if (val < 0) val = 0;
+        if (val > rem) val = rem;
+        e.target.value = val;
+      });
+    });
+
+    // delete row
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.target.closest("tr").remove();
+      });
+    });
+
+    Sortable.create(tableBody, { handle: ".row-handle", animation: 150 });
+  }
+
+  /*************************************************
+   * Reload INV detail
+   *************************************************/
+  function reloadINV() {
+    if (invSelect.value) loadInvDetail(invSelect.value);
+  }
+
+  /*************************************************
+   * Validation
+   *************************************************/
+  function validateForm() {
+    if (!receivingDate.value) return "Receiving Date required.";
+    if (!invSelect.value) return "Inv Number required.";
+
+    const rows = [...document.querySelectorAll("#tableBody tr")];
+    if (rows.length === 0) return "No line items found.";
+
+    let ok = false;
+    for (const r of rows) {
+      const qty = +r.querySelector(".qty-receipt").value;
+      const rem = +r.querySelector(".remaining").value;
+      if (qty > rem) return "Qty cannot exceed remaining.";
+      if (qty > 0) ok = true;
+    }
+
+    return ok ? null : "At least one line must have Qty > 0";
+  }
+
+  /*************************************************
+   * Submit Receiving
+   *************************************************/
+  function submitReceiving() {
+    const err = validateForm();
+    if (err) {
+      alert(err);
+      return;
+    }
+
+    showLoading();
+
+    const rows = [...document.querySelectorAll("#tableBody tr")];
+
+    const payloadLines = rows.map(r => ({
+      rowIndex: r.dataset.rowIndex,
+      poNumber: r.children[1].textContent.trim(),
+      kpc: r.children[2].textContent.trim(),
+      description: r.children[3].textContent.trim(),
+      orderedQty: r.children[4].children[0].value,
+      receivedToDate: r.children[5].children[0].value,
+      remainingQty: r.children[6].children[0].value,
+      qtyThisReceipt: r.children[7].children[0].value,
+      uom: "Meter"
+    }));
+
+    const payload = {
+      receivingId: receivingId.value,
+      receivingDate: receivingDate.value,
+      invNumber: invSelect.value,
+      header: currentINV ? currentINV.header : {},
+      notes: notes.value,
+      lines: payloadLines
+    };
+
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    })
+      .then(r => r.json())
+      .then(res => {
+        hideLoading();
+        if (res.status === "success") {
+          alert("Receiving saved.\nReceiving ID: " + payload.receivingId);
+          loadNextReceivingId();
+          reloadINV();
+        } else {
+          alert("Error: " + (res.message || "Unknown error"));
+        }
+      })
+      .catch(err => {
+        hideLoading();
+        alert("Submit failed: " + err);
+        console.error(err);
+      });
+  }
+
+  /*************************************************
+   * INIT
+   *************************************************/
+  window.addEventListener("DOMContentLoaded", async () => {
+    showLoading();
+
+    const t = new Date();
+    receivingDate.value = `${t.getFullYear()}-${String(
+      t.getMonth() + 1
+    ).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+
+    await Promise.all([loadNextReceivingId(), loadInvList()]);
     hideLoading();
-    alert("Submit failed: "+err);
   });
-}
-
-window.addEventListener("DOMContentLoaded",async()=>{
-  showLoading();
-
-  const t=new Date();
-  receivingDate.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
-
-  await Promise.all([loadNextReceivingId(),loadInvList()]);
-  hideLoading();
-});
 </script>
 
 </body>
