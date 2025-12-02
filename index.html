@@ -13,7 +13,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
   <style>
-    /* GLOBAL STYLE (Xero-like) */
     body {
       margin: 0;
       padding: 0;
@@ -22,10 +21,6 @@
       font-size: 13px;
       color: #333;
     }
-    input, select, textarea, .choices__inner { transition: all 0.18s ease; }
-    input:hover, select:hover, textarea:hover, .choices__inner:hover { border-color: #b9c4d0 !important; }
-
-    @keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
 
     .top-bar {
       height: 50px;
@@ -35,12 +30,20 @@
       background: #ffffff;
       border-bottom: 1px solid #e1e4e8;
     }
+
     .brand-main { font-size:17px;font-weight:600;margin-right:6px;letter-spacing:0.08em; }
     .brand-sub { font-size:13px;color:#7a8699; }
 
     .page { max-width:1120px;margin:32px auto;padding:0 16px; }
     .card { background:#fff;border-radius:8px;box-shadow:0 0 0 1px rgba(15,23,42,.04),0 14px 30px rgba(15,23,42,.08);padding:24px 26px; }
     .card-title { font-size:20px;font-weight:600;color:#1f2933;margin-bottom:18px; }
+
+    .row-flex {
+      display:grid;
+      grid-template-columns: minmax(160px,1fr) minmax(220px,1.2fr) minmax(210px,1.1fr);
+      gap:24px;margin-bottom:18px;
+      align-items:end;
+    }
 
     label { font-size:12.5px;font-weight:600;color:#4a5568;margin-bottom:4px;display:block; }
 
@@ -51,14 +54,6 @@
       background:#f9fafb !important;box-sizing:border-box;
     }
 
-    .row-flex {
-      display:grid;
-      grid-template-columns: minmax(160px,1fr) minmax(220px,1.2fr) minmax(210px,1.1fr);
-      gap:24px;margin-bottom:18px;
-      align-items:end;
-    }
-
-    /* SUMMARY BOX – sekarang 3 kolom per baris, tanpa Currency & ETA */
     .summary-grid {
       display:grid;
       grid-template-columns: repeat(3, minmax(150px,1fr));
@@ -94,8 +89,8 @@
       border:5px solid #dae6f4;border-top-color:#2b6be8;
       animation:spin .85s linear infinite;
     }
+    @keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
 
-    .error-text { color:#b91c1c;font-size:12px;display:none;margin-top:6px; }
   </style>
 </head>
 
@@ -119,8 +114,8 @@
       </div>
 
       <div>
-        <label>PO Number</label>
-        <select id="poNumberSelect" class="input-box"></select>
+        <label>Inv Number</label>
+        <select id="invSelect" class="input-box"></select>
       </div>
 
       <div>
@@ -129,15 +124,14 @@
       </div>
     </div>
 
-    <!-- SUMMARY -->
     <div class="summary-grid">
       <div>
         <div class="summary-label">Supplier</div>
-        <div class="summary-value" id="summarySupplier"><span class="summary-muted">Select PO</span></div>
+        <div class="summary-value" id="summarySupplier"><span class="summary-muted">Select INV</span></div>
       </div>
 
       <div>
-        <div class="summary-label">PO Date</div>
+        <div class="summary-label">Invoice Date</div>
         <div class="summary-value" id="summaryDate">—</div>
       </div>
 
@@ -162,11 +156,11 @@
       </div>
     </div>
 
-    <!-- TABLE -->
     <table>
       <thead>
         <tr>
           <th></th>
+          <th>PO Number</th>
           <th>Item</th>
           <th>Ordered</th>
           <th>Received</th>
@@ -179,13 +173,11 @@
       <tbody id="tableBody"></tbody>
     </table>
 
-    <div id="tableError" class="error-text">Error loading PO lines.</div>
-
     <div class="notes-label">Additional Notes</div>
     <textarea id="notes"></textarea>
 
     <div class="actions-row">
-      <button class="secondary-btn" type="button" onclick="reloadPO()">Reload PO</button>
+      <button class="secondary-btn" type="button" onclick="reloadINV()">Reload INV</button>
       <button class="submit-btn" type="button" onclick="submitReceiving()">Submit Receiving</button>
     </div>
 
@@ -193,18 +185,13 @@
 </div>
 
 <script>
-  // =========================================
-  //  GANTI INI DENGAN URL WEB APP SCRIPT KAMU
-  // =========================================
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8MWJpMRSfEQfP-a6KdDRJR5o0U1sR5LMUXHEUxMcheOLNO8Z_iS3Nnk7lNPIpZZTRmQ/exec";
+  const SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
 
-  let poList = [];
-  let currentPO = null;
+  let currentINV = null;
 
   function showLoading(){ loadingOverlay.style.display="flex"; }
   function hideLoading(){ loadingOverlay.style.display="none"; }
 
-  // ---------- AUTO RECEIVING ID ----------
   async function loadNextReceivingId() {
     try {
       const res = await fetch(`${SCRIPT_URL}?action=getlastreceivingid`);
@@ -225,7 +212,6 @@
       receivingId.value = prefix + String(seq).padStart(7,"0");
     } catch(e){
       console.error(e);
-      // fallback
       const today = new Date();
       const yy = String(today.getFullYear()).slice(2);
       const mm = String(today.getMonth()+1).padStart(2,"0");
@@ -233,82 +219,75 @@
     }
   }
 
-  // ---------- LOAD PO LIST ----------
-  async function loadPOList() {
-    const res = await fetch(`${SCRIPT_URL}?action=getpolist`);
-    poList = await res.json();
+  async function loadInvList(){
+    const res = await fetch(`${SCRIPT_URL}?action=getinvlist`);
+    const invList = await res.json();
 
-    poNumberSelect.innerHTML = "<option value='' disabled selected>— Select PO —</option>";
+    invSelect.innerHTML = "<option value='' disabled selected>— Select INV —</option>";
 
-    poList.forEach(p => {
+    invList.forEach(inv => {
       const opt = document.createElement("option");
-      opt.value = p.poNumber;
-      opt.textContent = `${p.poNumber} — ${p.supplier || ""}`;
-      poNumberSelect.appendChild(opt);
+      opt.value = inv.invNumber;
+      opt.textContent = inv.invNumber;
+      invSelect.appendChild(opt);
     });
 
-    new Choices(poNumberSelect,{searchEnabled:true,itemSelectText:"",shouldSort:false});
+    new Choices(invSelect,{searchEnabled:true,itemSelectText:"",shouldSort:false});
 
-    poNumberSelect.addEventListener("change",()=>loadPODetail(poNumberSelect.value));
+    invSelect.addEventListener("change",()=>loadInvDetail(invSelect.value));
   }
 
-  // ---------- SUMMARY ----------
   function renderSummary(h) {
     summarySupplier.textContent = h.supplier || "-";
-    summaryDate.textContent = h.poDate || "-";
+    summaryDate.textContent = h.invoiceDate || "-";
     summaryStatus.textContent = h.status || "-";
     summaryTotalOrdered.textContent = h.totalOrdered ?? "-";
     summaryTotalReceived.textContent = h.totalReceived ?? "-";
     summaryTotalRemaining.textContent = h.totalRemaining ?? "-";
   }
 
-  // ---------- PO DETAIL ----------
-  async function loadPODetail(poNo) {
+  async function loadInvDetail(invNumber) {
     showLoading();
     try {
-      const res = await fetch(`${SCRIPT_URL}?action=getpodetail&poNumber=${encodeURIComponent(poNo)}`);
-      currentPO = await res.json();
+      const res = await fetch(`${SCRIPT_URL}?action=getinvdetail&invNumber=${encodeURIComponent(invNumber)}`);
+      currentINV = await res.json();
 
-      renderSummary(currentPO.header);
-      renderPOLines(currentPO.lines);
+      renderSummary(currentINV.header);
+      renderLines(currentINV.lines);
     } catch(e){
       console.error(e);
-      tableError.style.display="block";
+      alert("Error loading invoice detail.");
     } finally {
       hideLoading();
     }
   }
 
-  // ---------- RENDER LINES ----------
-  function renderPOLines(lines){
+  function renderLines(lines){
     tableBody.innerHTML = "";
-    if (!lines || !lines.length) {
-      tableError.style.display="block";
-      return;
-    }
-    tableError.style.display="none";
-
-    lines.forEach((ln,i)=>{
-      const ordered = parseFloat(ln.orderedQty)||0;
-      const received = parseFloat(ln.receivedToDate)||0;
-      const remain = Math.max(ordered-received,0);
-
+    lines.forEach(ln=>{
       const tr=document.createElement("tr");
-      tr.dataset.rowIndex = ln.rowIndex; // untuk update Qty di sheet
+
+      tr.dataset.rowIndex = ln.rowIndex;
+
+      const ord = ln.orderedQty || 0;
+      const rec = ln.receivedToDate || 0;
+      const rem = ln.remainingQty || 0;
 
       tr.innerHTML=`
         <td class="row-handle">⋮⋮</td>
+        <td>${ln.poNumber}</td>
         <td>
-          <div class="item-main" style="font-weight:600">${ln.itemCode || ""}</div>
-          <div class="item-desc" style="font-size:11px;color:#6b7280">${ln.description || ""}</div>
+          <div style="font-weight:600">${ln.kpc}</div>
+          <div style="font-size:11px;color:#6b7280">${ln.description}</div>
         </td>
-        <td><input class="table-input ordered" value="${ordered}" readonly></td>
-        <td><input class="table-input received" value="${received}" readonly></td>
-        <td><input class="table-input remaining" value="${remain}" readonly></td>
-        <td><input type="number" class="table-input qty-receipt" value="${remain}" min="0"></td>
-        <td><input class="table-input uom" value="${ln.uom || ""}" readonly></td>
+        <td><input class="table-input" value="${ord}" readonly></td>
+        <td><input class="table-input" value="${rec}" readonly></td>
+        <td><input class="table-input remaining" value="${rem}" readonly></td>
+        <td><input type="number" class="table-input qty-receipt" value="${rem}" min="0"></td>
+        <td><input class="table-input" value="m" readonly></td>
         <td class="delete-btn" onclick="this.closest('tr').remove()">🗑</td>
       `;
+
       tableBody.appendChild(tr);
     });
 
@@ -326,30 +305,29 @@
     Sortable.create(tableBody,{handle:".row-handle",animation:150});
   }
 
-  function reloadPO(){
-    if(poNumberSelect.value) loadPODetail(poNumberSelect.value);
+  function reloadINV(){
+    if(invSelect.value) loadInvDetail(invSelect.value);
   }
 
-  // ---------- VALIDATION ----------
   function validateForm(){
     if(!receivingDate.value) return "Receiving Date required.";
-    if(!poNumberSelect.value) return "PO Number required.";
+    if(!invSelect.value) return "Inv Number required.";
 
     const rows = Array.from(document.querySelectorAll("#tableBody tr"));
-    if(!rows.length) return "No line items to receive.";
+    if(!rows.length) return "No line items found.";
 
     let hasQty=false;
     for(const r of rows){
       const qty=parseFloat(r.querySelector(".qty-receipt").value)||0;
       const remaining=parseFloat(r.querySelector(".remaining").value)||0;
       if(qty>0) hasQty=true;
-      if(qty>remaining+1e-9) return "Qty This Receipt cannot exceed Remaining.";
+      if(qty>remaining) return "Qty cannot exceed Remaining.";
     }
-    if(!hasQty) return "At least one line must have Qty This Receipt > 0.";
+    if(!hasQty) return "At least one item must have Qty > 0.";
+
     return null;
   }
 
-  // ---------- SUBMIT ----------
   function submitReceiving(){
     const err=validateForm();
     if(err){ alert(err); return; }
@@ -357,25 +335,25 @@
     showLoading();
 
     const rows = Array.from(document.querySelectorAll("#tableBody tr"));
-    const linesPayload = rows.map(r=>{
-      return {
-        rowIndex: r.dataset.rowIndex,
-        itemCode: r.querySelector(".item-main").textContent,
-        description: r.querySelector(".item-desc").textContent,
-        orderedQty: r.querySelector(".ordered").value,
-        receivedToDate: r.querySelector(".received").value,
-        qtyThisReceipt: r.querySelector(".qty-receipt").value,
-        uom: r.querySelector(".uom").value
-      };
-    });
+    const payloadLines = rows.map(r=>({
+      rowIndex: r.dataset.rowIndex,
+      poNumber: r.children[1].textContent.trim(),
+      kpc: r.children[2].children[0].textContent.trim(),
+      description: r.children[2].children[1].textContent.trim(),
+      orderedQty: r.children[3].children[0].value,
+      receivedToDate: r.children[4].children[0].value,
+      remainingQty: r.children[5].children[0].value,
+      qtyThisReceipt: r.children[6].children[0].value,
+      uom: "m"
+    }));
 
     const payload = {
       receivingId: receivingId.value,
       receivingDate: receivingDate.value,
-      poNumber: poNumberSelect.value,
+      invNumber: invSelect.value,
+      header: currentINV ? currentINV.header : {},
       notes: notes.value,
-      header: currentPO ? currentPO.header : {},
-      lines: linesPayload
+      lines: payloadLines
     };
 
     fetch(SCRIPT_URL,{
@@ -388,7 +366,7 @@
         if(r.status==="success"){
           alert("Receiving saved.\nReceiving ID: "+payload.receivingId);
           loadNextReceivingId();
-          reloadPO();
+          reloadINV();
         } else {
           alert("Error: "+(r.message || "Unknown error"));
         }
@@ -399,17 +377,17 @@
       });
   }
 
-  // ---------- INIT ----------
   window.addEventListener("DOMContentLoaded",async()=>{
     showLoading();
+
     const t=new Date();
     receivingDate.value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
 
     try {
-      await Promise.all([loadNextReceivingId(),loadPOList()]);
+      await Promise.all([loadNextReceivingId(),loadInvList()]);
     } catch(e){
       console.error(e);
-      alert("Error initialising page. Please check SCRIPT_URL.");
+      alert("Error initializing page. Check SCRIPT_URL.");
     }
     hideLoading();
   });
