@@ -22,7 +22,6 @@
       color: #333;
     }
 
-    /* Top Bar */
     .top-bar {
       height: 54px;
       display: flex;
@@ -34,14 +33,12 @@
     .brand-main { font-size: 18px; font-weight: 600; margin-right: 6px; }
     .brand-sub { font-size: 13px; color: #7a8699; }
 
-    /* Page */
     .page {
       max-width: 1180px;
       margin: 32px auto;
       padding: 0 20px;
     }
 
-    /* Card */
     .card {
       background: white;
       border-radius: 10px;
@@ -55,7 +52,6 @@
       color: #1f2933;
     }
 
-    /* 4 Column Layout */
     .row-flex {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -72,7 +68,6 @@
       color: #445;
     }
 
-    /* Standard Input */
     .input-box {
       height: 34px !important;
       padding: 6px 10px !important;
@@ -84,7 +79,6 @@
       box-sizing: border-box;
     }
 
-    /* Choices.js — Make identical to input-box */
     .choices {
       margin-bottom: 0 !important;
       width: 100% !important;
@@ -126,7 +120,6 @@
       flex-direction: column;
     }
 
-    /* Summary Box */
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -140,7 +133,6 @@
     .summary-label { font-size: 12px; font-weight: 600; color: #55627a; }
     .summary-value { font-size: 13px; font-weight: 500; }
 
-    /* Lock Warning */
     .lock-warning {
       display: none;
       margin-bottom: 16px;
@@ -152,7 +144,6 @@
       font-size: 12.5px;
     }
 
-    /* Table */
     .table-wrapper { width: 100%; overflow-x: auto; }
     table {
       width: 100%;
@@ -177,7 +168,6 @@
       vertical-align: top;
     }
 
-    /* Input in Table */
     .table-input {
       width: 100%;
       padding: 6px;
@@ -187,7 +177,6 @@
       box-sizing: border-box;
     }
 
-    /* Readonly Input */
     .readonly-field {
       background: #f3f4f6 !important;
       border-color: #d3d7e3 !important;
@@ -197,7 +186,6 @@
     .row-handle { cursor: grab; color: #bbb; text-align: center; }
     .delete-btn { cursor: pointer; color: #d33; font-size: 15px; text-align: center; }
 
-    /* Notes */
     textarea {
       width: 100%;
       height: 120px;
@@ -209,7 +197,6 @@
       margin-top: 6px;
     }
 
-    /* Buttons */
     .actions-row {
       display: flex;
       justify-content: flex-end;
@@ -239,7 +226,6 @@
       cursor: not-allowed;
     }
 
-    /* Loading Overlay */
     #loadingOverlay {
       position: fixed;
       inset: 0;
@@ -275,7 +261,6 @@
   <div class="card">
     <div class="card-title">Receiving Entry (Based on PO - Purchase Coil)</div>
 
-    <!-- Header 4 Columns -->
     <div class="row-flex">
       <div>
         <label>Receiving Date</label>
@@ -301,11 +286,9 @@
     </div>
 
     <div id="lockWarning" class="lock-warning">
-      ⚠ This Receiving Entry is <strong>LOCKED</strong> by period closing and cannot be edited.  
-      Please create adjustment in the next period if needed.
+      ⚠ This Receiving Entry is <strong>LOCKED</strong> by period closing and cannot be edited.
     </div>
 
-    <!-- Summary -->
     <div class="summary-grid">
       <div><div class="summary-label">Supplier</div><div id="summarySupplier" class="summary-value">-</div></div>
       <div><div class="summary-label">Invoice Date</div><div id="summaryDate" class="summary-value">-</div></div>
@@ -315,7 +298,6 @@
       <div><div class="summary-label">Total Remaining</div><div id="summaryTotalRemaining" class="summary-value">-</div></div>
     </div>
 
-    <!-- Table -->
     <div class="table-wrapper">
       <table>
         <thead>
@@ -336,11 +318,9 @@
       </table>
     </div>
 
-    <!-- Notes -->
     <label style="margin-top:18px;">Additional Notes</label>
     <textarea id="notes"></textarea>
 
-    <!-- Buttons -->
     <div class="actions-row">
       <button class="secondary-btn" type="button" onclick="reloadINV()">Reload INV</button>
       <button id="submitBtn" class="submit-btn" type="button" onclick="submitReceiving()">Submit Receiving</button>
@@ -350,17 +330,19 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyrEmzOPogSkovEcNSQ0Va3TivzeyZ3HxNFIQOuRtb7MaYJVtgEdj1mqjBCEoU7TCJQtg/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyqsUNP7oUdQsSOMLKCxgs4OZqROpF5ZzFr5IXNIs-jmOo-vNZJkPyQc1JTN431uBPK/exec";
 
-let currentINV = null;
-let isLocked = false;
+let currentINV = "";
+let currentINVChoicesValue = "";
 let invChoices = null;
 let editChoices = null;
+let isLocked = false;
+let isEditMode = false;
 
 function showLoading(){ loadingOverlay.style.display="flex"; }
 function hideLoading(){ loadingOverlay.style.display="none"; }
 
-/* ===================== ID GENERATOR (FRONTEND) ===================== */
+/* ------------ ID GENERATOR ------------ */
 async function loadNextReceivingId() {
   try {
     const res = await fetch(`${SCRIPT_URL}?action=getlastreceivingid`);
@@ -390,58 +372,71 @@ async function loadNextReceivingId() {
   }
 }
 
-/* ===================== SUMMARY HELPERS ===================== */
+/* ------------ SUMMARY ------------ */
 function renderSummary(header){
   summarySupplier.textContent       = header.supplier || "-";
   summaryDate.textContent           = header.invoiceDate || "-";
   summaryStatus.textContent         = header.status || "-";
-  summaryTotalOrdered.textContent   = header.totalOrdered || header.totalOrdered === 0 ? header.totalOrdered : "-";
-  summaryTotalReceived.textContent  = header.totalReceived || header.totalReceived === 0 ? header.totalReceived : "-";
-  summaryTotalRemaining.textContent = header.totalRemaining || header.totalRemaining === 0 ? header.totalRemaining : "-";
+  summaryTotalOrdered.textContent   = header.totalOrdered ?? "-";
+  summaryTotalReceived.textContent  = header.totalReceived ?? "-";
+  summaryTotalRemaining.textContent = header.totalRemaining ?? "-";
 }
 
 function renderSummaryFromLines(lines, supplier, lockedFlag){
-  let totalOrdered = 0, totalReceived = 0, totalRemaining = 0;
+  let tOrd=0, tRec=0, tRem=0;
   lines.forEach(ln=>{
     const ord = Number(ln.orderedQty) || 0;
     const recBefore = Number(ln.receivedToDate) || 0;
     const qtyThis = Number(ln.qtyThisReceipt) || 0;
     const rem = Number(ln.remainingQty) || 0;
-
-    totalOrdered += ord;
-    totalReceived += recBefore + qtyThis;
-    totalRemaining += rem;
+    tOrd += ord;
+    tRec += recBefore + qtyThis;
+    tRem += rem;
   });
 
   summarySupplier.textContent = supplier || "-";
   summaryDate.textContent = "-";
-
   let status = "-";
   if (lockedFlag) status = "LOCKED";
-  else if (totalRemaining === 0) status = "Selesai";
-  else if (totalReceived === 0) status = "Belum Diterima";
+  else if (tRem === 0) status = "Selesai";
+  else if (tRec === 0) status = "Belum Diterima";
   else status = "Sebagian";
 
   summaryStatus.textContent = status;
-  summaryTotalOrdered.textContent = totalOrdered || (totalOrdered === 0 ? 0 : "-");
-  summaryTotalReceived.textContent = totalReceived || (totalReceived === 0 ? 0 : "-");
-  summaryTotalRemaining.textContent = totalRemaining || (totalRemaining === 0 ? 0 : "-");
+  summaryTotalOrdered.textContent   = tOrd || (tOrd === 0 ? 0 : "-");
+  summaryTotalReceived.textContent  = tRec || (tRec === 0 ? 0 : "-");
+  summaryTotalRemaining.textContent = tRem || (tRem === 0 ? 0 : "-");
 }
 
-/* ===================== LOCK HANDLING ===================== */
+/* ------------ LOCK STATE ------------ */
 function applyLockState(locked){
   isLocked = !!locked;
   const disabled = !!locked;
 
-  document.querySelectorAll(".qty-receipt").forEach(el => { el.disabled = disabled; });
+  document.querySelectorAll(".qty-receipt").forEach(el => el.disabled = disabled);
   receivingDate.disabled = disabled;
   notes.disabled = disabled;
-
   submitBtn.disabled = disabled;
   lockWarning.style.display = locked ? "block" : "none";
 }
 
-/* ===================== LINES RENDERING ===================== */
+/* ------------ MODE HANDLING ------------ */
+function enterNewMode(){
+  isEditMode = false;
+  editChoices && editChoices.setChoiceByValue("");
+  invSelect.disabled = false;
+  invChoices && invChoices.enable && invChoices.enable();
+  applyLockState(false);
+  loadNextReceivingId();
+}
+
+function enterEditMode(){
+  isEditMode = true;
+  invSelect.disabled = true;
+  invChoices && invChoices.disable && invChoices.disable();
+}
+
+/* ------------ RENDER LINES ------------ */
 function renderLines(lines, useExistingQty){
   tableBody.innerHTML = "";
 
@@ -480,23 +475,19 @@ function renderLines(lines, useExistingQty){
   });
 
   document.querySelectorAll(".delete-btn").forEach(btn=>{
-    btn.addEventListener("click",e=>{
-      e.target.closest("tr").remove();
-    });
+    btn.addEventListener("click",e=> e.target.closest("tr").remove());
   });
 
   Sortable.create(tableBody,{handle:".row-handle",animation:150});
 
-  // When re-rendering lines, reset lock state controls (but not value)
   applyLockState(isLocked);
 }
 
-/* ===================== LOAD INV LIST ===================== */
+/* ------------ LOAD INV LIST (NEW MODE) ------------ */
 async function loadInvList(){
   const res = await fetch(`${SCRIPT_URL}?action=getinvlist`);
   const list = await res.json();
 
-  // Reset inv select
   if (invChoices) invChoices.destroy();
   invSelect.innerHTML = `<option value="">— Select INV —</option>`;
 
@@ -513,13 +504,28 @@ async function loadInvList(){
   });
 
   invSelect.addEventListener("change",()=>{
-    if(invSelect.value){
+    if(!isEditMode && invSelect.value){
+      currentINV = invSelect.value;
       loadInvDetail(invSelect.value);
     }
   });
+}
 
-  // Edit dropdown (Choices instance) init
+/* ------------ LOAD EDITABLE RECEIVING LIST (GLOBAL) ------------ */
+async function loadEditableReceivingList(){
+  const res = await fetch(`${SCRIPT_URL}?action=geteditablelist`);
+  const list = await res.json();
+
   if (editChoices) editChoices.destroy();
+  editSelect.innerHTML = `<option value="">— New Receiving Entry —</option>`;
+
+  list.forEach(item=>{
+    const op = document.createElement("option");
+    op.value = item.receivingId;
+    op.textContent = `${item.receivingId} — ${item.invNumber || ''}`;
+    editSelect.appendChild(op);
+  });
+
   editChoices = new Choices("#editSelect",{
     searchEnabled:true,
     itemSelectText:"",
@@ -529,60 +535,39 @@ async function loadInvList(){
   editSelect.addEventListener("change",()=>{
     const id = editSelect.value;
     if(!id){
-      // back to NEW mode
-      applyLockState(false);
-      loadNextReceivingId();
-      if (invSelect.value) loadInvDetail(invSelect.value);
+      enterNewMode();
+      if (invSelect.value) {
+        currentINV = invSelect.value;
+        loadInvDetail(invSelect.value);
+      } else {
+        // kosong table & summary
+        tableBody.innerHTML = "";
+        renderSummary({supplier:"-",invoiceDate:"-",status:"-",totalOrdered:"-",totalReceived:"-",totalRemaining:"-"});
+      }
       return;
     }
     loadReceivingEntry(id);
   });
 }
 
-/* ===================== LOAD INV DETAIL (NEW MODE) ===================== */
+/* ------------ LOAD INV DETAIL (NEW MODE) ------------ */
 async function loadInvDetail(inv){
+  if (!inv) return;
   showLoading();
   try{
     const res = await fetch(`${SCRIPT_URL}?action=getinvdetail&invNumber=${encodeURIComponent(inv)}`);
-    currentINV = await res.json();
+    const data = await res.json();
+    currentINV = inv;
 
-    renderSummary(currentINV.header);
-    renderLines(currentINV.lines, false); // qty = remaining
+    renderSummary(data.header);
+    renderLines(data.lines, false);
     applyLockState(false);
-
-    // load existing receiving history for this INV
-    await loadReceivingHistory(inv);
   } finally {
     hideLoading();
   }
 }
 
-/* ===================== RECEIVING HISTORY DROPDOWN ===================== */
-async function loadReceivingHistory(inv){
-  if (!inv) return;
-
-  const res = await fetch(`${SCRIPT_URL}?action=getreceivinghistory&inv=${encodeURIComponent(inv)}`);
-  const history = await res.json();
-
-  // Reset edit select
-  if (editChoices) editChoices.destroy();
-  editSelect.innerHTML = `<option value="">— New Receiving Entry —</option>`;
-
-  history.forEach(item=>{
-    const op = document.createElement("option");
-    op.value = item.receivingId;
-    op.textContent = `${item.receivingId} — ${item.date || ''}`;
-    editSelect.appendChild(op);
-  });
-
-  editChoices = new Choices("#editSelect",{
-    searchEnabled:true,
-    itemSelectText:"",
-    shouldSort:false
-  });
-}
-
-/* ===================== LOAD EXISTING RECEIVING (EDIT MODE) ===================== */
+/* ------------ LOAD EXISTING RECEIVING (EDIT MODE) ------------ */
 async function loadReceivingEntry(rcvId){
   if(!rcvId) return;
   showLoading();
@@ -590,11 +575,14 @@ async function loadReceivingEntry(rcvId){
     const res = await fetch(`${SCRIPT_URL}?action=loadreceiving&id=${encodeURIComponent(rcvId)}`);
     const data = await res.json();
 
+    enterEditMode();
+    currentINV = data.invNumber || "";
+
     receivingId.value   = data.receivingId;
-    receivingDate.value = data.receivingDate || receivingDate.value;
+    if (data.receivingDate) receivingDate.value = data.receivingDate;
     notes.value         = data.notes || "";
 
-    renderLines(data.lines, true); // use existing qtyThisReceipt
+    renderLines(data.lines, true);
     renderSummaryFromLines(data.lines, data.header && data.header.supplier, data.locked);
     applyLockState(data.locked);
   } finally {
@@ -602,23 +590,23 @@ async function loadReceivingEntry(rcvId){
   }
 }
 
-/* ===================== RELOAD INV (keep mode) ===================== */
+/* ------------ RELOAD ------------ */
 function reloadINV(){
-  if(invSelect.value){
-    if(editSelect.value){
-      // re-load existing receiving
-      loadReceivingEntry(editSelect.value);
-    } else {
-      loadInvDetail(invSelect.value);
-    }
+  if(isEditMode && editSelect.value){
+    loadReceivingEntry(editSelect.value);
+  } else if (invSelect.value){
+    loadInvDetail(invSelect.value);
   }
 }
 
-/* ===================== VALIDATION & SUBMIT ===================== */
+/* ------------ VALIDATION & SUBMIT ------------ */
 function validateForm(){
   if(isLocked) return "This Receiving Entry is locked and cannot be edited.";
   if(!receivingDate.value) return "Receiving Date required.";
-  if(!invSelect.value) return "Inv Number required.";
+
+  if(!isEditMode && !invSelect.value) {
+    return "Inv Number required.";
+  }
 
   const rows=[...document.querySelectorAll("#tableBody tr")];
   if(rows.length===0) return "No line items found.";
@@ -657,8 +645,8 @@ function submitReceiving(){
   const payload = {
     receivingId: receivingId.value,
     receivingDate: receivingDate.value,
-    invNumber: invSelect.value,
-    header: currentINV ? currentINV.header : { supplier: summarySupplier.textContent || "" },
+    invNumber: currentINV || invSelect.value || "",
+    header: { supplier: summarySupplier.textContent || "" },
     notes: notes.value,
     lines: lines
   };
@@ -668,17 +656,22 @@ function submitReceiving(){
     body:JSON.stringify(payload)
   })
   .then(r=>r.json())
-  .then(res=>{
+  .then(async res=>{
     hideLoading();
     if(res.status==="success"){
       alert("Receiving saved.\nReceiving ID: "+payload.receivingId);
 
-      // After save: reset to new mode
-      editChoices.setChoiceByValue("");
-      applyLockState(false);
-      loadNextReceivingId();
+      // refresh editable list
+      await loadEditableReceivingList();
+
+      // back to NEW MODE
+      enterNewMode();
       if (invSelect.value) {
+        currentINV = invSelect.value;
         loadInvDetail(invSelect.value);
+      } else {
+        tableBody.innerHTML = "";
+        renderSummary({supplier:"-",invoiceDate:"-",status:"-",totalOrdered:"-",totalReceived:"-",totalRemaining:"-"});
       }
     } else {
       alert("Error: "+res.message);
@@ -690,14 +683,19 @@ function submitReceiving(){
   });
 }
 
-/* ===================== INIT ===================== */
+/* ------------ INIT ------------ */
 window.addEventListener("DOMContentLoaded",async()=>{
   showLoading();
 
   const t = new Date();
   receivingDate.value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
 
-  await Promise.all([loadNextReceivingId(), loadInvList()]);
+  await Promise.all([
+    loadNextReceivingId(),
+    loadInvList(),
+    loadEditableReceivingList()
+  ]);
+
   hideLoading();
 });
 </script>
