@@ -352,7 +352,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzXszjunjmVlflO5DZvVDolTT5KMprb9QCCdEWzYcdaji3CpAhlMWijJ1KoJmh_v_1Jzg/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwiEvBBu26yHpQuOpU8nGS3kSnuHunDOcNQDquij1iryC2oRTuBo4kDvN9FZhV3lIxvCg/exec";
 
 let currentINV = null;
 let isLockedMode = false;
@@ -390,21 +390,28 @@ async function loadNextReceivingId() {
 
     const now = new Date();
     const yy = String(now.getFullYear()).slice(2);
-    const mm = String(now.getMonth()+1).padStart(2,"0");
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+
     const prefix = `RCV${yy}${mm}`;
 
-    const lastId = data.lastId;
-    if (!lastId || !lastId.startsWith(prefix)) {
-      receivingId.value = prefix + "0000001";
+    let nextId;
+
+    if (!data.lastId || !data.lastId.startsWith(prefix)) {
+      nextId = prefix + "0000001";
     } else {
-      const seq = parseInt(lastId.substring(7)) + 1;
-      receivingId.value = prefix + String(seq).padStart(7,"0");
+      const lastSeq = parseInt(data.lastId.substring(7), 10) || 0;
+      const newSeq = lastSeq + 1;
+      nextId = prefix + String(newSeq).padStart(7, "0");
     }
-  } catch(e) {
+
+    receivingId.value = nextId;
+
+  } catch (e) {
     const now = new Date();
     receivingId.value = `RCV${String(now.getFullYear()).slice(2)}${String(now.getMonth()+1).padStart(2,"0")}0000001`;
   }
 }
+
 
 async function loadInvList(){
   const res = await fetch(`${SCRIPT_URL}?action=getinvlist`);
