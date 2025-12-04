@@ -1120,56 +1120,71 @@
   }
 
   /* ------------ VALIDATION & SUBMIT (FINAL FIX V2) ------------ */
-   function validateForm(){
-    if(isLocked) return "This Receiving Entry is locked and cannot be edited.";
-    if(!receivingDate.value) return "Receiving Date required.";
+   function validateForm() {
 
-    if(!isEditMode && !invSelect.value) {
-      return "Inv Number required.";
-    }
+  if (isLocked) return "This Receiving Entry is locked and cannot be edited.";
+  if (!receivingDate.value) return "Receiving Date required.";
 
-    const rows = [...document.querySelectorAll("#tableBody tr")];
-    if(rows.length === 0) return "No line items found.";
-
-    // Group by rowIndex
-    const groups = {};
-
-    for (const r of rows){
-      const rowIndex = r.dataset.rowIndex;
-      if (!rowIndex) continue;
-
-      if (!groups[rowIndex]) {
-        groups[rowIndex] = {
-          remaining: Number(r.querySelector(".remaining")?.value || 0),
-          totalQty: 0
-        };
-      }
-
-      const qty = +r.querySelector(".qty-receipt").value || 0;
-      const kpc = r.querySelector(".kpc-new").value.trim();
-
-      if (qty > 0 && !kpc) {
-        return "Every line with Qty must have KPC filled.";
-      }
-
-      groups[rowIndex].totalQty += qty;
-    }
-
-    let anyQty = false;
-
-    for (const key in groups) {
-      const g = groups[key];
-      if (g.totalQty > 0) anyQty = true;
-
-      if (g.totalQty > g.remaining) {
-        return `Total Qty for one PO line exceeds Remaining (${g.totalQty} > ${g.remaining}).`;
-      }
-    }
-
-    if(!anyQty) return "At least one line must have Qty > 0.";
-
-    return null;
+  if (!isEditMode && !invSelect.value) {
+    return "Inv Number required.";
   }
+
+  const rows = [...document.querySelectorAll("#tableBody tr")];
+  if (rows.length === 0) return "No line items found.";
+
+  // Group by rowIndex
+  const groups = {};
+  rows.forEach(r => {
+    const rowIndex = r.dataset.rowIndex;
+    if (!rowIndex) return;
+
+    if (!groups[rowIndex]) {
+      groups[rowIndex] = {
+        remaining: Number(r.querySelector(".remaining")?.value || 0),
+        totalQty: 0,         // total qty sublines atau parent (jika tidak split)
+        parentQty: 0,
+        hasSplit: false
+      };
+    }
+
+    const isSub = r.classList.contains("subline-row");
+    const qty   = Number(r.querySelector(".qty-receipt")?.value || 0);
+    const kpc   = (r.querySelector(".kpc-new")?.value || "").trim();
+
+    // KPC wajib jika QTY > 0
+    if (qty > 0 && !kpc) {
+      return "Every line with Qty > 0 must have KPC filled.";
+    }
+
+    if (isSub) {
+      // SUB-LINE
+      groups[rowIndex].hasSplit = true;
+      groups[rowIndex].totalQty += qty;   // hitung sub-line saja
+    } else {
+      // PARENT LINE (non-split)
+      groups[rowIndex].parentQty = qty;
+    }
+  });
+
+  let anyQty = false;
+
+  // Validasi per-group
+  for (const key in groups) {
+    const g = groups[key];
+
+    const effectiveTotal = g.hasSplit ? g.totalQty : g.parentQty;
+
+    if (effectiveTotal > 0) anyQty = true;
+
+    if (effectiveTotal > g.remaining) {
+      return `Total Qty for one PO line exceeds Remaining (${effectiveTotal} > ${g.remaining}).`;
+    }
+  }
+
+  if (!anyQty) return "At least one line must have Qty > 0.";
+
+  return null;
+}
 
 
     function submitReceiving(){
