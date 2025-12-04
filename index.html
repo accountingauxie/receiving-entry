@@ -24,6 +24,585 @@
       --ux-danger: #d33;
     }
 
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--ux-bg);
+      font-family: "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+      color: #333;
+    }
+
+    .top-bar {
+      height: 54px;
+      display: flex;
+      align-items: center;
+      padding: 0 48px;
+      background: #fff;
+      border-bottom: 1px solid #e3e6ea;
+    }
+
+    .brand-main {
+      font-size: 18px;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+
+    .brand-sub {
+      font-size: 13px;
+      color: #7a8699;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 32px auto;
+      padding: 0 20px 40px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 28px 32px 30px;
+      box-shadow:
+        0 0 0 1px rgba(15, 23, 42, 0.03),
+        0 18px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    .card-title {
+      font-size: 21px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--ux-text-main);
+    }
+
+    /* Form Row */
+    .row-flex {
+      display: grid;
+      grid-template-columns: 1.1fr 1.5fr 1.3fr 1.7fr;
+      gap: 20px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #445;
+      display: block;
+    }
+
+    .input-box {
+      height: 34px;
+      padding: 6px 10px;
+      font-size: 13px;
+      border: 1px solid var(--ux-border);
+      border-radius: 6px;
+      background: white;
+      width: 100%;
+    }
+
+    .choices__inner {
+      height: 34px !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    /* SUMMARY */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      background: #f7f8ff;
+      border: 1px solid #dbe2ff;
+      border-radius: 9px;
+      padding: 14px 18px;
+      margin: 16px 0 20px;
+    }
+
+    .summary-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ux-text-sub);
+      margin-bottom: 2px;
+      text-transform: uppercase;
+    }
+
+    /* TABLE */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--ux-border-soft);
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    thead { background: #eef2f7; }
+
+    th {
+      padding: 8px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #465166;
+      text-align: left;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--ux-border-soft);
+    }
+
+    td {
+      padding: 6px 7px;
+      border-bottom: 1px solid #f1f3f6;
+      vertical-align: middle;
+      font-size: 12.5px;
+    }
+
+    .row-handle {
+      cursor: grab;
+      color: #b4bac7;
+      text-align: center;
+      width: 26px;
+      user-select: none;
+    }
+
+    .table-input {
+      width: 100%;
+      padding: 5px 6px;
+      font-size: 12.5px;
+      border: 1px solid #cfd7e3;
+      border-radius: 6px;
+    }
+
+    .readonly-field {
+      background: #f3f4f6 !important;
+      border-color: #d3d7e3 !important;
+    }
+
+    .delete-btn {
+      cursor: pointer;
+      color: var(--ux-danger);
+      font-size: 15px;
+      text-align: center;
+    }
+
+    .split-btn {
+      padding: 3px 8px;
+      border-radius: 14px;
+      border: 1px solid var(--ux-border);
+      background: var(--ux-blue-soft);
+      cursor: pointer;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 110px;
+      padding: 9px 10px;
+      font-size: 13px;
+      background: #f9fafb;
+      border: 1px solid #ced4e1;
+      border-radius: 8px;
+      margin-top: 6px;
+      resize: vertical;
+    }
+
+    .actions-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.7);
+      backdrop-filter: blur(2px);
+      z-index: 9999;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 4px solid #d0d7e2;
+      border-top-color: #1a73e8;
+      animation: spin .85s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+
+<body>
+
+<div id="loadingOverlay"><div class="loading-spinner"></div></div>
+
+<div class="top-bar">
+  <span class="brand-main">UXILIUM</span>
+  <span class="brand-sub">Receiving Entry — Coil Purchase</span>
+</div>
+
+<div class="page">
+  <div class="card">
+
+    <div class="card-title">Receiving Entry (Based on PO - Purchase Coil)</div>
+
+    <div class="row-flex">
+      <div>
+        <label>Receiving Date</label>
+        <input type="date" id="receivingDate" class="input-box">
+      </div>
+
+      <div>
+        <label>Inv Number</label>
+        <select id="invSelect" class="input-box"></select>
+      </div>
+
+      <div>
+        <label>Receiving ID</label>
+        <input type="text" id="receivingId" class="input-box" readonly>
+      </div>
+
+      <div>
+        <label>Edit Existing Receiving (Optional)</label>
+        <select id="editSelect" class="input-box">
+          <option value="">— New Receiving Entry —</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="lockWarning" class="lock-warning" style="display:none;">
+      ⚠ This Receiving Entry is <strong>LOCKED</strong> and cannot be edited.
+    </div>
+
+    <div class="summary-grid">
+      <div><div class="summary-label">Supplier</div><div id="summarySupplier">-</div></div>
+      <div><div class="summary-label">Invoice Date</div><div id="summaryDate">-</div></div>
+      <div><div class="summary-label">Status</div><div id="summaryStatus">-</div></div>
+      <div><div class="summary-label">Total Ordered</div><div id="summaryTotalOrdered">-</div></div>
+      <div><div class="summary-label">Total Received</div><div id="summaryTotalReceived">-</div></div>
+      <div><div class="summary-label">Total Remaining</div><div id="summaryTotalRemaining">-</div></div>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th class="sticky-col" style="width:28px;"></th>
+            <th>PO Number</th>
+            <th>Item Code</th>
+            <th>KPC</th>
+            <th>Description</th>
+            <th>Ordered</th>
+            <th>Unit Amount</th>
+            <th>Received</th>
+            <th>Remaining</th>
+            <th>Qty This Receipt</th>
+            <th>UoM</th>
+            <th>Split</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <label style="margin-top:18px;">Additional Notes</label>
+    <textarea id="notes"></textarea>
+
+    <div class="actions-row">
+      <button class="secondary-btn" type="button" onclick="reloadINV()">Reload INV</button>
+      <button id="submitBtn" class="submit-btn" type="button" onclick="submitReceiving()">Submit Receiving</button>
+    </div>
+
+  </div>
+</div>
+<script>
+/* ============================================================
+   GLOBAL STATE
+   ============================================================ */
+let invChoices, editChoices;
+let originalPOHeader = null;
+let isEditMode = false;
+let isLocked = false;
+
+/* ============================================================
+   LOADING OVERLAY
+   ============================================================ */
+function showLoading(show = true) {
+  document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
+}
+
+/* ============================================================
+   FETCH WRAPPER
+   ============================================================ */
+async function gs(action, params = {}) {
+  const url = new URL(
+    "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"
+  );
+  url.searchParams.set("action", action);
+  Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
+  const res = await fetch(url);
+  return res.json();
+}
+
+/* ============================================================
+   INITIALIZATION
+   ============================================================ */
+window.addEventListener("DOMContentLoaded", initPage);
+
+async function initPage() {
+  showLoading(true);
+
+  // Setup Choices.js
+  invChoices = new Choices("#invSelect", { allowHTML: true, shouldSort: false });
+  editChoices = new Choices("#editSelect", { allowHTML: true, shouldSort: false });
+
+  await loadInvList();
+  await loadEditableReceivingList();
+  await generateNewReceivingId();
+
+  // Hook events
+  document.getElementById("invSelect").addEventListener("change", onInvSelected);
+  document.getElementById("editSelect").addEventListener("change", onEditSelected);
+
+  showLoading(false);
+}
+
+/* ============================================================
+   LOAD INV LIST (ONLY INVS WITH REMAIN > 5)
+   ============================================================ */
+async function loadInvList() {
+  const data = await gs("getinvlist");
+
+  invChoices.clearStore();
+  invChoices.setChoices(
+    data.map(d => ({ value: d.invNumber, label: d.invNumber })),
+    "value", "label", true
+  );
+}
+
+/* ============================================================
+   LOAD RECEIVING EDITABLE LIST
+   ============================================================ */
+async function loadEditableReceivingList() {
+  const data = await gs("geteditablelist");
+
+  editChoices.clearStore();
+  editChoices.setChoices(
+    [{ value: "", label: "— New Receiving Entry —" }].concat(
+      data.map(d => ({
+        value: d.receivingId,
+        label: `${d.receivingId} — ${d.invNumber} (${d.date})`
+      }))
+    ),
+    "value", "label",
+    true
+  );
+}
+
+/* ============================================================
+   GENERATE AUTO RECEIVING ID
+   ============================================================ */
+async function generateNewReceivingId() {
+  const data = await gs("getlastreceivingid");
+  let lastId = data.lastId || "RCV000000000000";
+
+  const prefix = "RCV";
+  let num = parseInt(lastId.substring(3)) + 1;
+  const newId = prefix + String(num).padStart(12, "0");
+
+  document.getElementById("receivingId").value = newId;
+}
+
+/* ============================================================
+   EVENT: INV SELECTED
+   ============================================================ */
+async function onInvSelected() {
+  if (!invSelect.value) return;
+
+  isEditMode = false;
+  isLocked = false;
+
+  const data = await gs("getinvdetail", { invNumber: invSelect.value });
+
+  originalPOHeader = data.header;
+  document.getElementById("summarySupplier").textContent = data.header.supplier || "-";
+  document.getElementById("summaryDate").textContent = data.header.invoiceDate || "-";
+  document.getElementById("summaryStatus").textContent = data.header.status || "-";
+  document.getElementById("summaryTotalOrdered").textContent = data.header.totalOrdered;
+  document.getElementById("summaryTotalReceived").textContent = data.header.totalReceived;
+  document.getElementById("summaryTotalRemaining").textContent = data.header.totalRemaining;
+
+  renderLines(data.lines, false);
+}
+
+/* ============================================================
+   EVENT: EDIT EXISTING RECEIVING SELECTED
+   ============================================================ */
+async function onEditSelected() {
+  if (!editSelect.value) {
+    isEditMode = false;
+    isLocked = false;
+    await generateNewReceivingId();
+    document.getElementById("tableBody").innerHTML = "";
+    return;
+  }
+
+  isEditMode = true;
+
+  const data = await gs("loadreceiving", { id: editSelect.value });
+
+  isLocked = data.locked;
+  document.getElementById("lockWarning").style.display = isLocked ? "block" : "none";
+
+  // Replace header info
+  document.getElementById("receivingId").value = data.receivingId;
+  document.getElementById("receivingDate").value = data.receivingDate || "";
+  document.getElementById("invSelect").value = data.invNumber;
+  invChoices.setChoiceByValue(data.invNumber);
+  document.getElementById("notes").value = data.notes || "";
+
+  originalPOHeader = data.header;
+  document.getElementById("summarySupplier").textContent = data.header.supplier || "-";
+  document.getElementById("summaryDate").textContent = data.header.invoiceDate || "-";
+  document.getElementById("summaryStatus").textContent = data.header.status || "-";
+  document.getElementById("summaryTotalOrdered").textContent = data.header.totalOrdered;
+  document.getElementById("summaryTotalReceived").textContent = data.header.totalReceived;
+  document.getElementById("summaryTotalRemaining").textContent = data.header.totalRemaining;
+
+  renderLines(data.lines, true);
+}
+
+/* ============================================================
+   RENDER TABLE LINES
+   ============================================================ */
+function renderLines(lines, isEdit) {
+  const body = document.getElementById("tableBody");
+  body.innerHTML = "";
+
+  lines.forEach(line => {
+    body.appendChild(buildRow(line));
+  });
+
+  Sortable.create(body, {
+    handle: ".row-handle",
+    animation: 150
+  });
+}
+
+/* ============================================================
+   BUILD ONE TABLE ROW
+   ============================================================ */
+function buildRow(l) {
+  const tr = document.createElement("tr");
+  tr.dataset.rowIndex = l.rowIndex;
+
+  tr.innerHTML = `
+    <td class="row-handle">⋮⋮</td>
+
+    <td>${l.poNumber}</td>
+    <td>${l.itemCode}</td>
+
+    <td>
+      <input class="table-input kpc-new" value="${l.kpc || ""}">
+    </td>
+
+    <td>${l.description}</td>
+
+    <td><input class="table-input readonly-field" value="${l.orderedQty}" readonly></td>
+    <td><input class="table-input readonly-field" value="${l.unitAmount}" readonly></td>
+    <td><input class="table-input readonly-field" value="${l.receivedToDate}" readonly></td>
+
+    <td>
+      <input class="table-input readonly-field remaining" value="${l.remainingQty}" readonly>
+    </td>
+
+    <td>
+      <input class="table-input qty-receipt" value="${l.qtyThisReceipt || ""}">
+    </td>
+
+    <td>
+      <input class="table-input" value="${l.uom || "m"}">
+    </td>
+
+    <td>
+      <button class="split-btn" onclick="splitRow(this)">Split</button>
+    </td>
+
+    <td class="delete-btn" onclick="deleteRow(this)">🗑</td>
+  `;
+
+  return tr;
+}
+
+/* ============================================================
+   SPLIT ROW
+   ============================================================ */
+function splitRow(btn) {
+  const tr = btn.closest("tr");
+  const clone = tr.cloneNode(true);
+
+  clone.querySelector(".qty-receipt").value = "";
+  clone.querySelector(".kpc-new").value = "";
+
+  tr.after(clone);
+}
+
+/* ============================================================
+   DELETE ROW
+   ============================================================ */
+function deleteRow(btn) {
+  btn.closest("tr").remove();
+}
+
+/* ============================================================
+   RELOAD INV
+   ============================================================ */
+async function reloadINV() {
+  await loadInvList();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Receiving Entry — Coil Purchase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Choices.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+  <!-- Sortable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+  <style>
+    :root {
+      --ux-blue: #0077e4;
+      --ux-blue-soft: #ecf4ff;
+      --ux-border: #d3d7e3;
+      --ux-border-soft: #e5e9f2;
+      --ux-bg: #f5f7fa;
+      --ux-text-main: #1f2933;
+      --ux-text-sub: #55627a;
+      --ux-danger: #d33;
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -490,14 +1069,13 @@
 
 <script>
   // GANTI KE URL WEB APP KAMU JIKA PERLU
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcCRSYpQIvMn4BFQc73J2f9Z0Iw-pHlDXxCJi72boXgBQET8vcwUkiS82zg1j9u8_J/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRBqCIxGLqmyIk689a60nJ-lxO2LuAI6lMZPrS1s4X7WQsPwGo7g3V22YsL9nu8HB0Uw/exec";
 
   let currentINV = "";
   let invChoices = null;
   let editChoices = null;
   let isLocked = false;
   let isEditMode = false;
-  let originalPOHeader = null;   // <-- NEW: untuk summary asli PO
 
   const loadingOverlay = document.getElementById("loadingOverlay");
   const tableBody = document.getElementById("tableBody");
@@ -558,7 +1136,6 @@
     summaryTotalRemaining.textContent = header.totalRemaining ?? "-";
   }
 
-  // fungsi ini sekarang hanya kalau suatu saat mau pakai; EDIT sudah tidak pakai ini lagi
   function renderSummaryFromLines(lines, supplier, lockedFlag){
     let tOrd=0, tRec=0, tRem=0;
     lines.forEach(ln=>{
@@ -602,7 +1179,6 @@
   /* ------------ MODE HANDLING ------------ */
   function enterNewMode(){
     isEditMode = false;
-    originalPOHeader = null;
     editChoices && editChoices.setChoiceByValue("");
     invSelect.disabled = false;
     invChoices && invChoices.enable && invChoices.enable();
@@ -659,7 +1235,7 @@
         <td class="row-handle">⋮⋮</td>
         <td>${ln.poNumber}</td>
         <td><span class="kpc-original">${itemCode}</span></td>
-        <td><input class="table-input kpc-new" placeholder="KPC"></td>
+        <td><input class="table-input kpc-new" placeholder="KPC" value="${useExistingQty && ln.kpc ? ln.kpc : ""}"></td>
         <td>${ln.description}</td>
         <td><input class="table-input readonly-field ordered" value="${ln.orderedQty}" readonly></td>
         <td><input class="table-input readonly-field unit-amount" value="${unitAmount}" readonly></td>
@@ -677,12 +1253,6 @@
 
       tableBody.appendChild(tr);
       attachRowEvents(tr);
-
-      // Pre-fill KPC saat EDIT MODE
-      if (useExistingQty && ln.kpc) {
-        const kpcInput = tr.querySelector(".kpc-new");
-        if (kpcInput) kpcInput.value = ln.kpc;
-      }
     });
 
     Sortable.create(tableBody,{handle:".row-handle",animation:150});
@@ -786,7 +1356,6 @@
       const data = await res.json();
       currentINV = inv;
 
-      originalPOHeader = data.header;  // simpan juga untuk jaga-jaga
       renderSummary(data.header);
       renderLines(data.lines, false);
       applyLockState(false);
@@ -810,24 +1379,18 @@
       if (data.receivingDate) receivingDate.value = data.receivingDate;
       notes.value         = data.notes || "";
 
-      originalPOHeader = data.originalPOHeader || null;
-
-      renderLines(data.lines, true);
-
-      // 🔥 SUMMARY SAAT EDIT SELALU PAKAI ORIGINAL PO, BUKAN LINES SPLIT
-      if (originalPOHeader) {
-        renderSummary(originalPOHeader);
+      // ⬇️ PENTING: summary ambil dari originalPOHeader (Apps Script baru)
+      if (data.originalPOHeader) {
+        renderSummary(data.originalPOHeader);
       } else {
-        renderSummary({
-          supplier:"-",
-          invoiceDate:"-",
-          status:"-",
-          totalOrdered:"-",
-          totalReceived:"-",
-          totalRemaining:"-"
-        });
+        renderSummaryFromLines(
+          data.lines,
+          data.header && data.header.supplier,
+          data.locked
+        );
       }
 
+      renderLines(data.lines, true);
       applyLockState(data.locked);
     } finally {
       hideLoading();
@@ -843,7 +1406,7 @@
     }
   }
 
-  /* ------------ VALIDATION & SUBMIT ------------ */
+  /* ------------ VALIDATION & SUBMIT (FINAL FIX V2) ------------ */
   function validateForm(){
     if(isLocked) return "This Receiving Entry is locked and cannot be edited.";
     if(!receivingDate.value) return "Receiving Date required.";
@@ -857,13 +1420,15 @@
 
     let anyQty = false;
 
-    // Row-level validation: qty vs remaining + KPC wajib jika qty > 0
+    // Row-level validation only (BENAR untuk split)
     for (const r of rows){
       const qty = +r.querySelector(".qty-receipt").value || 0;
       const rem = +r.querySelector(".remaining").value || 0;
       const kpc = r.querySelector(".kpc-new").value.trim();
 
-      if (qty > rem) return "Qty cannot exceed remaining.";
+      if (qty > rem){
+        return `Qty exceeds remaining (${qty} > ${rem}).`;
+      }
       if (qty > 0) {
         anyQty = true;
         if (!kpc) {
@@ -874,23 +1439,7 @@
 
     if(!anyQty) return "At least one line must have Qty > 0.";
 
-    // Group validation for split lines (total per rowIndex tidak boleh > remaining)
-    const groups = {};
-    rows.forEach(r=>{
-      const idx = r.dataset.rowIndex || "";
-      const qty = +r.querySelector(".qty-receipt").value || 0;
-      const rem = +r.querySelector(".remaining").value || 0;
-      if (!groups[idx]) groups[idx] = {sum:0, remaining:rem};
-      groups[idx].sum += qty;
-    });
-
-    for (const key in groups){
-      const g = groups[key];
-      if (g.sum > g.remaining){
-        return `Total Qty for one PO line exceeds Remaining (${g.sum} > ${g.remaining}).`;
-      }
-    }
-
+    // ❌ Group validation dihapus — tidak dipakai lagi
     return null;
   }
 
