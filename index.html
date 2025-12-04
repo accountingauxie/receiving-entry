@@ -490,13 +490,14 @@
 
 <script>
   // GANTI KE URL WEB APP KAMU JIKA PERLU
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRBqCIxGLqmyIk689a60nJ-lxO2LuAI6lMZPrS1s4X7WQsPwGo7g3V22YsL9nu8HB0Uw/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjm8lkbRoE6S76Nzh3N4msb2D88MLaloIHZHMgYOuxTdKeu8zCag8Xrhgw9uMiAqpS/exec";
 
   let currentINV = "";
   let invChoices = null;
   let editChoices = null;
   let isLocked = false;
   let isEditMode = false;
+  let originalPOHeader = null;   // <-- NEW: untuk summary asli PO
 
   const loadingOverlay = document.getElementById("loadingOverlay");
   const tableBody = document.getElementById("tableBody");
@@ -557,6 +558,7 @@
     summaryTotalRemaining.textContent = header.totalRemaining ?? "-";
   }
 
+  // fungsi ini sekarang hanya kalau suatu saat mau pakai; EDIT sudah tidak pakai ini lagi
   function renderSummaryFromLines(lines, supplier, lockedFlag){
     let tOrd=0, tRec=0, tRem=0;
     lines.forEach(ln=>{
@@ -600,6 +602,7 @@
   /* ------------ MODE HANDLING ------------ */
   function enterNewMode(){
     isEditMode = false;
+    originalPOHeader = null;
     editChoices && editChoices.setChoiceByValue("");
     invSelect.disabled = false;
     invChoices && invChoices.enable && invChoices.enable();
@@ -783,6 +786,7 @@
       const data = await res.json();
       currentINV = inv;
 
+      originalPOHeader = data.header;  // simpan juga untuk jaga-jaga
       renderSummary(data.header);
       renderLines(data.lines, false);
       applyLockState(false);
@@ -806,12 +810,24 @@
       if (data.receivingDate) receivingDate.value = data.receivingDate;
       notes.value         = data.notes || "";
 
+      originalPOHeader = data.originalPOHeader || null;
+
       renderLines(data.lines, true);
-      renderSummaryFromLines(
-        data.lines,
-        data.header && data.header.supplier,
-        data.locked
-      );
+
+      // 🔥 SUMMARY SAAT EDIT SELALU PAKAI ORIGINAL PO, BUKAN LINES SPLIT
+      if (originalPOHeader) {
+        renderSummary(originalPOHeader);
+      } else {
+        renderSummary({
+          supplier:"-",
+          invoiceDate:"-",
+          status:"-",
+          totalOrdered:"-",
+          totalReceived:"-",
+          totalRemaining:"-"
+        });
+      }
+
       applyLockState(data.locked);
     } finally {
       hideLoading();
@@ -888,7 +904,7 @@
 
     const lines = rows.map(r=>{
       const poNumber = r.children[1].textContent.trim();
-      const itemCode = r.querySelector(".kpc-original").textContent.trim(); // now Item Code
+      const itemCode = r.querySelector(".kpc-original").textContent.trim(); // Item Code
       const kpcVal   = r.querySelector(".kpc-new").value.trim();
       const description = r.children[4].textContent.trim();
       const orderedQty = r.querySelector(".ordered").value;
