@@ -259,6 +259,47 @@
       user-select: none;
       width: 26px;
     }
+  /* Sub-line indent style */
+.subline-row td {
+    background: #f7faff;
+    border-top: 1px dashed #d6e3ff;
+}
+
+/* Indent enhancement (opsional tapi direkomendasikan) */
+.subline-row td {
+    padding-left: 10px;
+}
+
+.subline-row td:first-child {
+    padding-left: 22px !important;
+}
+
+/* Row handle inside subline (already correct) */
+.subline-row .row-handle {
+    padding-left: 12px;
+    font-size: 14px;
+}
+
+/* Subline label */
+.subline-label {
+    font-size: 11px;
+    color: #6b7280;
+    font-style: italic;
+    margin-right: 4px;
+}
+
+
+    .subline-row .row-handle {
+      padding-left: 12px;
+      font-size: 14px;
+    }
+
+    .subline-label {
+      font-size: 11px;
+      color: #6b7280;
+      font-style: italic;
+      margin-right: 4px;
+    }
 
     .table-input {
       width: 100%;
@@ -514,6 +555,51 @@
   const summaryTotalOrdered = document.getElementById("summaryTotalOrdered");
   const summaryTotalReceived = document.getElementById("summaryTotalReceived");
   const summaryTotalRemaining = document.getElementById("summaryTotalRemaining");
+  // --- GROUP HELPERS (by rowIndex) ---
+  function getAllRows() {
+    return [...document.querySelectorAll("#tableBody tr")];
+  }
+
+  function getBaseRowByIndex(rowIndex) {
+    return getAllRows().find(r => r.dataset.rowIndex === String(rowIndex) && !r.classList.contains("subline-row"));
+  }
+
+  function getSubRowsByIndex(rowIndex) {
+    return getAllRows().filter(r => r.dataset.rowIndex === String(rowIndex) && r.classList.contains("subline-row"));
+  }
+
+  function recalcParentTotal(rowIndex) {
+    const base = getBaseRowByIndex(rowIndex);
+    if (!base) return;
+
+    const subs = getSubRowsByIndex(rowIndex);
+    let total = 0;
+
+    subs.forEach(sr => {
+      total += Number(sr.querySelector(".qty-receipt")?.value || 0);
+    });
+
+    const parentQty = base.querySelector(".qty-receipt");
+    if (parentQty) {
+      parentQty.value = total > 0 ? total : "";
+    }
+  }
+
+  function ensureParentModeForSplit(baseTr) {
+    const qtyInput = baseTr.querySelector(".qty-receipt");
+    const kpcInput = baseTr.querySelector(".kpc-new");
+
+    baseTr.dataset.hasSplit = "1";
+
+    if (qtyInput) {
+      qtyInput.readOnly = true;
+      qtyInput.classList.add("readonly-field");
+    }
+    if (kpcInput) {
+      // KPC akan pindah ke sub-line
+      kpcInput.value = "";
+    }
+  }
 
   function showLoading(){ loadingOverlay.style.display="flex"; }
   function hideLoading(){ loadingOverlay.style.display="none"; }
@@ -614,56 +700,162 @@
   }
 
   /* ------------ ROW EVENTS ------------ */
-  function attachRowEvents(tr){
+    function attachRowEvents(tr){
     const qtyInput = tr.querySelector(".qty-receipt");
     if (qtyInput) {
       qtyInput.addEventListener("input", e => {
+        const rowIndex = tr.dataset.rowIndex;
         const rem = Number(tr.querySelector(".remaining").value) || 0;
         let val = Number(e.target.value || 0);
         if (val < 0) val = 0;
         if (val > rem) val = rem;
         e.target.value = val || "";
+
+        // Jika sub-line, update total parent
+        if (tr.classList.contains("subline-row")) {
+          recalcParentTotal(rowIndex);
+        }
       });
     }
 
     const del = tr.querySelector(".delete-btn");
     if (del) {
       del.addEventListener("click", e => {
-        e.target.closest("tr").remove();
+        const row = e.target.closest("tr");
+        const rowIndex = row.dataset.rowIndex;
+
+        if (row.classList.contains("subline-row")) {
+          // hapus sub-line
+          row.remove();
+          const base = getBaseRowByIndex(rowIndex);
+          const subs = getSubRowsByIndex(rowIndex);
+
+          if (!subs.length && base) {
+            // kembali jadi normal row (tidak split)
+            delete base.dataset.hasSplit;
+            const qtyBase = base.querySelector(".qty-receipt");
+            if (qtyBase) {
+              qtyBase.readOnly = false;
+              qtyBase.classList.remove("readonly-field");
+            }
+          }
+          recalcParentTotal(rowIndex);
+        } else {
+          // base row dihapus → hapus juga semua sub-line
+          getSubRowsByIndex(rowIndex).forEach(sr => sr.remove());
+          row.remove();
+        }
       });
     }
 
     const splitBtn = tr.querySelector(".split-btn");
-    if (splitBtn) {
+    if (splitBtn && !tr.classList.contains("subline-row")) {
       splitBtn.addEventListener("click", () => addSplitRow(tr));
     }
   }
 
+
   /* ------------ RENDER LINES ------------ */
+    /* ------------ RENDER LINES (NEW: support split) ------------ */
   function renderLines(lines, useExistingQty){
     tableBody.innerHTML = "";
 
-    lines.forEach(ln=>{
-      const tr = document.createElement("tr");
-      tr.dataset.rowIndex = ln.rowIndex;
+    // NEW MODE (dari getInvDetail) → 1 baris per PO, tanpa split
+    if (!useExistingQty) {
+      lines.forEach(ln => {
+        const tr = document.createElement("tr");
+        tr.dataset.rowIndex = ln.rowIndex;
 
-      const remaining = Number(ln.remainingQty) || 0;
-      const defaultQty = useExistingQty ? (Number(ln.qtyThisReceipt) || 0) : remaining;
-      const itemCode = ln.itemCode || ln.kpc || "";
-      const unitAmount = ln.unitAmount ?? "";
+        const remaining = Number(ln.remainingQty) || 0;
+        const defaultQty = remaining;
+        const itemCode = ln.itemCode || ln.kpc || "";
+        const unitAmount = ln.unitAmount ?? "";
 
-      tr.innerHTML = `
+        tr.innerHTML = `
+          <td class="row-handle">⋮⋮</td>
+          <td>${ln.poNumber}</td>
+          <td><span class="kpc-original">${itemCode}</span></td>
+          <td><input class="table-input kpc-new" placeholder="KPC" value=""></td>
+          <td>${ln.description}</td>
+          <td><input class="table-input readonly-field ordered" value="${ln.orderedQty}" readonly></td>
+          <td><input class="table-input readonly-field unit-amount" value="${unitAmount}" readonly></td>
+          <td><input class="table-input readonly-field received" value="${ln.receivedToDate}" readonly></td>
+          <td><input class="table-input readonly-field remaining" value="${remaining}" readonly></td>
+          <td><input type="number" class="table-input qty-receipt" value="${defaultQty}" min="0"></td>
+          <td><input class="table-input readonly-field uom-field" value="${ln.uom || 'Meter'}" readonly></td>
+          <td style="text-align:center;">
+            <button type="button" class="split-btn" title="Split this line">
+              <span class="split-icon"></span>
+            </button>
+          </td>
+          <td class="delete-btn">🗑</td>
+        `;
+
+        tableBody.appendChild(tr);
+        attachRowEvents(tr);
+      });
+
+      Sortable.create(tableBody,{handle:".row-handle",animation:150});
+      applyLockState(isLocked);
+      return;
+    }
+
+    // EDIT MODE → lines berasal dari sheet Receiving (setiap row = satu split)
+    // Grouping by rowIndex
+    const groups = {};
+    lines.forEach(ln => {
+      const key = String(ln.rowIndex || "");
+      if (!key) return;
+
+      if (!groups[key]) {
+        groups[key] = {
+          base: {
+            rowIndex: ln.rowIndex,
+            poNumber: ln.poNumber,
+            itemCode: ln.itemCode,
+            description: ln.description,
+            unitAmount: ln.unitAmount ?? "",
+            orderedQty: ln.orderedQty,
+            uom: ln.uom || "Meter",
+            receivedToDate: ln.receivedToDate, // approx
+            remainingQty: ln.remainingQty      // approx
+          },
+          splits: []
+        };
+      }
+      groups[key].splits.push(ln);
+    });
+
+    Object.values(groups).forEach(group => {
+      const baseData = group.base;
+      const splits   = group.splits;
+
+      // Hitung total qty this receipt (sum of splits)
+      let totalQty = 0;
+      splits.forEach(s => {
+        totalQty += Number(s.qtyThisReceipt) || 0;
+      });
+      baseData.qtyThisReceipt = totalQty;
+
+      // --- BASE ROW (original) ---
+      const baseTr = document.createElement("tr");
+      baseTr.dataset.rowIndex = baseData.rowIndex;
+
+      const remaining = Number(baseData.remainingQty) || 0;
+      const itemCode  = baseData.itemCode || "";
+
+      baseTr.innerHTML = `
         <td class="row-handle">⋮⋮</td>
-        <td>${ln.poNumber}</td>
+        <td>${baseData.poNumber}</td>
         <td><span class="kpc-original">${itemCode}</span></td>
-        <td><input class="table-input kpc-new" placeholder="KPC" value="${useExistingQty && ln.kpc ? ln.kpc : ""}"></td>
-        <td>${ln.description}</td>
-        <td><input class="table-input readonly-field ordered" value="${ln.orderedQty}" readonly></td>
-        <td><input class="table-input readonly-field unit-amount" value="${unitAmount}" readonly></td>
-        <td><input class="table-input readonly-field received" value="${ln.receivedToDate}" readonly></td>
+        <td><input class="table-input kpc-new" placeholder="KPC" value=""></td>
+        <td>${baseData.description}</td>
+        <td><input class="table-input readonly-field ordered" value="${baseData.orderedQty}" readonly></td>
+        <td><input class="table-input readonly-field unit-amount" value="${baseData.unitAmount}" readonly></td>
+        <td><input class="table-input readonly-field received" value="${baseData.receivedToDate}" readonly></td>
         <td><input class="table-input readonly-field remaining" value="${remaining}" readonly></td>
-        <td><input type="number" class="table-input qty-receipt" value="${defaultQty}" min="0"></td>
-        <td><input class="table-input readonly-field uom-field" value="${ln.uom || 'Meter'}" readonly></td>
+        <td><input type="number" class="table-input qty-receipt" value="${totalQty || ""}" min="0"></td>
+        <td><input class="table-input readonly-field uom-field" value="${baseData.uom}" readonly></td>
         <td style="text-align:center;">
           <button type="button" class="split-btn" title="Split this line">
             <span class="split-icon"></span>
@@ -672,28 +864,128 @@
         <td class="delete-btn">🗑</td>
       `;
 
-      tableBody.appendChild(tr);
-      attachRowEvents(tr);
+      tableBody.appendChild(baseTr);
+      attachRowEvents(baseTr);
+
+      if (splits.length > 1) {
+        // ada split beneran → parent jadi container
+        ensureParentModeForSplit(baseTr);
+      }
+
+      // --- SUBLINES (jika memang ada lebih dari satu atau mau tampilkan tetap) ---
+      if (splits.length > 1) {
+        splits.forEach(s => {
+          const subTr = document.createElement("tr");
+          subTr.classList.add("subline-row");
+          subTr.dataset.rowIndex = baseData.rowIndex;
+
+          const sRemaining = Number(s.remainingQty) || remaining;
+          const sItemCode  = s.itemCode || baseData.itemCode;
+
+          subTr.innerHTML = `
+            <td class="row-handle">⋮⋮</td>
+            <td>${baseData.poNumber}</td>
+            <td>
+              <span class="subline-label">↳ Split</span>
+              <span class="kpc-original">${sItemCode}</span>
+            </td>
+            <td><input class="table-input kpc-new" placeholder="KPC" value="${s.kpc || ""}"></td>
+            <td>${baseData.description}</td>
+            <td><input class="table-input readonly-field ordered" value="${baseData.orderedQty}" readonly></td>
+            <td><input class="table-input readonly-field unit-amount" value="${baseData.unitAmount}" readonly></td>
+            <td><input class="table-input readonly-field received" value="${baseData.receivedToDate}" readonly></td>
+            <td><input class="table-input readonly-field remaining" value="${sRemaining}" readonly></td>
+            <td><input type="number" class="table-input qty-receipt" value="${s.qtyThisReceipt || ""}" min="0"></td>
+            <td><input class="table-input readonly-field uom-field" value="${baseData.uom}" readonly></td>
+            <td style="text-align:center;">
+              <button type="button" class="split-btn" title="Split this line again">
+                <span class="split-icon"></span>
+              </button>
+            </td>
+            <td class="delete-btn">🗑</td>
+          `;
+
+          tableBody.appendChild(subTr);
+          attachRowEvents(subTr);
+        });
+
+        recalcParentTotal(baseData.rowIndex);
+      }
     });
 
     Sortable.create(tableBody,{handle:".row-handle",animation:150});
     applyLockState(isLocked);
   }
 
-  /* ------------ SPLIT ROW ------------ */
+  /* ------------ SPLIT ROW (NEW) ------------ */
   function addSplitRow(baseTr){
-    const clone = baseTr.cloneNode(true);
-    clone.dataset.rowIndex = baseTr.dataset.rowIndex;
+    const rowIndex = baseTr.dataset.rowIndex;
+    const existingSubs = getSubRowsByIndex(rowIndex);
 
-    // clear KPC & qty
-    const newKpcInput = clone.querySelector(".kpc-new");
-    if (newKpcInput) newKpcInput.value = "";
-    const qtyInput = clone.querySelector(".qty-receipt");
-    if (qtyInput) qtyInput.value = "";
+    const baseQtyInput = baseTr.querySelector(".qty-receipt");
+    const baseKpcInput = baseTr.querySelector(".kpc-new");
 
-    tableBody.insertBefore(clone, baseTr.nextSibling);
-    attachRowEvents(clone);
+    let initialQty = "";
+    let initialKpc = "";
+
+    // Jika ini split pertama, pindahkan nilai dari parent ke sub-line
+    if (existingSubs.length === 0) {
+      initialQty = baseQtyInput ? (baseQtyInput.value || "") : "";
+      initialKpc = baseKpcInput ? (baseKpcInput.value || "") : "";
+
+      // parent jadi container (qty readonly, kpc kosong)
+      ensureParentModeForSplit(baseTr);
+    }
+
+    // Buat sub-row
+    const subTr = document.createElement("tr");
+    subTr.classList.add("subline-row");
+    subTr.dataset.rowIndex = rowIndex;
+
+    const poNumber   = baseTr.children[1].textContent.trim();
+    const itemCode   = baseTr.querySelector(".kpc-original").textContent.trim();
+    const desc       = baseTr.children[4].textContent.trim();
+    const orderedVal = baseTr.querySelector(".ordered").value;
+    const unitAmount = baseTr.querySelector(".unit-amount").value;
+    const received   = baseTr.querySelector(".received").value;
+    const remaining  = baseTr.querySelector(".remaining").value;
+    const uom        = baseTr.querySelector(".uom-field").value || "Meter";
+
+    subTr.innerHTML = `
+      <td class="row-handle">⋮⋮</td>
+      <td>${poNumber}</td>
+      <td>
+        <span class="subline-label">↳ Split</span>
+        <span class="kpc-original">${itemCode}</span>
+      </td>
+      <td><input class="table-input kpc-new" placeholder="KPC" value="${initialKpc}"></td>
+      <td>${desc}</td>
+      <td><input class="table-input readonly-field ordered" value="${orderedVal}" readonly></td>
+      <td><input class="table-input readonly-field unit-amount" value="${unitAmount}" readonly></td>
+      <td><input class="table-input readonly-field received" value="${received}" readonly></td>
+      <td><input class="table-input readonly-field remaining" value="${remaining}" readonly></td>
+      <td><input type="number" class="table-input qty-receipt" value="${initialQty}" min="0"></td>
+      <td><input class="table-input readonly-field uom-field" value="${uom}" readonly></td>
+      <td style="text-align:center;">
+        <button type="button" class="split-btn" title="Split this line again">
+          <span class="split-icon"></span>
+        </button>
+      </td>
+      <td class="delete-btn">🗑</td>
+    `;
+
+    // Sisipkan setelah parent atau setelah sub terakhir
+    if (existingSubs.length === 0) {
+      tableBody.insertBefore(subTr, baseTr.nextSibling);
+    } else {
+      const lastSub = existingSubs[existingSubs.length - 1];
+      tableBody.insertBefore(subTr, lastSub.nextSibling);
+    }
+
+    attachRowEvents(subTr);
+    recalcParentTotal(rowIndex);
   }
+
 
   /* ------------ LOAD INV LIST (NEW MODE) ------------ */
   async function loadInvList(){
@@ -828,7 +1120,7 @@
   }
 
   /* ------------ VALIDATION & SUBMIT (FINAL FIX V2) ------------ */
-  function validateForm(){
+   function validateForm(){
     if(isLocked) return "This Receiving Entry is locked and cannot be edited.";
     if(!receivingDate.value) return "Receiving Date required.";
 
@@ -839,64 +1131,130 @@
     const rows = [...document.querySelectorAll("#tableBody tr")];
     if(rows.length === 0) return "No line items found.";
 
-    let anyQty = false;
+    // Group by rowIndex
+    const groups = {};
 
-    // Row-level validation only (BENAR untuk split)
     for (const r of rows){
+      const rowIndex = r.dataset.rowIndex;
+      if (!rowIndex) continue;
+
+      if (!groups[rowIndex]) {
+        groups[rowIndex] = {
+          remaining: Number(r.querySelector(".remaining")?.value || 0),
+          totalQty: 0
+        };
+      }
+
       const qty = +r.querySelector(".qty-receipt").value || 0;
-      const rem = +r.querySelector(".remaining").value || 0;
       const kpc = r.querySelector(".kpc-new").value.trim();
 
-      if (qty > rem){
-        return `Qty exceeds remaining (${qty} > ${rem}).`;
+      if (qty > 0 && !kpc) {
+        return "Every line with Qty must have KPC filled.";
       }
-      if (qty > 0) {
-        anyQty = true;
-        if (!kpc) {
-          return "Every line with Qty must have KPC filled.";
-        }
+
+      groups[rowIndex].totalQty += qty;
+    }
+
+    let anyQty = false;
+
+    for (const key in groups) {
+      const g = groups[key];
+      if (g.totalQty > 0) anyQty = true;
+
+      if (g.totalQty > g.remaining) {
+        return `Total Qty for one PO line exceeds Remaining (${g.totalQty} > ${g.remaining}).`;
       }
     }
 
     if(!anyQty) return "At least one line must have Qty > 0.";
 
-    // ❌ Group validation dihapus — tidak dipakai lagi
     return null;
   }
 
-  function submitReceiving(){
+
+    function submitReceiving(){
     const err = validateForm();
     if(err) return alert(err);
 
     showLoading();
 
-    const rows = [...document.querySelectorAll("#tableBody tr")];
+    const allRows = [...document.querySelectorAll("#tableBody tr")];
 
-    const lines = rows.map(r=>{
-      const poNumber = r.children[1].textContent.trim();
-      const itemCode = r.querySelector(".kpc-original").textContent.trim(); // Item Code
-      const kpcVal   = r.querySelector(".kpc-new").value.trim();
-      const description = r.children[4].textContent.trim();
-      const orderedQty = r.querySelector(".ordered").value;
-      const unitAmount = r.querySelector(".unit-amount")?.value || 0;
-      const receivedToDate = r.querySelector(".received").value;
-      const remainingQty = r.querySelector(".remaining").value;
-      const qtyThisReceipt = r.querySelector(".qty-receipt").value;
-      const uom = (r.querySelector(".uom-field")?.value || "m");
+    // Group rows by rowIndex
+    const groupMap = {};
+    allRows.forEach(r => {
+      const idx = r.dataset.rowIndex;
+      if (!idx) return;
+      if (!groupMap[idx]) groupMap[idx] = { base: null, subs: [] };
 
-      return {
-        rowIndex: r.dataset.rowIndex,
-        poNumber,
-        itemCode,
-        kpc: kpcVal,
-        description,
-        unitAmount,
-        orderedQty,
-        receivedToDate,
-        remainingQty,
-        qtyThisReceipt,
-        uom
-      };
+      if (r.classList.contains("subline-row")) {
+        groupMap[idx].subs.push(r);
+      } else {
+        groupMap[idx].base = r;
+      }
+    });
+
+    const lines = [];
+
+    Object.keys(groupMap).forEach(idx => {
+      const g = groupMap[idx];
+      const base = g.base;
+      if (!base) return;
+
+      const poNumber   = base.children[1].textContent.trim();
+      const itemCode   = base.querySelector(".kpc-original").textContent.trim();
+      const description= base.children[4].textContent.trim();
+      const orderedQty = base.querySelector(".ordered").value;
+      const unitAmount = base.querySelector(".unit-amount")?.value || 0;
+      const receivedToDate = base.querySelector(".received").value;
+      const remainingQty   = base.querySelector(".remaining").value;
+      const uom            = base.querySelector(".uom-field")?.value || "m";
+      const rowIndex       = base.dataset.rowIndex;
+
+      if (g.subs.length === 0) {
+        // NO SPLIT: gunakan parent row seperti biasa
+        const kpcVal = base.querySelector(".kpc-new").value.trim();
+        const qtyVal = base.querySelector(".qty-receipt").value;
+
+        if ((Number(qtyVal) || 0) > 0) {
+          lines.push({
+            rowIndex,
+            poNumber,
+            itemCode,
+            kpc: kpcVal,
+            description,
+            unitAmount,
+            orderedQty,
+            receivedToDate,
+            remainingQty,
+            qtyThisReceipt: qtyVal,
+            uom
+          });
+        }
+      } else {
+        // WITH SPLIT: tiap sub-line dikirim sebagai row sendiri.
+        g.subs.forEach(sr => {
+          const kpcVal = sr.querySelector(".kpc-new").value.trim();
+          const qtyVal = sr.querySelector(".qty-receipt").value;
+          const remSub = sr.querySelector(".remaining").value;
+
+          if ((Number(qtyVal) || 0) <= 0) return;
+
+          lines.push({
+            rowIndex,
+            poNumber,
+            itemCode,
+            kpc: kpcVal,
+            description,
+            unitAmount,
+            orderedQty,
+            receivedToDate,
+            remainingQty: remSub,
+            qtyThisReceipt: qtyVal,
+            uom
+          });
+        });
+      }
     });
 
     const payload = {
@@ -946,6 +1304,7 @@
       alert("Submit failed: "+err);
     });
   }
+
 
   /* ------------ INIT ------------ */
   window.addEventListener("DOMContentLoaded", async ()=>{
