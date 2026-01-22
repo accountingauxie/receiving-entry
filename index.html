@@ -196,32 +196,50 @@
     <div class="fixed inset-0 bg-slate-900 bg-opacity-40 transition-opacity backdrop-blur-sm" onclick="toggleFilterModal()"></div>
 
     <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
-        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-3xl w-full">
+        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-5xl w-full">
             
             <div class="bg-white px-4 py-3 border-b border-slate-100 flex justify-between items-center">
                 <h3 class="text-lg leading-6 font-bold text-slate-900" id="modal-title"><i class="fas fa-sliders-h mr-2 text-blue-600"></i> Filter Data</h3>
                 <button onclick="toggleFilterModal()" class="text-slate-400 hover:text-slate-600 transition"><i class="fas fa-times text-xl"></i></button>
             </div>
 
-            <div class="px-6 py-6 max-h-[70vh] overflow-y-auto bg-slate-50">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="px-6 py-6 max-h-[75vh] overflow-y-auto bg-slate-50">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     
-                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
-                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Item Name</div>
-                        <div class="space-y-2 max-h-60 overflow-y-auto pr-2" id="filter-container-itemProduced">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col">
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Status Stok</div>
+                        <div class="space-y-2 flex-grow overflow-y-auto pr-2" id="filter-container-qty">
                             </div>
                     </div>
 
-                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col">
                         <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Machine</div>
-                        <div class="space-y-2 max-h-60 overflow-y-auto pr-2" id="filter-container-machine">
+                        <div class="space-y-2 flex-grow overflow-y-auto pr-2" id="filter-container-machine">
                             </div>
                     </div>
 
-                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
-                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Xero Code</div>
-                        <div class="space-y-2 max-h-60 overflow-y-auto pr-2" id="filter-container-itemCode">
-                           </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col gap-4">
+                         <div>
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Item Name</div>
+                            <div class="space-y-2 max-h-32 overflow-y-auto pr-2" id="filter-container-itemProduced">
+                                </div>
+                         </div>
+                         <div class="border-t border-slate-100 pt-3">
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Xero Code</div>
+                            <div class="space-y-2 max-h-32 overflow-y-auto pr-2" id="filter-container-itemCode">
+                                </div>
+                         </div>
+                    </div>
+
+                     <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col h-80">
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">KPC Number</div>
+                        <div class="relative mb-2">
+                            <input type="text" id="kpc-filter-search" onkeyup="filterKPCList()" class="block w-full px-2 py-1.5 text-xs border border-slate-300 rounded leading-5 placeholder-slate-400 focus:outline-none focus:border-blue-500" placeholder="Cari No KPC...">
+                            <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400"><i class="fas fa-search text-xs"></i></div>
+                        </div>
+                        <div class="space-y-2 flex-grow overflow-y-auto pr-2" id="filter-container-kpc">
+                            </div>
                     </div>
 
                 </div>
@@ -245,14 +263,16 @@
     let rawData = [];
     
     // State Variables
-    let currentTabMachine = 'All'; // Quick filter (Tabs)
+    let currentTabMachine = 'All'; 
     let currentSort = { column: null, direction: 'asc' };
     
     // Advanced Filters State
     let activeFilters = {
         itemProduced: [],
         machine: [],
-        itemCode: []
+        itemCode: [],
+        qtyStatus: [], // values: 'available', 'zero', 'negative'
+        kpc: []        // values: KPC Numbers
     };
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -276,8 +296,8 @@
             
             rawData = data;
             
-            initTabFilters();     // Generate tab mesin
-            populateFilterModal(); // Generate checkbox di modal
+            initTabFilters();     
+            populateFilterModal(); 
             renderTable();
 
         } catch (error) {
@@ -292,9 +312,7 @@
     function initTabFilters() {
         const machines = [...new Set(rawData.map(item => item.machine).filter(m => m))].sort();
         const container = document.getElementById('machine-filters');
-        
         container.innerHTML = '<button onclick="quickFilterMachine(\'All\')" class="filter-pill pill-active" id="btn-All">All Machines</button>';
-
         machines.forEach(m => {
             const cleanId = m.replace(/[^a-zA-Z0-9]/g, '');
             const btn = document.createElement('button');
@@ -308,7 +326,6 @@
 
     function quickFilterMachine(machineName) {
         currentTabMachine = machineName;
-        // Update UI Tabs
         document.querySelectorAll('.filter-pill').forEach(btn => {
             btn.classList.remove('pill-active');
             btn.classList.add('pill-inactive');
@@ -330,18 +347,32 @@
     }
 
     function populateFilterModal() {
-        // Helper untuk generate checkbox group
+        // 1. Qty Status (Manual Options)
+        const qtyContainer = document.getElementById('filter-container-qty');
+        qtyContainer.innerHTML = `
+            <div class="flex items-center">
+                <input id="chk-qty-available" type="checkbox" value="available" class="custom-checkbox text-blue-600 focus:ring-blue-500 rounded border-gray-300" ${activeFilters.qtyStatus.includes('available') ? 'checked' : ''}>
+                <label for="chk-qty-available" class="ml-2 text-sm text-slate-600 cursor-pointer">Ready (Qty > 0)</label>
+            </div>
+            <div class="flex items-center">
+                <input id="chk-qty-zero" type="checkbox" value="zero" class="custom-checkbox text-blue-600 focus:ring-blue-500 rounded border-gray-300" ${activeFilters.qtyStatus.includes('zero') ? 'checked' : ''}>
+                <label for="chk-qty-zero" class="ml-2 text-sm text-slate-600 cursor-pointer">Habis (Qty = 0)</label>
+            </div>
+            <div class="flex items-center">
+                <input id="chk-qty-negative" type="checkbox" value="negative" class="custom-checkbox text-blue-600 focus:ring-blue-500 rounded border-gray-300" ${activeFilters.qtyStatus.includes('negative') ? 'checked' : ''}>
+                <label for="chk-qty-negative" class="ml-2 text-sm text-slate-600 cursor-pointer text-red-500">Minus (Qty < 0)</label>
+            </div>
+        `;
+
+        // Helper untuk Checkbox umum
         const createCheckboxes = (key, containerId) => {
             const uniqueValues = [...new Set(rawData.map(d => d[key]).filter(v => v))].sort();
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-
             uniqueValues.forEach(val => {
                 const div = document.createElement('div');
                 div.className = 'flex items-center';
-                // Cek apakah value ini sedang aktif di filter state
                 const isChecked = activeFilters[key].includes(val) ? 'checked' : '';
-                
                 div.innerHTML = `
                     <input id="chk-${key}-${val}" type="checkbox" value="${val}" class="custom-checkbox text-blue-600 focus:ring-blue-500 rounded border-gray-300" ${isChecked}>
                     <label for="chk-${key}-${val}" class="ml-2 text-sm text-slate-600 cursor-pointer truncate" title="${val}">${val}</label>
@@ -353,22 +384,62 @@
         createCheckboxes('itemProduced', 'filter-container-itemProduced');
         createCheckboxes('machine', 'filter-container-machine');
         createCheckboxes('itemCode', 'filter-container-itemCode');
+
+        // 2. KPC List (Searchable)
+        const kpcContainer = document.getElementById('filter-container-kpc');
+        kpcContainer.innerHTML = '';
+        const uniqueKPC = [...new Set(rawData.map(d => d.kpc).filter(v => v))].sort();
+        
+        uniqueKPC.forEach(val => {
+            const div = document.createElement('div');
+            div.className = 'flex items-center kpc-item'; // Add class for search
+            div.setAttribute('data-search', val.toLowerCase());
+            
+            const isChecked = activeFilters.kpc.includes(val) ? 'checked' : '';
+            div.innerHTML = `
+                <input id="chk-kpc-${val}" type="checkbox" value="${val}" class="custom-checkbox text-blue-600 focus:ring-blue-500 rounded border-gray-300" ${isChecked}>
+                <label for="chk-kpc-${val}" class="ml-2 text-xs text-slate-600 cursor-pointer truncate font-mono" title="${val}">${val}</label>
+            `;
+            kpcContainer.appendChild(div);
+        });
+    }
+
+    // Function untuk search KPC di dalam Modal
+    function filterKPCList() {
+        const input = document.getElementById('kpc-filter-search').value.toLowerCase();
+        const items = document.querySelectorAll('.kpc-item');
+        
+        items.forEach(item => {
+            const val = item.getAttribute('data-search');
+            if (val.includes(input)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
     }
 
     function applyAdvancedFilters() {
-        // Ambil nilai dari semua checkbox yang dicentang
-        const getCheckedValues = (key, containerId) => {
+        // Helper retrieve checked
+        const getCheckedValues = (containerId) => {
             const container = document.getElementById(containerId);
             const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
             return Array.from(checkboxes).map(cb => cb.value);
         };
 
-        activeFilters.itemProduced = getCheckedValues('itemProduced', 'filter-container-itemProduced');
-        activeFilters.machine = getCheckedValues('machine', 'filter-container-machine');
-        activeFilters.itemCode = getCheckedValues('itemCode', 'filter-container-itemCode');
+        activeFilters.itemProduced = getCheckedValues('filter-container-itemProduced');
+        activeFilters.machine = getCheckedValues('filter-container-machine');
+        activeFilters.itemCode = getCheckedValues('filter-container-itemCode');
+        activeFilters.qtyStatus = getCheckedValues('filter-container-qty'); // New
+        activeFilters.kpc = getCheckedValues('filter-container-kpc'); // New
 
-        // Hitung total filter aktif untuk badge
-        const totalActive = activeFilters.itemProduced.length + activeFilters.machine.length + activeFilters.itemCode.length;
+        // Badge Count
+        const totalActive = activeFilters.itemProduced.length + 
+                            activeFilters.machine.length + 
+                            activeFilters.itemCode.length +
+                            activeFilters.qtyStatus.length +
+                            activeFilters.kpc.length;
+
         const badge = document.getElementById('active-filter-badge');
         
         if (totalActive > 0) {
@@ -383,18 +454,19 @@
     }
 
     function resetFilters() {
-        activeFilters = { itemProduced: [], machine: [], itemCode: [] };
+        activeFilters = { itemProduced: [], machine: [], itemCode: [], qtyStatus: [], kpc: [] };
         document.getElementById('active-filter-badge').classList.add('hidden');
+        document.getElementById('kpc-filter-search').value = ''; // Reset search kpc box
         
-        // Uncheck semua box visual
         document.querySelectorAll('#filterModal input[type="checkbox"]').forEach(cb => cb.checked = false);
-        
+        // Show all hidden KPC
+        document.querySelectorAll('.kpc-item').forEach(item => item.style.display = 'flex');
+
         toggleFilterModal();
         renderTable();
     }
 
-
-    // --- SORTING LOGIC ---
+    // --- SORTING ---
     function handleSort(column) {
         if (currentSort.column === column) {
             currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
@@ -433,31 +505,39 @@
         
         tbody.innerHTML = '';
 
-        // --- FILTERING ---
         let filteredData = rawData.filter(item => {
-            // 1. Search Text
+            // 1. Search Text Global
             const searchString = `${item.kpc} ${item.coilName} ${item.itemProduced} ${item.itemCode} ${item.machine}`.toLowerCase();
             const matchSearch = searchString.includes(searchInput);
 
-            // 2. Tab Machine Filter (Quick Filter)
-            // Note: Jika di Advanced Filter Machine dipilih, kita abaikan Tab ini atau combine. 
-            // Disini saya buat: Tab harus match, KECUALI user pakai Advanced Filter Machine.
-            // Jika user pakai Advanced Filter Machine, Tab dianggap 'All' otomatis secara logika.
+            // 2. Tab Machine (Ignore if Advanced Machine Filter is Active)
             let matchTab = true;
             if (activeFilters.machine.length === 0) {
                  matchTab = currentTabMachine === 'All' || item.machine === currentTabMachine;
             }
 
-            // 3. Advanced Filters
-            // Jika array kosong = tidak ada filter = true. Jika ada isi, item harus ada di list.
+            // 3. Advanced Filters (General)
             const matchAdvItem = activeFilters.itemProduced.length === 0 || activeFilters.itemProduced.includes(item.itemProduced);
             const matchAdvMachine = activeFilters.machine.length === 0 || activeFilters.machine.includes(item.machine);
             const matchAdvCode = activeFilters.itemCode.length === 0 || activeFilters.itemCode.includes(item.itemCode);
+            const matchAdvKPC = activeFilters.kpc.length === 0 || activeFilters.kpc.includes(item.kpc);
 
-            return matchSearch && matchTab && matchAdvItem && matchAdvMachine && matchAdvCode;
+            // 4. Advanced Filter (Quantity Logic)
+            let matchQty = true;
+            if (activeFilters.qtyStatus.length > 0) {
+                const qty = cleanNumber(item.qty);
+                let meetsAvailable = activeFilters.qtyStatus.includes('available') && qty > 0;
+                let meetsZero = activeFilters.qtyStatus.includes('zero') && qty === 0;
+                let meetsNegative = activeFilters.qtyStatus.includes('negative') && qty < 0;
+                
+                // OR Logic between Qty checkboxes
+                matchQty = meetsAvailable || meetsZero || meetsNegative;
+            }
+
+            return matchSearch && matchTab && matchAdvItem && matchAdvMachine && matchAdvCode && matchAdvKPC && matchQty;
         });
 
-        // --- SORTING ---
+        // Sorting
         if (currentSort.column) {
             filteredData.sort((a, b) => {
                 let valA = a[currentSort.column];
@@ -484,8 +564,14 @@
         }
 
         filteredData.forEach(row => {
-            const fmtQty = new Intl.NumberFormat('id-ID').format(cleanNumber(row.qty));
+            const numQty = cleanNumber(row.qty);
+            const fmtQty = new Intl.NumberFormat('id-ID').format(numQty);
             const fmtPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(cleanNumber(row.price));
+
+            // Styling jika Minus atau Zero
+            let qtyClass = "text-slate-700";
+            if(numQty < 0) qtyClass = "text-red-600 font-bold";
+            if(numQty === 0) qtyClass = "text-slate-400";
 
             const tr = document.createElement('tr');
             tr.className = 'table-row';
@@ -503,7 +589,7 @@
                     </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right">
-                    <div class="text-sm font-mono font-bold text-slate-700">${fmtQty}</div>
+                    <div class="text-sm font-mono font-bold ${qtyClass}">${fmtQty}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right">
                     <div class="text-sm text-slate-600">${fmtPrice}</div>
