@@ -44,12 +44,11 @@
     font-weight: 700; 
     text-transform: uppercase; 
     letter-spacing: 0.05em; 
-    cursor: pointer; /* Menandakan bisa diklik */
-    user-select: none; /* Mencegah teks terblok saat klik cepat */
+    cursor: pointer; 
+    user-select: none;
     transition: background-color 0.2s;
   }
   .table-header:hover { background-color: #e2e8f0; color: #334155; }
-  
   .table-row { border-bottom: 1px solid #f1f5f9; transition: all 0.2s; }
   .table-row:hover { background-color: #f8fafc; }
    
@@ -63,6 +62,34 @@
   .pill-active { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
   .pill-inactive { background-color: white; color: #64748b; border-color: #e2e8f0; }
   .pill-inactive:hover { background-color: #f1f5f9; color: #334155; }
+
+  /* Custom Checkbox Style */
+  .custom-checkbox {
+      appearance: none;
+      background-color: #fff;
+      margin: 0;
+      font: inherit;
+      color: currentColor;
+      width: 1.15em;
+      height: 1.15em;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.25em;
+      display: grid;
+      place-content: center;
+      cursor: pointer;
+  }
+  .custom-checkbox::before {
+      content: "";
+      width: 0.65em;
+      height: 0.65em;
+      transform: scale(0);
+      transition: 120ms transform ease-in-out;
+      box-shadow: inset 1em 1em white;
+      transform-origin: center;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+  .custom-checkbox:checked { background-color: #3b82f6; border-color: #3b82f6; }
+  .custom-checkbox:checked::before { transform: scale(1); }
 </style>
 </head>
 
@@ -92,10 +119,10 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
       <div>
           <h1 class="text-2xl font-bold text-slate-900 tracking-tight">KPC Finished Goods</h1>
-          <p class="text-sm text-slate-500 mt-1">Monitoring stok, nilai aset, dan penggunaan mesin (Kolom A-H).</p>
+          <p class="text-sm text-slate-500 mt-1">Monitoring stok, nilai aset, dan penggunaan mesin.</p>
       </div>
       <div class="flex gap-3">
-          <a href="https://accountingauxie.github.io/Auxilium-Portal-Sukses-Jaya/production/daftarproduksi/index.html" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center">
+          <a href="#" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center">
               <i class="fas fa-arrow-left mr-2"></i> Kembali
           </a>
           <button onclick="fetchData()" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center">
@@ -122,40 +149,36 @@
       </div>
     </div>
 
-    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <div class="flex gap-2 overflow-x-auto pb-2 w-full md:w-auto" id="machine-filters">
-            <button onclick="filterByMachine('All')" class="filter-pill pill-active" id="btn-all">All Machines</button>
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+        
+        <div class="flex gap-2 overflow-x-auto pb-2 w-full lg:w-auto no-scrollbar" id="machine-filters">
+            <button onclick="quickFilterMachine('All')" class="filter-pill pill-active" id="btn-All">All Machines</button>
         </div>
 
-        <div class="relative w-full md:w-80">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-slate-400"></i></div>
-            <input type="text" id="searchInput" onkeyup="renderTable()" class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm shadow-sm transition" placeholder="Cari KPC, Item, atau Code...">
+        <div class="flex items-center gap-2 w-full lg:w-auto">
+            <button onclick="toggleFilterModal()" class="relative flex items-center justify-center px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition shadow-sm">
+                <i class="fas fa-filter mr-2"></i> Filter
+                <span id="active-filter-badge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-white">0</span>
+            </button>
+
+            <div class="relative w-full lg:w-72">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-slate-400"></i></div>
+                <input type="text" id="searchInput" onkeyup="renderTable()" class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm shadow-sm transition" placeholder="Cari KPC, Item...">
+            </div>
         </div>
     </div>
 
-    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden min-h-[400px]">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50">
                     <tr>
-                        <th scope="col" onclick="handleSort('kpc')" class="px-6 py-3 text-left table-header">
-                            KPC Number <i id="sort-icon-kpc" class="fas fa-sort ml-1 text-slate-400"></i>
-                        </th>
-                        <th scope="col" onclick="handleSort('itemProduced')" class="px-6 py-3 text-left table-header">
-                            Item Name <i id="sort-icon-itemProduced" class="fas fa-sort ml-1 text-slate-400"></i>
-                        </th>
-                        <th scope="col" onclick="handleSort('machine')" class="px-6 py-3 text-left table-header">
-                            Machine <i id="sort-icon-machine" class="fas fa-sort ml-1 text-slate-400"></i>
-                        </th>
-                        <th scope="col" onclick="handleSort('qty')" class="px-6 py-3 text-right table-header">
-                            Qty (kg) <i id="sort-icon-qty" class="fas fa-sort ml-1 text-slate-400"></i>
-                        </th>
-                        <th scope="col" onclick="handleSort('price')" class="px-6 py-3 text-right table-header">
-                            Price (Unit) <i id="sort-icon-price" class="fas fa-sort ml-1 text-slate-400"></i>
-                        </th>
-                        <th scope="col" onclick="handleSort('itemCode')" class="px-6 py-3 text-left table-header">
-                            Xero Code <i id="sort-icon-itemCode" class="fas fa-sort ml-1 text-slate-400"></i>
-                        </th>
+                        <th scope="col" onclick="handleSort('kpc')" class="px-6 py-3 text-left table-header">KPC Number <i id="sort-icon-kpc" class="fas fa-sort ml-1 text-slate-400"></i></th>
+                        <th scope="col" onclick="handleSort('itemProduced')" class="px-6 py-3 text-left table-header">Item Name <i id="sort-icon-itemProduced" class="fas fa-sort ml-1 text-slate-400"></i></th>
+                        <th scope="col" onclick="handleSort('machine')" class="px-6 py-3 text-left table-header">Machine <i id="sort-icon-machine" class="fas fa-sort ml-1 text-slate-400"></i></th>
+                        <th scope="col" onclick="handleSort('qty')" class="px-6 py-3 text-right table-header">Qty (kg) <i id="sort-icon-qty" class="fas fa-sort ml-1 text-slate-400"></i></th>
+                        <th scope="col" onclick="handleSort('price')" class="px-6 py-3 text-right table-header">Price (Unit) <i id="sort-icon-price" class="fas fa-sort ml-1 text-slate-400"></i></th>
+                        <th scope="col" onclick="handleSort('itemCode')" class="px-6 py-3 text-left table-header">Xero Code <i id="sort-icon-itemCode" class="fas fa-sort ml-1 text-slate-400"></i></th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-100" id="table-body">
@@ -169,21 +192,74 @@
 
   </div>
 
+  <div id="filterModal" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-slate-900 bg-opacity-40 transition-opacity backdrop-blur-sm" onclick="toggleFilterModal()"></div>
+
+    <div class="flex items-center justify-center min-h-screen p-4 text-center sm:p-0">
+        <div class="relative bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-3xl w-full">
+            
+            <div class="bg-white px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-lg leading-6 font-bold text-slate-900" id="modal-title"><i class="fas fa-sliders-h mr-2 text-blue-600"></i> Filter Data</h3>
+                <button onclick="toggleFilterModal()" class="text-slate-400 hover:text-slate-600 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+
+            <div class="px-6 py-6 max-h-[70vh] overflow-y-auto bg-slate-50">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Item Name</div>
+                        <div class="space-y-2 max-h-60 overflow-y-auto pr-2" id="filter-container-itemProduced">
+                            </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Machine</div>
+                        <div class="space-y-2 max-h-60 overflow-y-auto pr-2" id="filter-container-machine">
+                            </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Xero Code</div>
+                        <div class="space-y-2 max-h-60 overflow-y-auto pr-2" id="filter-container-itemCode">
+                           </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="bg-white px-6 py-4 border-t border-slate-100 flex justify-between items-center">
+                <button onclick="resetFilters()" class="text-sm text-slate-500 hover:text-red-600 font-medium">Reset All</button>
+                <div class="flex gap-3">
+                    <button onclick="toggleFilterModal()" class="px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm font-medium">Cancel</button>
+                    <button onclick="applyAdvancedFilters()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md text-sm font-medium">Apply Filter</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+  </div>
+
 <script>
-    // --- KONFIGURASI ---
     const API_URL = "https://script.google.com/macros/s/AKfycbzEWjrouJixlNXuqm0zkI_zoGWinte7rQBbJ5T5cruHuwM-Bd5rJ_hBMMWsGT1Jw8JN/exec"; 
 
     let rawData = [];
-    let currentFilter = 'All';
-    // State untuk Sorting
+    
+    // State Variables
+    let currentTabMachine = 'All'; // Quick filter (Tabs)
     let currentSort = { column: null, direction: 'asc' };
+    
+    // Advanced Filters State
+    let activeFilters = {
+        itemProduced: [],
+        machine: [],
+        itemCode: []
+    };
 
     document.addEventListener('DOMContentLoaded', () => {
         feather.replace();
         fetchData();
     });
 
-    // Helper: Membersihkan angka
     function cleanNumber(val) {
         if (!val) return 0;
         if (typeof val === 'number') return val;
@@ -196,30 +272,28 @@
         try {
             const response = await fetch(API_URL);
             const data = await response.json();
-            
             if (!Array.isArray(data)) throw new Error("Format data salah");
             
             rawData = data;
-            generateMachineFilters();
+            
+            initTabFilters();     // Generate tab mesin
+            populateFilterModal(); // Generate checkbox di modal
             renderTable();
 
         } catch (error) {
             console.error(error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal Memuat Data',
-                text: 'Pastikan URL Apps Script benar dan Deployment diatur ke "Anyone".'
-            });
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal memuat data.' });
         } finally {
             document.getElementById('loading').style.display = 'none';
         }
     }
 
-    function generateMachineFilters() {
+    // --- QUICK TAB FILTER ---
+    function initTabFilters() {
         const machines = [...new Set(rawData.map(item => item.machine).filter(m => m))].sort();
         const container = document.getElementById('machine-filters');
         
-        container.innerHTML = '<button onclick="filterByMachine(\'All\')" class="filter-pill pill-active" id="btn-All">All Machines</button>';
+        container.innerHTML = '<button onclick="quickFilterMachine(\'All\')" class="filter-pill pill-active" id="btn-All">All Machines</button>';
 
         machines.forEach(m => {
             const cleanId = m.replace(/[^a-zA-Z0-9]/g, '');
@@ -227,70 +301,126 @@
             btn.className = 'filter-pill pill-inactive whitespace-nowrap';
             btn.id = `btn-${cleanId}`;
             btn.textContent = m;
-            btn.onclick = () => filterByMachine(m);
+            btn.onclick = () => quickFilterMachine(m);
             container.appendChild(btn);
         });
     }
 
-    function filterByMachine(machineName) {
-        currentFilter = machineName;
-        
+    function quickFilterMachine(machineName) {
+        currentTabMachine = machineName;
+        // Update UI Tabs
         document.querySelectorAll('.filter-pill').forEach(btn => {
             btn.classList.remove('pill-active');
             btn.classList.add('pill-inactive');
         });
-
         const targetId = machineName === 'All' ? 'btn-All' : `btn-${machineName.replace(/[^a-zA-Z0-9]/g, '')}`;
         const activeBtn = document.getElementById(targetId);
         if(activeBtn) {
             activeBtn.classList.remove('pill-inactive');
             activeBtn.classList.add('pill-active');
         }
-
         renderTable();
     }
 
-    // --- LOGIKA SORTING BARU ---
+    // --- ADVANCED MODAL FILTER LOGIC ---
+    
+    function toggleFilterModal() {
+        const modal = document.getElementById('filterModal');
+        modal.classList.toggle('hidden');
+    }
+
+    function populateFilterModal() {
+        // Helper untuk generate checkbox group
+        const createCheckboxes = (key, containerId) => {
+            const uniqueValues = [...new Set(rawData.map(d => d[key]).filter(v => v))].sort();
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            uniqueValues.forEach(val => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center';
+                // Cek apakah value ini sedang aktif di filter state
+                const isChecked = activeFilters[key].includes(val) ? 'checked' : '';
+                
+                div.innerHTML = `
+                    <input id="chk-${key}-${val}" type="checkbox" value="${val}" class="custom-checkbox text-blue-600 focus:ring-blue-500 rounded border-gray-300" ${isChecked}>
+                    <label for="chk-${key}-${val}" class="ml-2 text-sm text-slate-600 cursor-pointer truncate" title="${val}">${val}</label>
+                `;
+                container.appendChild(div);
+            });
+        };
+
+        createCheckboxes('itemProduced', 'filter-container-itemProduced');
+        createCheckboxes('machine', 'filter-container-machine');
+        createCheckboxes('itemCode', 'filter-container-itemCode');
+    }
+
+    function applyAdvancedFilters() {
+        // Ambil nilai dari semua checkbox yang dicentang
+        const getCheckedValues = (key, containerId) => {
+            const container = document.getElementById(containerId);
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        };
+
+        activeFilters.itemProduced = getCheckedValues('itemProduced', 'filter-container-itemProduced');
+        activeFilters.machine = getCheckedValues('machine', 'filter-container-machine');
+        activeFilters.itemCode = getCheckedValues('itemCode', 'filter-container-itemCode');
+
+        // Hitung total filter aktif untuk badge
+        const totalActive = activeFilters.itemProduced.length + activeFilters.machine.length + activeFilters.itemCode.length;
+        const badge = document.getElementById('active-filter-badge');
+        
+        if (totalActive > 0) {
+            badge.innerText = totalActive;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+
+        toggleFilterModal();
+        renderTable();
+    }
+
+    function resetFilters() {
+        activeFilters = { itemProduced: [], machine: [], itemCode: [] };
+        document.getElementById('active-filter-badge').classList.add('hidden');
+        
+        // Uncheck semua box visual
+        document.querySelectorAll('#filterModal input[type="checkbox"]').forEach(cb => cb.checked = false);
+        
+        toggleFilterModal();
+        renderTable();
+    }
+
+
+    // --- SORTING LOGIC ---
     function handleSort(column) {
-        // Jika kolom sama, balik arahnya (asc <-> desc)
         if (currentSort.column === column) {
             currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
         } else {
-            // Jika kolom baru, default ke ascending
             currentSort.column = column;
             currentSort.direction = 'asc';
         }
-        
         updateSortIcons(column);
         renderTable();
     }
 
     function updateSortIcons(activeColumn) {
-        // Reset semua icon ke default (fa-sort dan warna abu)
-        const allIcons = document.querySelectorAll('[id^="sort-icon-"]');
-        allIcons.forEach(icon => {
+        document.querySelectorAll('[id^="sort-icon-"]').forEach(icon => {
             icon.className = 'fas fa-sort ml-1 text-slate-400';
         });
-
-        // Update icon kolom yang aktif
         const activeIcon = document.getElementById(`sort-icon-${activeColumn}`);
         if (activeIcon) {
-            // Ubah icon jadi sort-up atau sort-down
             activeIcon.className = `fas fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'} ml-1 text-blue-600`;
         }
     }
 
-    // Fungsi update kartu statistik (Subtotal Dinamis)
+    // --- RENDER & CALCULATION ---
     function updateStats(dataSet) {
         const totalItems = dataSet.length;
-        
         const totalQty = dataSet.reduce((sum, item) => sum + cleanNumber(item.qty), 0);
-        
-        const totalValue = dataSet.reduce((sum, item) => {
-            const q = cleanNumber(item.qty);
-            const p = cleanNumber(item.price); 
-            return sum + (q * p); 
-        }, 0);
+        const totalValue = dataSet.reduce((sum, item) => sum + (cleanNumber(item.qty) * cleanNumber(item.price)), 0);
 
         document.getElementById('stat-total-items').innerText = new Intl.NumberFormat('id-ID').format(totalItems);
         document.getElementById('stat-total-qty').innerText = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(totalQty);
@@ -303,39 +433,49 @@
         
         tbody.innerHTML = '';
 
-        // 1. Filter Data
+        // --- FILTERING ---
         let filteredData = rawData.filter(item => {
-            const matchMachine = currentFilter === 'All' || item.machine === currentFilter;
+            // 1. Search Text
             const searchString = `${item.kpc} ${item.coilName} ${item.itemProduced} ${item.itemCode} ${item.machine}`.toLowerCase();
             const matchSearch = searchString.includes(searchInput);
-            return matchMachine && matchSearch;
+
+            // 2. Tab Machine Filter (Quick Filter)
+            // Note: Jika di Advanced Filter Machine dipilih, kita abaikan Tab ini atau combine. 
+            // Disini saya buat: Tab harus match, KECUALI user pakai Advanced Filter Machine.
+            // Jika user pakai Advanced Filter Machine, Tab dianggap 'All' otomatis secara logika.
+            let matchTab = true;
+            if (activeFilters.machine.length === 0) {
+                 matchTab = currentTabMachine === 'All' || item.machine === currentTabMachine;
+            }
+
+            // 3. Advanced Filters
+            // Jika array kosong = tidak ada filter = true. Jika ada isi, item harus ada di list.
+            const matchAdvItem = activeFilters.itemProduced.length === 0 || activeFilters.itemProduced.includes(item.itemProduced);
+            const matchAdvMachine = activeFilters.machine.length === 0 || activeFilters.machine.includes(item.machine);
+            const matchAdvCode = activeFilters.itemCode.length === 0 || activeFilters.itemCode.includes(item.itemCode);
+
+            return matchSearch && matchTab && matchAdvItem && matchAdvMachine && matchAdvCode;
         });
 
-        // 2. Sorting Logic (Ditambahkan di sini)
+        // --- SORTING ---
         if (currentSort.column) {
             filteredData.sort((a, b) => {
                 let valA = a[currentSort.column];
                 let valB = b[currentSort.column];
-
-                // Cek apakah kolom yang disort adalah angka (qty atau price)
                 if (currentSort.column === 'qty' || currentSort.column === 'price') {
                     valA = cleanNumber(valA);
                     valB = cleanNumber(valB);
                 } else {
-                    // String comparison (case insensitive)
                     valA = (valA || '').toString().toLowerCase();
                     valB = (valB || '').toString().toLowerCase();
                 }
-
                 if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
                 if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
                 return 0;
             });
         }
 
-        // 3. Update Stats Cards dengan data yang sudah difilter
         updateStats(filteredData);
-
         document.getElementById('showing-info').innerText = `Showing ${filteredData.length} entries`;
 
         if (filteredData.length === 0) {
@@ -343,13 +483,9 @@
             return;
         }
 
-        // 4. Render Rows
         filteredData.forEach(row => {
-            const numQty = cleanNumber(row.qty);
-            const numPrice = cleanNumber(row.price);
-            
-            const fmtQty = new Intl.NumberFormat('id-ID').format(numQty);
-            const fmtPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(numPrice);
+            const fmtQty = new Intl.NumberFormat('id-ID').format(cleanNumber(row.qty));
+            const fmtPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(cleanNumber(row.price));
 
             const tr = document.createElement('tr');
             tr.className = 'table-row';
