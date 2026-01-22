@@ -1,1388 +1,309 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Receiving Entry — Coil Purchase</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory KPC FG - Auxilium Style</title>
 
-  <!-- Choices.js -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/feather-icons"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <!-- Sortable -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<style>
+  :root { 
+    --primary-color: #116999; 
+    --bg-color: #f8fafc; 
+    --text-color: #333; 
+    --border-color: #eaecf0;
+  }
+  body { 
+    font-family: "Inter", sans-serif; 
+    background: var(--bg-color); 
+    color: var(--text-color); 
+  }
 
-  <style>
-    :root {
-      --ux-blue: #0077e4;
-      --ux-blue-soft: #ecf4ff;
-      --ux-border: #d3d7e3;
-      --ux-border-soft: #e5e9f2;
-      --ux-bg: #f5f7fa;
-      --ux-text-main: #1f2933;
-      --ux-text-sub: #55627a;
-      --ux-danger: #d33;
-    }
+  /* Navbar Style */
+  .aux-navbar {
+    background-color: #ffffff;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    position: sticky; top: 0; z-index: 50;
+  }
+  
+  /* Table Style */
+  .table-header { background-color: #f8fafc; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+  .table-row { border-bottom: 1px solid #f1f5f9; transition: all 0.2s; }
+  .table-row:hover { background-color: #f8fafc; }
+  
+  /* Loading Spinner */
+  #loading { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 50000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+  .spinner { border: 4px solid #e2e8f0; border-top: 4px solid #3b82f6; border-radius: 50%; width: 45px; height: 45px; animation: spin 0.8s linear infinite; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      background: var(--ux-bg);
-      font-family: "Segoe UI", Roboto, sans-serif;
-      font-size: 13px;
-      color: #333;
-    }
-
-    .top-bar {
-      height: 54px;
-      display: flex;
-      align-items: center;
-      padding: 0 48px;
-      background: #fff;
-      border-bottom: 1px solid #e3e6ea;
-    }
-    .brand-main {
-      font-size: 18px;
-      font-weight: 600;
-      margin-right: 6px;
-      letter-spacing: 0.04em;
-    }
-    .brand-sub {
-      font-size: 13px;
-      color: #7a8699;
-    }
-
-    .page {
-      max-width: 1180px;
-      margin: 32px auto;
-      padding: 0 20px 40px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 28px 32px 30px;
-      box-shadow:
-        0 0 0 1px rgba(15, 23, 42, 0.03),
-        0 18px 40px rgba(15, 23, 42, 0.08);
-    }
-    .card-title {
-      font-size: 21px;
-      font-weight: 600;
-      margin-bottom: 20px;
-      color: var(--ux-text-main);
-    }
-
-    /* Top form row (4 kolom) */
-    .row-flex {
-      display: grid;
-      grid-template-columns: 1.1fr 1.5fr 1.3fr 1.7fr;
-      gap: 20px;
-      align-items: end;
-      margin-bottom: 12px;
-    }
-
-    label {
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 4px;
-      display: block;
-      color: #445;
-    }
-
-    .input-box {
-      height: 34px !important;
-      padding: 6px 10px !important;
-      font-size: 13px !important;
-      border: 1px solid var(--ux-border) !important;
-      border-radius: 6px !important;
-      background: white !important;
-      width: 100%;
-    }
-
-    .choices {
-      margin-bottom: 0 !important;
-      width: 100% !important;
-    }
-    .choices__inner {
-      height: 34px !important;
-      min-height: 34px !important;
-      padding: 4px 8px !important;
-      border: 1px solid var(--ux-border) !important;
-      border-radius: 6px !important;
-      background: white !important;
-      box-shadow: none !important;
-      display: flex !important;
-      align-items: center !important;
-      font-size: 13px !important;
-    }
-    .choices__placeholder { opacity: 0.6 !important; }
-    .choices__list--dropdown {
-      border-radius: 6px !important;
-      border: 1px solid var(--ux-border) !important;
-      margin-top: 4px !important;
-    }
-    .choices__list--dropdown .choices__item {
-      padding: 7px 10px !important;
-      font-size: 13px;
-    }
-    .choices__list--single { padding: 0 !important; }
-    .choices[data-type*="select-one"]::after {
-      top: 14px !important;
-      right: 12px !important;
-      border-color: #777 transparent transparent transparent !important;
-    }
-    .row-flex > div {
-      display: flex;
-      flex-direction: column;
-    }
-
-    @media (max-width: 900px) {
-      .row-flex {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-    @media (max-width: 640px) {
-      .row-flex {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Summary */
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      background: #f7f8ff;
-      border: 1px solid #dbe2ff;
-      border-radius: 9px;
-      padding: 14px 18px;
-      margin: 16px 0 20px;
-    }
-    .summary-item {
-      min-width: 0;
-    }
-    .summary-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--ux-text-sub);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 2px;
-    }
-    .summary-value {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--ux-text-main);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    @media (max-width: 900px) {
-      .summary-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-    @media (max-width: 640px) {
-      .summary-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Lock warning */
-    .lock-warning {
-      display: none;
-      margin-bottom: 10px;
-      padding: 9px 11px;
-      border-radius: 6px;
-      border: 1px solid #f6c86a;
-      background: #fff7e0;
-      color: #8a5a19;
-      font-size: 12.5px;
-    }
-
-    /* Table hybrid Xero style */
-    .table-wrapper {
-      width: 100%;
-      overflow-x: auto;
-      border-radius: 8px;
-      border: 1px solid var(--ux-border-soft);
-      background: #fff;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      table-layout: auto;
-    }
-    thead {
-      background: #eef2f7;
-    }
-    th {
-      padding: 8px 8px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #465166;
-      text-align: left;
-      white-space: nowrap;
-      border-bottom: 1px solid var(--ux-border-soft);
-    }
-    th.sticky-col {
-      position: sticky;
-      left: 0;
-      background: #eef2f7;
-      z-index: 2;
-    }
-    td {
-      padding: 6px 7px;
-      border-bottom: 1px solid #f1f3f6;
-      vertical-align: middle;
-      font-size: 12.5px;
-    }
-    tbody tr:nth-child(even) {
-      background: #fafbff;
-    }
-    tbody tr:hover {
-      background: #f2f6ff;
-    }
-
-    .row-handle {
-      cursor: grab;
-      color: #b4bac7;
-      text-align: center;
-      font-size: 16px;
-      user-select: none;
-      width: 26px;
-    }
-  /* Sub-line indent style */
-.subline-row td {
-    background: #f7faff;
-    border-top: 1px dashed #d6e3ff;
-}
-
-/* Indent enhancement (opsional tapi direkomendasikan) */
-.subline-row td {
-    padding-left: 10px;
-}
-
-.subline-row td:first-child {
-    padding-left: 22px !important;
-}
-
-/* Row handle inside subline (already correct) */
-.subline-row .row-handle {
-    padding-left: 12px;
-    font-size: 14px;
-}
-
-/* Subline label */
-.subline-label {
-    font-size: 11px;
-    color: #6b7280;
-    font-style: italic;
-    margin-right: 4px;
-}
-
-
-    .subline-row .row-handle {
-      padding-left: 12px;
-      font-size: 14px;
-    }
-
-    .subline-label {
-      font-size: 11px;
-      color: #6b7280;
-      font-style: italic;
-      margin-right: 4px;
-    }
-
-    .table-input {
-      width: 100%;
-      padding: 5px 6px;
-      font-size: 12.5px;
-      border: 1px solid #cfd7e3;
-      border-radius: 6px;
-    }
-
-    .readonly-field {
-      background: #f3f4f6 !important;
-      border-color: #d3d7e3 !important;
-      color: #555 !important;
-    }
-
-    .kpc-original {
-      font-weight: 600;
-      color: #273b74;
-      font-size: 12.5px;
-    }
-
-    .delete-btn {
-      cursor: pointer;
-      color: var(--ux-danger);
-      font-size: 15px;
-      text-align: center;
-      user-select: none;
-    }
-
-    .split-btn {
-      padding: 3px 8px;
-      border-radius: 14px;
-      border: 1px solid var(--ux-border);
-      background: var(--ux-blue-soft);
-      cursor: pointer;
-      font-size: 11px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
-    .split-btn span.split-icon {
-      display: inline-block;
-      width: 10px;
-      height: 8px;
-      position: relative;
-    }
-    .split-btn span.split-icon::before,
-    .split-btn span.split-icon::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 2px;
-      border-radius: 999px;
-      background: #4b5a7a;
-    }
-    .split-btn span.split-icon::before {
-      top: 1px;
-    }
-    .split-btn span.split-icon::after {
-      bottom: 1px;
-    }
-
-    textarea {
-      width: 100%;
-      height: 110px;
-      padding: 9px 10px;
-      font-size: 13px;
-      background: #f9fafb;
-      border: 1px solid #ced4e1;
-      border-radius: 8px;
-      margin-top: 6px;
-      resize: vertical;
-    }
-
-    .actions-row {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    .secondary-btn {
-      padding: 8px 14px;
-      background: #ecf1f8;
-      border: 1px solid #cfd7e3;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .submit-btn {
-      padding: 9px 22px;
-      background: var(--ux-blue);
-      border-radius: 6px;
-      border: none;
-      color: white;
-      font-weight: 600;
-      font-size: 13.5px;
-      cursor: pointer;
-    }
-    .submit-btn:disabled {
-      opacity: .5;
-      cursor: not-allowed;
-    }
-
-    #loadingOverlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(255,255,255,.7);
-      backdrop-filter: blur(2px);
-      z-index: 9999;
-      display: none;
-      justify-content: center;
-      align-items: center;
-    }
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 4px solid #d0d7e2;
-      border-top-color: #1a73e8;
-      animation: spin .85s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-/* Google Sheet Button — Bottom Placement */
-.sheet-bottom-wrapper {
-  margin-top: 18px;
-  margin-bottom: 10px;
-}
-
-.sheet-bottom-btn {
-  background: #eef4ff;
-  border: 1px solid #cfe0ff;
-  padding: 7px 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #1f5ddb;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.sheet-bottom-btn:hover {
-  background: #e2ebff;
-}
-
-/* Icon */
-.sheet-icon {
-  width: 18px;
-  height: 18px;
-}
-
-    
-  </style>
+  /* Pill/Tabs */
+  .filter-pill { cursor: pointer; padding: 6px 16px; border-radius: 9999px; font-size: 13px; font-weight: 500; transition: all 0.2s; border: 1px solid transparent; }
+  .pill-active { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+  .pill-inactive { background-color: white; color: #64748b; border-color: #e2e8f0; }
+  .pill-inactive:hover { background-color: #f1f5f9; color: #334155; }
+</style>
 </head>
 
 <body>
 
-<div id="loadingOverlay"><div class="loading-spinner"></div></div>
-
-<div class="top-bar">
-  <span class="brand-main">UXILIUM</span>
-  <span class="brand-sub">Receiving Entry — Coil Purchase</span>
-</div>
-
-<div class="page">
-  <div class="card">
-    <div class="card-title">Receiving PO Entry </div>
-
-    <div class="row-flex">
-      <div>
-        <label>Receiving Date</label>
-        <input type="date" id="receivingDate" class="input-box">
-      </div>
-
-      <div>
-        <label>Inv Number</label>
-        <select id="invSelect" class="input-box"></select>
-      </div>
-
-      <div>
-        <label>Receiving ID</label>
-        <input type="text" id="receivingId" class="input-box" readonly>
-      </div>
-
-      <div>
-        <label>Edit Existing Receiving (Optional)</label>
-        <select id="editSelect" class="input-box">
-          <option value="">— New Receiving Entry —</option>
-        </select>
-      </div>
+  <div class="aux-navbar">
+    <div class="flex items-center gap-3">
+        <div class="font-bold text-xl text-slate-800 flex items-center gap-2">
+            <i class="fas fa-layer-group text-blue-600"></i> KPC Inventory
+        </div>
     </div>
-
-    <div id="lockWarning" class="lock-warning">
-      ⚠ This Receiving Entry is <strong>LOCKED</strong> by period closing and cannot be edited.
+    <div class="flex items-center gap-4">
+        <div class="text-right hidden sm:block">
+            <div class="text-xs text-slate-500">Data Source</div>
+            <div class="text-sm font-semibold text-slate-800">Sheet: KPC FG</div>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
+            AG
+        </div>
     </div>
+  </div>
 
-    <div class="summary-grid">
-      <div class="summary-item">
-        <div class="summary-label">Supplier</div>
-        <div id="summarySupplier" class="summary-value">-</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-label">Invoice Date</div>
-        <div id="summaryDate" class="summary-value">-</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-label">Status</div>
-        <div id="summaryStatus" class="summary-value">-</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-label">Total Ordered</div>
-        <div id="summaryTotalOrdered" class="summary-value">-</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-label">Total Received</div>
-        <div id="summaryTotalReceived" class="summary-value">-</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-label">Total Remaining</div>
-        <div id="summaryTotalRemaining" class="summary-value">-</div>
-      </div>
-    </div>
+  <div id="loading"><div class="spinner"></div></div>
 
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th class="sticky-col" style="width:28px;"></th>
-            <th>PO Number</th>
-            <th>Item Code</th>
-            <th>KPC</th>
-            <th>Description</th>
-            <th>Ordered</th>
-            <th>Unit Amount</th>
-            <th>Received</th>
-            <th>Remaining</th>
-            <th>Qty This Receipt</th>
-            <th>UoM</th>
-            <th>Split</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-    </div>
-
-    <label style="margin-top:18px;">Additional Notes</label>
-    <textarea id="notes"></textarea>
-<!-- Google Sheet Button at Bottom -->
-<div class="sheet-bottom-wrapper">
-  <a 
-    href="https://docs.google.com/spreadsheets/d/1waLwJDMdKHd7R2BMMtkDobfcTn3B6YRk0P7304nvH7I/edit?gid=1127389013"
-    target="_blank"
-    class="sheet-bottom-btn">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     
-    <!-- Google Sheet Icon -->
-    <svg class="sheet-icon" viewBox="0 0 24 24">
-      <path fill="#0F9D58" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
-      <path fill="#FFF" d="M7 7h10v2H7zM7 11h10v2H7zM7 15h7v2H7z"/>
-    </svg>
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+      <div>
+          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">KPC Finished Goods</h1>
+          <p class="text-sm text-slate-500 mt-1">Monitoring stok, nilai aset, dan penggunaan mesin (Kolom A-H).</p>
+      </div>
+      <div class="flex gap-3">
+          <a href="https://accountingauxie.github.io/Auxilium-Portal-Sukses-Jaya/production/daftarproduksi/index.html" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center">
+              <i class="fas fa-arrow-left mr-2"></i> Kembali
+          </a>
+          <button onclick="fetchData()" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center">
+              <i class="fas fa-sync-alt mr-2"></i> Refresh Data
+          </button>
+      </div>
+    </div>
 
-    Open Google Sheet
-  </a>
-</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden transition-all duration-300">
+        <div class="absolute right-0 top-0 h-full w-1 bg-blue-500"></div>
+        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Items (KPC)</div>
+        <div class="flex items-baseline"><span class="text-3xl font-bold text-slate-800" id="stat-total-items">0</span></div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden transition-all duration-300">
+        <div class="absolute right-0 top-0 h-full w-1 bg-emerald-500"></div>
+        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Quantity (KG)</div>
+        <div class="flex items-baseline"><span class="text-3xl font-bold text-slate-800" id="stat-total-qty">0</span> <span class="ml-2 text-sm text-slate-400">kg</span></div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden transition-all duration-300">
+        <div class="absolute right-0 top-0 h-full w-1 bg-amber-500"></div>
+        <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Total Asset Value</div>
+        <div class="flex items-baseline"><span class="text-xl font-bold text-slate-800" id="stat-total-value">Rp 0</span></div>
+      </div>
+    </div>
 
-    <div class="actions-row">
-      <button class="secondary-btn" type="button" onclick="reloadINV()">Reload INV</button>
-      <button id="submitBtn" class="submit-btn" type="button" onclick="submitReceiving()">Submit Receiving</button>
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <div class="flex gap-2 overflow-x-auto pb-2 w-full md:w-auto" id="machine-filters">
+            <button onclick="filterByMachine('All')" class="filter-pill pill-active" id="btn-all">All Machines</button>
+        </div>
+
+        <div class="relative w-full md:w-80">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-slate-400"></i></div>
+            <input type="text" id="searchInput" onkeyup="renderTable()" class="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm shadow-sm transition" placeholder="Cari KPC, Item, atau Code...">
+        </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">KPC Number</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Item Name</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Machine</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Qty (kg)</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Price (Unit)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Xero</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-slate-100" id="table-body">
+                </tbody>
+            </table>
+        </div>
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+            <span class="text-xs text-slate-500" id="showing-info">Showing 0 entries</span>
+        </div>
     </div>
 
   </div>
-</div>
 
 <script>
-  // GANTI KE URL WEB APP KAMU JIKA PERLU
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwa1ooTwjV_I0Buf5ZXTI53u6HzE3E0R_yhdLoPZhP9lud79Zle-g6iIbFP2i_8MFeEgA/exec";
+    // --- KONFIGURASI ---
+    const API_URL = "https://script.google.com/macros/s/AKfycbzEWjrouJixlNXuqm0zkI_zoGWinte7rQBbJ5T5cruHuwM-Bd5rJ_hBMMWsGT1Jw8JN/exec"; 
 
-  let currentINV = "";
-  let invChoices = null;
-  let editChoices = null;
-  let isLocked = false;
-  let isEditMode = false;
+    let rawData = [];
+    let currentFilter = 'All';
 
-  const loadingOverlay = document.getElementById("loadingOverlay");
-  const tableBody = document.getElementById("tableBody");
-  const receivingDate = document.getElementById("receivingDate");
-  const receivingId = document.getElementById("receivingId");
-  const invSelect = document.getElementById("invSelect");
-  const editSelect = document.getElementById("editSelect");
-  const notes = document.getElementById("notes");
-  const submitBtn = document.getElementById("submitBtn");
-  const lockWarning = document.getElementById("lockWarning");
-
-  const summarySupplier = document.getElementById("summarySupplier");
-  const summaryDate = document.getElementById("summaryDate");
-  const summaryStatus = document.getElementById("summaryStatus");
-  const summaryTotalOrdered = document.getElementById("summaryTotalOrdered");
-  const summaryTotalReceived = document.getElementById("summaryTotalReceived");
-  const summaryTotalRemaining = document.getElementById("summaryTotalRemaining");
-  // --- GROUP HELPERS (by rowIndex) ---
-  function getAllRows() {
-    return [...document.querySelectorAll("#tableBody tr")];
-  }
-
-  function getBaseRowByIndex(rowIndex) {
-    return getAllRows().find(r => r.dataset.rowIndex === String(rowIndex) && !r.classList.contains("subline-row"));
-  }
-
-  function getSubRowsByIndex(rowIndex) {
-    return getAllRows().filter(r => r.dataset.rowIndex === String(rowIndex) && r.classList.contains("subline-row"));
-  }
-
-  function recalcParentTotal(rowIndex) {
-    const base = getBaseRowByIndex(rowIndex);
-    if (!base) return;
-
-    const subs = getSubRowsByIndex(rowIndex);
-    let total = 0;
-
-    subs.forEach(sr => {
-      total += Number(sr.querySelector(".qty-receipt")?.value || 0);
+    document.addEventListener('DOMContentLoaded', () => {
+        feather.replace();
+        fetchData();
     });
 
-    const parentQty = base.querySelector(".qty-receipt");
-    if (parentQty) {
-      parentQty.value = total > 0 ? total : "";
+    // Helper: Membersihkan angka
+    function cleanNumber(val) {
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
+        const cleanStr = String(val).replace(/,/g, '');
+        return parseFloat(cleanStr) || 0;
     }
-  }
 
-  function ensureParentModeForSplit(baseTr) {
-    const qtyInput = baseTr.querySelector(".qty-receipt");
-    const kpcInput = baseTr.querySelector(".kpc-new");
+    async function fetchData() {
+        document.getElementById('loading').style.display = 'flex';
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            
+            if (!Array.isArray(data)) throw new Error("Format data salah");
+            
+            rawData = data;
+            generateMachineFilters();
+            renderTable();
 
-    baseTr.dataset.hasSplit = "1";
-
-    if (qtyInput) {
-      qtyInput.readOnly = true;
-      qtyInput.classList.add("readonly-field");
-    }
-    if (kpcInput) {
-      // KPC akan pindah ke sub-line
-      kpcInput.value = "";
-    }
-  }
-
-  function showLoading(){ loadingOverlay.style.display="flex"; }
-  function hideLoading(){ loadingOverlay.style.display="none"; }
-
-  /* ------------ ID GENERATOR ------------ */
-  async function loadNextReceivingId() {
-    try {
-      const res = await fetch(`${SCRIPT_URL}?action=getlastreceivingid`);
-      const data = await res.json();
-
-      const now = new Date();
-      const yy = String(now.getFullYear()).slice(2);
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const prefix = `RCV${yy}${mm}`;
-
-      const lastId = data.lastId;
-      let nextId;
-
-      if (!lastId || !lastId.startsWith(prefix)) {
-        nextId = prefix + "0000001";
-      } else {
-        const lastSeq = parseInt(lastId.substring(7), 10) || 0;
-        const newSeq = lastSeq + 1;
-        nextId = prefix + String(newSeq).padStart(7, "0");
-      }
-
-      receivingId.value = nextId;
-    } catch (e) {
-      const now = new Date();
-      receivingId.value = `RCV${String(now.getFullYear()).slice(2)}${String(now.getMonth()+1).padStart(2,"0")}0000001`;
-    }
-  }
-
-  /* ------------ SUMMARY ------------ */
-  function renderSummary(header){
-    summarySupplier.textContent       = header.supplier || "-";
-    summaryDate.textContent           = header.invoiceDate || "-";
-    summaryStatus.textContent         = header.status || "-";
-    summaryTotalOrdered.textContent   = header.totalOrdered ?? "-";
-    summaryTotalReceived.textContent  = header.totalReceived ?? "-";
-    summaryTotalRemaining.textContent = header.totalRemaining ?? "-";
-  }
-
-  function renderSummaryFromLines(lines, supplier, lockedFlag){
-    let tOrd=0, tRec=0, tRem=0;
-    lines.forEach(ln=>{
-      const ord = Number(ln.orderedQty) || 0;
-      const recBefore = Number(ln.receivedToDate) || 0;
-      const qtyThis = Number(ln.qtyThisReceipt) || 0;
-      const rem = Number(ln.remainingQty) || 0;
-      tOrd += ord;
-      tRec += recBefore + qtyThis;
-      tRem += rem;
-    });
-
-    summarySupplier.textContent = supplier || "-";
-    summaryDate.textContent = "-";
-
-    let status = "-";
-    if (lockedFlag) status = "LOCKED";
-    else if (tRem === 0) status = "Selesai";
-    else if (tRec === 0) status = "Belum Diterima";
-    else status = "Sebagian";
-
-    summaryStatus.textContent = status;
-    summaryTotalOrdered.textContent   = tOrd || (tOrd === 0 ? 0 : "-");
-    summaryTotalReceived.textContent  = tRec || (tRec === 0 ? 0 : "-");
-    summaryTotalRemaining.textContent = tRem || (tRem === 0 ? 0 : "-");
-  }
-
-  /* ------------ LOCK STATE ------------ */
-  function applyLockState(locked){
-    isLocked = !!locked;
-    const disabled = !!locked;
-
-    document.querySelectorAll(".qty-receipt").forEach(el => el.disabled = disabled);
-    document.querySelectorAll(".kpc-new").forEach(el => el.disabled = disabled);
-    receivingDate.disabled = disabled;
-    notes.disabled = disabled;
-    submitBtn.disabled = disabled;
-    lockWarning.style.display = locked ? "block" : "none";
-  }
-
-  /* ------------ MODE HANDLING ------------ */
-  function enterNewMode(){
-    isEditMode = false;
-    editChoices && editChoices.setChoiceByValue("");
-    invSelect.disabled = false;
-    invChoices && invChoices.enable && invChoices.enable();
-    applyLockState(false);
-    loadNextReceivingId();
-  }
-
-  function enterEditMode(){
-    isEditMode = true;
-    invSelect.disabled = true;
-    invChoices && invChoices.disable && invChoices.disable();
-  }
-
-  /* ------------ ROW EVENTS ------------ */
-    function attachRowEvents(tr){
-    const qtyInput = tr.querySelector(".qty-receipt");
-    if (qtyInput) {
-      qtyInput.addEventListener("input", e => {
-        const rowIndex = tr.dataset.rowIndex;
-        const rem = Number(tr.querySelector(".remaining").value) || 0;
-        let val = Number(e.target.value || 0);
-        if (val < 0) val = 0;
-        if (val > rem) val = rem;
-        e.target.value = val || "";
-
-        // Jika sub-line, update total parent
-        if (tr.classList.contains("subline-row")) {
-          recalcParentTotal(rowIndex);
+        } catch (error) {
+            console.error(error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Memuat Data',
+                text: 'Pastikan URL Apps Script benar dan Deployment diatur ke "Anyone".'
+            });
+        } finally {
+            document.getElementById('loading').style.display = 'none';
         }
-      });
     }
 
-    const del = tr.querySelector(".delete-btn");
-    if (del) {
-      del.addEventListener("click", e => {
-        const row = e.target.closest("tr");
-        const rowIndex = row.dataset.rowIndex;
+    function generateMachineFilters() {
+        const machines = [...new Set(rawData.map(item => item.machine).filter(m => m))].sort();
+        const container = document.getElementById('machine-filters');
+        
+        container.innerHTML = '<button onclick="filterByMachine(\'All\')" class="filter-pill pill-active" id="btn-All">All Machines</button>';
 
-        if (row.classList.contains("subline-row")) {
-          // hapus sub-line
-          row.remove();
-          const base = getBaseRowByIndex(rowIndex);
-          const subs = getSubRowsByIndex(rowIndex);
-
-          if (!subs.length && base) {
-            // kembali jadi normal row (tidak split)
-            delete base.dataset.hasSplit;
-            const qtyBase = base.querySelector(".qty-receipt");
-            if (qtyBase) {
-              qtyBase.readOnly = false;
-              qtyBase.classList.remove("readonly-field");
-            }
-          }
-          recalcParentTotal(rowIndex);
-        } else {
-          // base row dihapus → hapus juga semua sub-line
-          getSubRowsByIndex(rowIndex).forEach(sr => sr.remove());
-          row.remove();
-        }
-      });
+        machines.forEach(m => {
+            const cleanId = m.replace(/[^a-zA-Z0-9]/g, '');
+            const btn = document.createElement('button');
+            btn.className = 'filter-pill pill-inactive whitespace-nowrap';
+            btn.id = `btn-${cleanId}`;
+            btn.textContent = m;
+            btn.onclick = () => filterByMachine(m);
+            container.appendChild(btn);
+        });
     }
 
-    const splitBtn = tr.querySelector(".split-btn");
-    if (splitBtn && !tr.classList.contains("subline-row")) {
-      splitBtn.addEventListener("click", () => addSplitRow(tr));
-    }
-  }
-
-
-  /* ------------ RENDER LINES ------------ */
-    /* ------------ RENDER LINES (NEW: support split) ------------ */
-  function renderLines(lines, useExistingQty){
-    tableBody.innerHTML = "";
-
-    // NEW MODE (dari getInvDetail) → 1 baris per PO, tanpa split
-    if (!useExistingQty) {
-      lines.forEach(ln => {
-        const tr = document.createElement("tr");
-        tr.dataset.rowIndex = ln.rowIndex;
-
-        const remaining = Number(ln.remainingQty) || 0;
-        const defaultQty = remaining;
-        const itemCode = ln.itemCode || ln.kpc || "";
-        const unitAmount = ln.unitAmount ?? "";
-
-        tr.innerHTML = `
-          <td class="row-handle">⋮⋮</td>
-          <td>${ln.poNumber}</td>
-          <td><span class="kpc-original">${itemCode}</span></td>
-          <td><input class="table-input kpc-new" placeholder="KPC" value=""></td>
-          <td>${ln.description}</td>
-          <td><input class="table-input readonly-field ordered" value="${ln.orderedQty}" readonly></td>
-          <td><input class="table-input readonly-field unit-amount" value="${unitAmount}" readonly></td>
-          <td><input class="table-input readonly-field received" value="${ln.receivedToDate}" readonly></td>
-          <td><input class="table-input readonly-field remaining" value="${remaining}" readonly></td>
-          <td><input type="number" class="table-input qty-receipt" value="${defaultQty}" min="0"></td>
-          <td><input class="table-input readonly-field uom-field" value="${ln.uom || 'Meter'}" readonly></td>
-          <td style="text-align:center;">
-            <button type="button" class="split-btn" title="Split this line">
-              <span class="split-icon"></span>
-            </button>
-          </td>
-          <td class="delete-btn">🗑</td>
-        `;
-
-        tableBody.appendChild(tr);
-        attachRowEvents(tr);
-      });
-
-      Sortable.create(tableBody,{handle:".row-handle",animation:150});
-      applyLockState(isLocked);
-      return;
-    }
-
-    // EDIT MODE → lines berasal dari sheet Receiving (setiap row = satu split)
-    // Grouping by rowIndex
-    const groups = {};
-    lines.forEach(ln => {
-      const key = String(ln.rowIndex || "");
-      if (!key) return;
-
-      if (!groups[key]) {
-        groups[key] = {
-          base: {
-            rowIndex: ln.rowIndex,
-            poNumber: ln.poNumber,
-            itemCode: ln.itemCode,
-            description: ln.description,
-            unitAmount: ln.unitAmount ?? "",
-            orderedQty: ln.orderedQty,
-            uom: ln.uom || "Meter",
-            receivedToDate: ln.receivedToDate, // approx
-            remainingQty: ln.remainingQty      // approx
-          },
-          splits: []
-        };
-      }
-      groups[key].splits.push(ln);
-    });
-
-    Object.values(groups).forEach(group => {
-      const baseData = group.base;
-      const splits   = group.splits;
-
-      // Hitung total qty this receipt (sum of splits)
-      let totalQty = 0;
-      splits.forEach(s => {
-        totalQty += Number(s.qtyThisReceipt) || 0;
-      });
-      baseData.qtyThisReceipt = totalQty;
-
-      // --- BASE ROW (original) ---
-      const baseTr = document.createElement("tr");
-      baseTr.dataset.rowIndex = baseData.rowIndex;
-
-      const remaining = Number(baseData.remainingQty) || 0;
-      const itemCode  = baseData.itemCode || "";
-
-      baseTr.innerHTML = `
-        <td class="row-handle">⋮⋮</td>
-        <td>${baseData.poNumber}</td>
-        <td><span class="kpc-original">${itemCode}</span></td>
-        <td><input class="table-input kpc-new" placeholder="KPC" value=""></td>
-        <td>${baseData.description}</td>
-        <td><input class="table-input readonly-field ordered" value="${baseData.orderedQty}" readonly></td>
-        <td><input class="table-input readonly-field unit-amount" value="${baseData.unitAmount}" readonly></td>
-        <td><input class="table-input readonly-field received" value="${baseData.receivedToDate}" readonly></td>
-        <td><input class="table-input readonly-field remaining" value="${remaining}" readonly></td>
-        <td><input type="number" class="table-input qty-receipt" value="${totalQty || ""}" min="0"></td>
-        <td><input class="table-input readonly-field uom-field" value="${baseData.uom}" readonly></td>
-        <td style="text-align:center;">
-          <button type="button" class="split-btn" title="Split this line">
-            <span class="split-icon"></span>
-          </button>
-        </td>
-        <td class="delete-btn">🗑</td>
-      `;
-
-      tableBody.appendChild(baseTr);
-      attachRowEvents(baseTr);
-
-      if (splits.length > 1) {
-        // ada split beneran → parent jadi container
-        ensureParentModeForSplit(baseTr);
-      }
-
-      // --- SUBLINES (jika memang ada lebih dari satu atau mau tampilkan tetap) ---
-      if (splits.length > 1) {
-        splits.forEach(s => {
-          const subTr = document.createElement("tr");
-          subTr.classList.add("subline-row");
-          subTr.dataset.rowIndex = baseData.rowIndex;
-
-          const sRemaining = Number(s.remainingQty) || remaining;
-          const sItemCode  = s.itemCode || baseData.itemCode;
-
-          subTr.innerHTML = `
-            <td class="row-handle">⋮⋮</td>
-            <td>${baseData.poNumber}</td>
-            <td>
-              <span class="subline-label">↳ Split</span>
-              <span class="kpc-original">${sItemCode}</span>
-            </td>
-            <td><input class="table-input kpc-new" placeholder="KPC" value="${s.kpc || ""}"></td>
-            <td>${baseData.description}</td>
-            <td><input class="table-input readonly-field ordered" value="${baseData.orderedQty}" readonly></td>
-            <td><input class="table-input readonly-field unit-amount" value="${baseData.unitAmount}" readonly></td>
-            <td><input class="table-input readonly-field received" value="${baseData.receivedToDate}" readonly></td>
-            <td><input class="table-input readonly-field remaining" value="${sRemaining}" readonly></td>
-            <td><input type="number" class="table-input qty-receipt" value="${s.qtyThisReceipt || ""}" min="0"></td>
-            <td><input class="table-input readonly-field uom-field" value="${baseData.uom}" readonly></td>
-            <td style="text-align:center;">
-              <button type="button" class="split-btn" title="Split this line again">
-                <span class="split-icon"></span>
-              </button>
-            </td>
-            <td class="delete-btn">🗑</td>
-          `;
-
-          tableBody.appendChild(subTr);
-          attachRowEvents(subTr);
+    function filterByMachine(machineName) {
+        currentFilter = machineName;
+        
+        document.querySelectorAll('.filter-pill').forEach(btn => {
+            btn.classList.remove('pill-active');
+            btn.classList.add('pill-inactive');
         });
 
-        recalcParentTotal(baseData.rowIndex);
-      }
-    });
-
-    Sortable.create(tableBody,{handle:".row-handle",animation:150});
-    applyLockState(isLocked);
-  }
-
-  /* ------------ SPLIT ROW (NEW) ------------ */
-  function addSplitRow(baseTr){
-    const rowIndex = baseTr.dataset.rowIndex;
-    const existingSubs = getSubRowsByIndex(rowIndex);
-
-    const baseQtyInput = baseTr.querySelector(".qty-receipt");
-    const baseKpcInput = baseTr.querySelector(".kpc-new");
-
-    let initialQty = "";
-    let initialKpc = "";
-
-    // Jika ini split pertama, pindahkan nilai dari parent ke sub-line
-    if (existingSubs.length === 0) {
-      initialQty = baseQtyInput ? (baseQtyInput.value || "") : "";
-      initialKpc = baseKpcInput ? (baseKpcInput.value || "") : "";
-
-      // parent jadi container (qty readonly, kpc kosong)
-      ensureParentModeForSplit(baseTr);
-    }
-
-    // Buat sub-row
-    const subTr = document.createElement("tr");
-    subTr.classList.add("subline-row");
-    subTr.dataset.rowIndex = rowIndex;
-
-    const poNumber   = baseTr.children[1].textContent.trim();
-    const itemCode   = baseTr.querySelector(".kpc-original").textContent.trim();
-    const desc       = baseTr.children[4].textContent.trim();
-    const orderedVal = baseTr.querySelector(".ordered").value;
-    const unitAmount = baseTr.querySelector(".unit-amount").value;
-    const received   = baseTr.querySelector(".received").value;
-    const remaining  = baseTr.querySelector(".remaining").value;
-    const uom        = baseTr.querySelector(".uom-field").value || "Meter";
-
-    subTr.innerHTML = `
-      <td class="row-handle">⋮⋮</td>
-      <td>${poNumber}</td>
-      <td>
-        <span class="subline-label">↳ Split</span>
-        <span class="kpc-original">${itemCode}</span>
-      </td>
-      <td><input class="table-input kpc-new" placeholder="KPC" value="${initialKpc}"></td>
-      <td>${desc}</td>
-      <td><input class="table-input readonly-field ordered" value="${orderedVal}" readonly></td>
-      <td><input class="table-input readonly-field unit-amount" value="${unitAmount}" readonly></td>
-      <td><input class="table-input readonly-field received" value="${received}" readonly></td>
-      <td><input class="table-input readonly-field remaining" value="${remaining}" readonly></td>
-      <td><input type="number" class="table-input qty-receipt" value="${initialQty}" min="0"></td>
-      <td><input class="table-input readonly-field uom-field" value="${uom}" readonly></td>
-      <td style="text-align:center;">
-        <button type="button" class="split-btn" title="Split this line again">
-          <span class="split-icon"></span>
-        </button>
-      </td>
-      <td class="delete-btn">🗑</td>
-    `;
-
-    // Sisipkan setelah parent atau setelah sub terakhir
-    if (existingSubs.length === 0) {
-      tableBody.insertBefore(subTr, baseTr.nextSibling);
-    } else {
-      const lastSub = existingSubs[existingSubs.length - 1];
-      tableBody.insertBefore(subTr, lastSub.nextSibling);
-    }
-
-    attachRowEvents(subTr);
-    recalcParentTotal(rowIndex);
-  }
-
-
-  /* ------------ LOAD INV LIST (NEW MODE) ------------ */
-  async function loadInvList(){
-    const res = await fetch(`${SCRIPT_URL}?action=getinvlist`);
-    const list = await res.json();
-
-    if (invChoices) invChoices.destroy();
-    invSelect.innerHTML = `<option value="">— Select INV —</option>`;
-
-    list.forEach(x => {
-      const op = document.createElement("option");
-      op.value = op.textContent = x.invNumber;
-      invSelect.appendChild(op);
-    });
-
-    invChoices = new Choices("#invSelect",{
-      searchEnabled:true,
-      itemSelectText:"",
-      shouldSort:false
-    });
-
-    invSelect.addEventListener("change",()=>{
-      if(!isEditMode && invSelect.value){
-        currentINV = invSelect.value;
-        loadInvDetail(invSelect.value);
-      }
-    });
-  }
-
-  /* ------------ LOAD EDITABLE RECEIVING LIST ------------ */
-  async function loadEditableReceivingList(){
-    const res = await fetch(`${SCRIPT_URL}?action=geteditablelist`);
-    const list = await res.json();
-
-    if (editChoices) editChoices.destroy();
-    editSelect.innerHTML = `<option value="">— New Receiving Entry —</option>`;
-
-    list.forEach(item=>{
-      const op = document.createElement("option");
-      op.value = item.receivingId;
-      op.textContent = `${item.receivingId} — ${item.invNumber || ''}`;
-      editSelect.appendChild(op);
-    });
-
-    editChoices = new Choices("#editSelect",{
-      searchEnabled:true,
-      itemSelectText:"",
-      shouldSort:false
-    });
-
-    editSelect.addEventListener("change",()=>{
-      const id = editSelect.value;
-      if(!id){
-        enterNewMode();
-        if (invSelect.value) {
-          currentINV = invSelect.value;
-          loadInvDetail(invSelect.value);
-        } else {
-          tableBody.innerHTML = "";
-          renderSummary({
-            supplier:"-",
-            invoiceDate:"-",
-            status:"-",
-            totalOrdered:"-",
-            totalReceived:"-",
-            totalRemaining:"-"
-          });
+        const targetId = machineName === 'All' ? 'btn-All' : `btn-${machineName.replace(/[^a-zA-Z0-9]/g, '')}`;
+        const activeBtn = document.getElementById(targetId);
+        if(activeBtn) {
+            activeBtn.classList.remove('pill-inactive');
+            activeBtn.classList.add('pill-active');
         }
-        return;
-      }
-      loadReceivingEntry(id);
-    });
-  }
 
-  /* ------------ LOAD INV DETAIL (NEW MODE) ------------ */
-  async function loadInvDetail(inv){
-    if (!inv) return;
-    showLoading();
-    try{
-      const res = await fetch(`${SCRIPT_URL}?action=getinvdetail&invNumber=${encodeURIComponent(inv)}`);
-      const data = await res.json();
-      currentINV = inv;
-
-      renderSummary(data.header);
-      renderLines(data.lines, false);
-      applyLockState(false);
-    } finally {
-      hideLoading();
-    }
-  }
-
-  /* ------------ LOAD EXISTING RECEIVING (EDIT MODE) ------------ */
-  async function loadReceivingEntry(rcvId){
-    if(!rcvId) return;
-    showLoading();
-    try{
-      const res = await fetch(`${SCRIPT_URL}?action=loadreceiving&id=${encodeURIComponent(rcvId)}`);
-      const data = await res.json();
-
-      enterEditMode();
-      currentINV = data.invNumber || "";
-
-      receivingId.value   = data.receivingId;
-      if (data.receivingDate) receivingDate.value = data.receivingDate;
-      notes.value         = data.notes || "";
-
-      // ⬇️ PENTING: summary ambil dari originalPOHeader (Apps Script baru)
-      if (data.originalPOHeader) {
-        renderSummary(data.originalPOHeader);
-      } else {
-        renderSummaryFromLines(
-          data.lines,
-          data.header && data.header.supplier,
-          data.locked
-        );
-      }
-
-      renderLines(data.lines, true);
-      applyLockState(data.locked);
-    } finally {
-      hideLoading();
-    }
-  }
-
-  /* ------------ RELOAD ------------ */
-  function reloadINV(){
-    if(isEditMode && editSelect.value){
-      loadReceivingEntry(editSelect.value);
-    } else if (invSelect.value){
-      loadInvDetail(invSelect.value);
-    }
-  }
-
-  /* ------------ VALIDATION & SUBMIT (FINAL FIX V2) ------------ */
-   function validateForm() {
-
-  if (isLocked) return "This Receiving Entry is locked and cannot be edited.";
-  if (!receivingDate.value) return "Receiving Date required.";
-
-  if (!isEditMode && !invSelect.value) {
-    return "Inv Number required.";
-  }
-
-  const rows = [...document.querySelectorAll("#tableBody tr")];
-  if (rows.length === 0) return "No line items found.";
-
-  // Group by rowIndex
-  const groups = {};
-  rows.forEach(r => {
-    const rowIndex = r.dataset.rowIndex;
-    if (!rowIndex) return;
-
-    if (!groups[rowIndex]) {
-      groups[rowIndex] = {
-        remaining: Number(r.querySelector(".remaining")?.value || 0),
-        totalQty: 0,         // total qty sublines atau parent (jika tidak split)
-        parentQty: 0,
-        hasSplit: false
-      };
+        renderTable();
     }
 
-    const isSub = r.classList.contains("subline-row");
-    const qty   = Number(r.querySelector(".qty-receipt")?.value || 0);
-    const kpc   = (r.querySelector(".kpc-new")?.value || "").trim();
+    // Fungsi update kartu statistik (Subtotal Dinamis)
+    function updateStats(dataSet) {
+        const totalItems = dataSet.length;
+        
+        const totalQty = dataSet.reduce((sum, item) => sum + cleanNumber(item.qty), 0);
+        
+        const totalValue = dataSet.reduce((sum, item) => {
+            const q = cleanNumber(item.qty);
+            const p = cleanNumber(item.price); 
+            return sum + (q * p); 
+        }, 0);
 
-    // KPC wajib jika QTY > 0
-    if (qty > 0 && !kpc) {
-      return "Every line with Qty > 0 must have KPC filled.";
+        document.getElementById('stat-total-items').innerText = new Intl.NumberFormat('id-ID').format(totalItems);
+        document.getElementById('stat-total-qty').innerText = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(totalQty);
+        document.getElementById('stat-total-value').innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalValue);
     }
 
-    if (isSub) {
-      // SUB-LINE
-      groups[rowIndex].hasSplit = true;
-      groups[rowIndex].totalQty += qty;   // hitung sub-line saja
-    } else {
-      // PARENT LINE (non-split)
-      groups[rowIndex].parentQty = qty;
-    }
-  });
+    function renderTable() {
+        const tbody = document.getElementById('table-body');
+        const searchInput = document.getElementById('searchInput').value.toLowerCase();
+        
+        tbody.innerHTML = '';
 
-  let anyQty = false;
-
-  // Validasi per-group
-  for (const key in groups) {
-    const g = groups[key];
-
-    const effectiveTotal = g.hasSplit ? g.totalQty : g.parentQty;
-
-    if (effectiveTotal > 0) anyQty = true;
-
-    if (effectiveTotal > g.remaining) {
-      return `Total Qty for one PO line exceeds Remaining (${effectiveTotal} > ${g.remaining}).`;
-    }
-  }
-
-  if (!anyQty) return "At least one line must have Qty > 0.";
-
-  return null;
-}
-
-
-    function submitReceiving(){
-    const err = validateForm();
-    if(err) return alert(err);
-
-    showLoading();
-
-    const allRows = [...document.querySelectorAll("#tableBody tr")];
-
-    // Group rows by rowIndex
-    const groupMap = {};
-    allRows.forEach(r => {
-      const idx = r.dataset.rowIndex;
-      if (!idx) return;
-      if (!groupMap[idx]) groupMap[idx] = { base: null, subs: [] };
-
-      if (r.classList.contains("subline-row")) {
-        groupMap[idx].subs.push(r);
-      } else {
-        groupMap[idx].base = r;
-      }
-    });
-
-    const lines = [];
-
-    Object.keys(groupMap).forEach(idx => {
-      const g = groupMap[idx];
-      const base = g.base;
-      if (!base) return;
-
-      const poNumber   = base.children[1].textContent.trim();
-      const itemCode   = base.querySelector(".kpc-original").textContent.trim();
-      const description= base.children[4].textContent.trim();
-      const orderedQty = base.querySelector(".ordered").value;
-      const unitAmount = base.querySelector(".unit-amount")?.value || 0;
-      const receivedToDate = base.querySelector(".received").value;
-      const remainingQty   = base.querySelector(".remaining").value;
-      const uom            = base.querySelector(".uom-field")?.value || "m";
-      const rowIndex       = base.dataset.rowIndex;
-
-      if (g.subs.length === 0) {
-        // NO SPLIT: gunakan parent row seperti biasa
-        const kpcVal = base.querySelector(".kpc-new").value.trim();
-        const qtyVal = base.querySelector(".qty-receipt").value;
-
-        if ((Number(qtyVal) || 0) > 0) {
-          lines.push({
-            rowIndex,
-            poNumber,
-            itemCode,
-            kpc: kpcVal,
-            description,
-            unitAmount,
-            orderedQty,
-            receivedToDate,
-            remainingQty,
-            qtyThisReceipt: qtyVal,
-            uom
-          });
-        }
-      } else {
-        // WITH SPLIT: tiap sub-line dikirim sebagai row sendiri.
-        g.subs.forEach(sr => {
-          const kpcVal = sr.querySelector(".kpc-new").value.trim();
-          const qtyVal = sr.querySelector(".qty-receipt").value;
-          const remSub = sr.querySelector(".remaining").value;
-
-          if ((Number(qtyVal) || 0) <= 0) return;
-
-          lines.push({
-            rowIndex,
-            poNumber,
-            itemCode,
-            kpc: kpcVal,
-            description,
-            unitAmount,
-            orderedQty,
-            receivedToDate,
-            remainingQty: remSub,
-            qtyThisReceipt: qtyVal,
-            uom
-          });
+        // Filter Data
+        const filteredData = rawData.filter(item => {
+            const matchMachine = currentFilter === 'All' || item.machine === currentFilter;
+            const searchString = `${item.kpc} ${item.coilName} ${item.itemProduced} ${item.itemCode} ${item.machine}`.toLowerCase();
+            const matchSearch = searchString.includes(searchInput);
+            return matchMachine && matchSearch;
         });
-      }
-    });
 
-    const payload = {
-      receivingId: receivingId.value,
-      receivingDate: receivingDate.value,
-      invNumber: currentINV || invSelect.value || "",
-      header: { supplier: summarySupplier.textContent || "" },
-      notes: notes.value,
-      lines: lines
-    };
+        // Update Stats Cards dengan data yang sudah difilter
+        updateStats(filteredData);
 
-    fetch(SCRIPT_URL,{
-      method:"POST",
-      body:JSON.stringify(payload)
-    })
-    .then(r=>r.json())
-    .then(async res=>{
-      hideLoading();
-      if(res.status==="success"){
-        alert("Receiving saved.\nReceiving ID: "+payload.receivingId);
+        document.getElementById('showing-info').innerText = `Showing ${filteredData.length} entries`;
 
-        // refresh editable list
-        await loadEditableReceivingList();
-
-        // back to NEW MODE
-        enterNewMode();
-        if (invSelect.value) {
-          currentINV = invSelect.value;
-          loadInvDetail(invSelect.value);
-        } else {
-          tableBody.innerHTML = "";
-          renderSummary({
-            supplier:"-",
-            invoiceDate:"-",
-            status:"-",
-            totalOrdered:"-",
-            totalReceived:"-",
-            totalRemaining:"-"
-          });
+        if (filteredData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400 italic">Tidak ada data ditemukan.</td></tr>`;
+            return;
         }
-      } else {
-        alert("Error: "+res.message);
-      }
-    })
-    .catch(err=>{
-      hideLoading();
-      alert("Submit failed: "+err);
-    });
-  }
 
+        // Render Rows
+        filteredData.forEach(row => {
+            const numQty = cleanNumber(row.qty);
+            const numPrice = cleanNumber(row.price);
+            
+            const fmtQty = new Intl.NumberFormat('id-ID').format(numQty);
+            const fmtPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(numPrice);
 
-  /* ------------ INIT ------------ */
-  window.addEventListener("DOMContentLoaded", async ()=>{
-    showLoading();
-
-    const t = new Date();
-    receivingDate.value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
-
-    await Promise.all([
-      loadNextReceivingId(),
-      loadInvList(),
-      loadEditableReceivingList()
-    ]);
-
-    hideLoading();
-  });
+            const tr = document.createElement('tr');
+            tr.className = 'table-row';
+            tr.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-bold text-slate-900">${row.kpc || '-'}</div>
+                    <div class="text-xs text-slate-500">${row.coilName || ''}</div>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="text-sm text-slate-900 font-medium">${row.itemProduced || '-'}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                        ${row.machine || 'N/A'}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right">
+                    <div class="text-sm font-mono font-bold text-slate-700">${fmtQty}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right">
+                    <div class="text-sm text-slate-600">${fmtPrice}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">ITEM: <span class="text-slate-600 font-mono font-normal normal-case">${row.itemCode}</span></span>
+                        <span class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">XERO: <span class="text-slate-600 font-mono font-normal normal-case">${row.accountXero}</span></span>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 </script>
 
 </body>
