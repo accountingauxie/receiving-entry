@@ -35,12 +35,24 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     position: sticky; top: 0; z-index: 50;
   }
-  
+   
   /* Table Style */
-  .table-header { background-color: #f8fafc; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+  .table-header { 
+    background-color: #f8fafc; 
+    color: #64748b; 
+    font-size: 12px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em; 
+    cursor: pointer; /* Menandakan bisa diklik */
+    user-select: none; /* Mencegah teks terblok saat klik cepat */
+    transition: background-color 0.2s;
+  }
+  .table-header:hover { background-color: #e2e8f0; color: #334155; }
+  
   .table-row { border-bottom: 1px solid #f1f5f9; transition: all 0.2s; }
   .table-row:hover { background-color: #f8fafc; }
-  
+   
   /* Loading Spinner */
   #loading { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 50000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
   .spinner { border: 4px solid #e2e8f0; border-top: 4px solid #3b82f6; border-radius: 50%; width: 45px; height: 45px; animation: spin 0.8s linear infinite; }
@@ -126,12 +138,24 @@
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="bg-slate-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">KPC Number</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Item Name</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Machine</th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Qty (kg)</th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Price (Unit)</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Xero</th>
+                        <th scope="col" onclick="handleSort('kpc')" class="px-6 py-3 text-left table-header">
+                            KPC Number <i id="sort-icon-kpc" class="fas fa-sort ml-1 text-slate-400"></i>
+                        </th>
+                        <th scope="col" onclick="handleSort('itemProduced')" class="px-6 py-3 text-left table-header">
+                            Item Name <i id="sort-icon-itemProduced" class="fas fa-sort ml-1 text-slate-400"></i>
+                        </th>
+                        <th scope="col" onclick="handleSort('machine')" class="px-6 py-3 text-left table-header">
+                            Machine <i id="sort-icon-machine" class="fas fa-sort ml-1 text-slate-400"></i>
+                        </th>
+                        <th scope="col" onclick="handleSort('qty')" class="px-6 py-3 text-right table-header">
+                            Qty (kg) <i id="sort-icon-qty" class="fas fa-sort ml-1 text-slate-400"></i>
+                        </th>
+                        <th scope="col" onclick="handleSort('price')" class="px-6 py-3 text-right table-header">
+                            Price (Unit) <i id="sort-icon-price" class="fas fa-sort ml-1 text-slate-400"></i>
+                        </th>
+                        <th scope="col" onclick="handleSort('itemCode')" class="px-6 py-3 text-left table-header">
+                            Xero Code <i id="sort-icon-itemCode" class="fas fa-sort ml-1 text-slate-400"></i>
+                        </th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-slate-100" id="table-body">
@@ -151,6 +175,8 @@
 
     let rawData = [];
     let currentFilter = 'All';
+    // State untuk Sorting
+    let currentSort = { column: null, direction: 'asc' };
 
     document.addEventListener('DOMContentLoaded', () => {
         feather.replace();
@@ -224,6 +250,36 @@
         renderTable();
     }
 
+    // --- LOGIKA SORTING BARU ---
+    function handleSort(column) {
+        // Jika kolom sama, balik arahnya (asc <-> desc)
+        if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            // Jika kolom baru, default ke ascending
+            currentSort.column = column;
+            currentSort.direction = 'asc';
+        }
+        
+        updateSortIcons(column);
+        renderTable();
+    }
+
+    function updateSortIcons(activeColumn) {
+        // Reset semua icon ke default (fa-sort dan warna abu)
+        const allIcons = document.querySelectorAll('[id^="sort-icon-"]');
+        allIcons.forEach(icon => {
+            icon.className = 'fas fa-sort ml-1 text-slate-400';
+        });
+
+        // Update icon kolom yang aktif
+        const activeIcon = document.getElementById(`sort-icon-${activeColumn}`);
+        if (activeIcon) {
+            // Ubah icon jadi sort-up atau sort-down
+            activeIcon.className = `fas fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'} ml-1 text-blue-600`;
+        }
+    }
+
     // Fungsi update kartu statistik (Subtotal Dinamis)
     function updateStats(dataSet) {
         const totalItems = dataSet.length;
@@ -247,15 +303,37 @@
         
         tbody.innerHTML = '';
 
-        // Filter Data
-        const filteredData = rawData.filter(item => {
+        // 1. Filter Data
+        let filteredData = rawData.filter(item => {
             const matchMachine = currentFilter === 'All' || item.machine === currentFilter;
             const searchString = `${item.kpc} ${item.coilName} ${item.itemProduced} ${item.itemCode} ${item.machine}`.toLowerCase();
             const matchSearch = searchString.includes(searchInput);
             return matchMachine && matchSearch;
         });
 
-        // Update Stats Cards dengan data yang sudah difilter
+        // 2. Sorting Logic (Ditambahkan di sini)
+        if (currentSort.column) {
+            filteredData.sort((a, b) => {
+                let valA = a[currentSort.column];
+                let valB = b[currentSort.column];
+
+                // Cek apakah kolom yang disort adalah angka (qty atau price)
+                if (currentSort.column === 'qty' || currentSort.column === 'price') {
+                    valA = cleanNumber(valA);
+                    valB = cleanNumber(valB);
+                } else {
+                    // String comparison (case insensitive)
+                    valA = (valA || '').toString().toLowerCase();
+                    valB = (valB || '').toString().toLowerCase();
+                }
+
+                if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        // 3. Update Stats Cards dengan data yang sudah difilter
         updateStats(filteredData);
 
         document.getElementById('showing-info').innerText = `Showing ${filteredData.length} entries`;
@@ -265,7 +343,7 @@
             return;
         }
 
-        // Render Rows
+        // 4. Render Rows
         filteredData.forEach(row => {
             const numQty = cleanNumber(row.qty);
             const numPrice = cleanNumber(row.price);
@@ -296,8 +374,8 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex flex-col gap-1">
-                        <span class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">ITEM: <span class="text-slate-600 font-mono font-normal normal-case">${row.itemCode}</span></span>
-                        <span class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">XERO: <span class="text-slate-600 font-mono font-normal normal-case">${row.accountXero}</span></span>
+                        <span class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">ITEM: <span class="text-slate-600 font-mono font-normal normal-case">${row.itemCode || '-'}</span></span>
+                        <span class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">XERO: <span class="text-slate-600 font-mono font-normal normal-case">${row.accountXero || '-'}</span></span>
                     </div>
                 </td>
             `;
