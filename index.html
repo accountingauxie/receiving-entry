@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         /* --- THEME & UTILS --- */
         body { background-color: #f8f9fc; font-family: 'Inter', sans-serif; color: #333; font-size: 0.85rem; }
@@ -126,6 +130,16 @@
                     </span>
                 </button>
                 
+                <div class="dropdown">
+                    <button class="btn btn-success btn-sm dropdown-toggle text-white" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-download me-1"></i> Export
+                    </button>
+                    <ul class="dropdown-menu shadow">
+                        <li><a class="dropdown-item small" href="#" onclick="exportToExcel()"><i class="bi bi-file-earmark-excel text-success me-2"></i>To Excel</a></li>
+                        <li><a class="dropdown-item small" href="#" onclick="exportToPDF()"><i class="bi bi-file-earmark-pdf text-danger me-2"></i>To PDF</a></li>
+                    </ul>
+                </div>
+                
                 <button class="btn btn-light border btn-sm" onclick="fetchData()">
                     <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
@@ -171,7 +185,7 @@
                         <i class="bi bi-plus-circle me-1"></i> Add Condition
                     </button>
                     <ul class="dropdown-menu shadow" id="conditionDropdown">
-                        </ul>
+                    </ul>
                 </div>
             </div>
 
@@ -224,7 +238,6 @@
     let activeFilters = []; 
 
     // --- CONFIGURATION ---
-    // filterType: 'multi_select' (Checkbox Dropdown), 'date' (Range), null (No filter)
     const CONFIG = {
         'receiving': {
             columns: [
@@ -265,7 +278,6 @@
                 { label: 'Recv Bef', key: 'qtyBefore', filterType: null },
                 { label: 'This Rect', key: 'qtyNow', filterType: null }, 
                 { label: 'UoM', key: 'uom', filterType: 'multi_select' },
-                // CHANGE: KPC Moved AFTER UOM
                 { label: 'KPC Number', key: 'kpc', filterType: 'multi_select' }, 
                 { label: 'Container', key: 'container', filterType: 'multi_select' }
             ],
@@ -333,7 +345,7 @@
         return row;
     }
 
-    // --- DYNAMIC FILTER SYSTEM (CASCADING & MULTI-SELECT) ---
+    // --- DYNAMIC FILTER SYSTEM ---
 
     document.getElementById('filterModal').addEventListener('show.bs.modal', setupConditionDropdown);
 
@@ -351,7 +363,6 @@
     }
 
     function addFilterRow(key, type, label) {
-        // Prevent duplicate filters for same key
         if(activeFilters.find(f => f.key === key)) {
             alert("Filter for " + label + " already active.");
             return;
@@ -360,7 +371,6 @@
         document.getElementById('emptyFilterMsg').style.display = 'none';
         const filterId = Date.now(); 
         
-        // Initial state
         activeFilters.push({ id: filterId, key: key, type: type, values: [], start: null, end: null });
 
         const container = document.getElementById('activeFiltersContainer');
@@ -380,7 +390,6 @@
             `;
         } 
         else if (type === 'multi_select') {
-            // Placeholder for Multi Select, options will be loaded dynamically
             inputHtml = `
                 <div class="multi-select-dropdown" id="ms-dropdown-${filterId}">
                     <button class="multi-select-btn" onclick="toggleMultiSelect(${filterId})">
@@ -392,7 +401,7 @@
                             <input type="text" class="form-control form-control-sm" placeholder="Search..." onkeyup="filterMultiSelectOptions(${filterId}, this.value)">
                         </div>
                         <div class="multi-select-options" id="ms-options-${filterId}">
-                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -407,7 +416,6 @@
         container.appendChild(row);
 
         if (type === 'multi_select') {
-            // Load options initially (Cascading happens here)
             loadMultiSelectOptions(filterId, key);
         }
     }
@@ -420,46 +428,42 @@
 
     // --- CASCADING LOGIC CORE ---
     function getCascadingOptions(targetKey) {
-        // Filter data based on ALL active filters EXCEPT the current one
-        // This ensures cascading (e.g., Date limits Vendor), but allows modifying the current filter
         let filteredContext = allData.filter(row => {
             for (let filter of activeFilters) {
-                if (filter.key === targetKey) continue; // Skip self
+                if (filter.key === targetKey) continue; 
 
-// Date Check
-if (filter.type === 'date') {
-    if(!row.date) continue; 
-    const parts = row.date.split('/');
-    if(parts.length !== 3) continue;
-    
-    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
-    rowDate.setHours(0,0,0,0);
+                // Date Check
+                if (filter.type === 'date') {
+                    if(!row.date) continue; 
+                    const parts = row.date.split('/');
+                    if(parts.length !== 3) continue;
+                    
+                    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
+                    rowDate.setHours(0,0,0,0);
 
-    if (filter.start) {
-        const s = filter.start.split('-');
-        const startDate = new Date(s[0], s[1]-1, s[2]);
-        startDate.setHours(0,0,0,0);
-        if (rowDate < startDate) return false;
-    }
-    
-    if (filter.end) {
-        const e = filter.end.split('-');
-        const endDate = new Date(e[0], e[1]-1, e[2]);
-        endDate.setHours(23,59,59,999);
-        if (rowDate > endDate) return false;
-    }
-}
+                    if (filter.start) {
+                        const s = filter.start.split('-');
+                        const startDate = new Date(s[0], s[1]-1, s[2]);
+                        startDate.setHours(0,0,0,0);
+                        if (rowDate < startDate) return false;
+                    }
+                    
+                    if (filter.end) {
+                        const e = filter.end.split('-');
+                        const endDate = new Date(e[0], e[1]-1, e[2]);
+                        endDate.setHours(23,59,59,999);
+                        if (rowDate > endDate) return false;
+                    }
+                }
                 // Multi Select Check
                 else if (filter.type === 'multi_select' && filter.values.length > 0) {
-                     if (!filter.values.includes(row[filter.key])) return false;
+                      if (!filter.values.includes(row[filter.key])) return false;
                 }
             }
             return true;
         });
 
-        // Get unique values for the target column from the filtered context
         const uniqueValues = [...new Set(filteredContext.map(item => item[targetKey]))].sort();
-        // Remove empty/null
         return uniqueValues.filter(v => v && v !== '-' && v.trim() !== '');
     }
 
@@ -484,17 +488,13 @@ if (filter.type === 'date') {
     }
 
     function toggleMultiSelect(id) {
-        // Close others
         document.querySelectorAll('.multi-select-menu').forEach(el => {
             if(el.id !== `ms-menu-${id}`) el.classList.remove('show');
         });
 
         const menu = document.getElementById(`ms-menu-${id}`);
-        // Refresh options when opening to ensure cascading is up to date
         const filter = activeFilters.find(f => f.id === id);
         if(filter && !menu.classList.contains('show')) {
-            // Re-load options to reflect changes in other filters
-            // But we need to keep selected ones checked
             const currentSelection = filter.values;
             const optionsContainer = document.getElementById(`ms-options-${id}`);
             const availableOptions = getCascadingOptions(filter.key);
@@ -514,7 +514,6 @@ if (filter.type === 'date') {
         menu.classList.toggle('show');
     }
 
-    // Close dropdowns when clicking outside
     window.onclick = function(event) {
         if (!event.target.closest('.multi-select-dropdown')) {
             document.querySelectorAll('.multi-select-menu').forEach(el => el.classList.remove('show'));
@@ -551,7 +550,6 @@ if (filter.type === 'date') {
                 filter.values = filter.values.filter(v => v !== val);
             }
             
-            // Update Label Button
             const btnLabel = document.getElementById(`ms-label-${id}`);
             if (filter.values.length === 0) btnLabel.innerText = "Select options...";
             else if (filter.values.length === 1) btnLabel.innerText = filter.values[0];
@@ -571,7 +569,7 @@ if (filter.type === 'date') {
         if(refresh) { displayedData = allData; renderTable(displayedData); updateSummary(); }
     }
 
-function applyFilters() {
+    function applyFilters() {
         const searchInputVal = document.getElementById('searchInput').value.toLowerCase();
         
         const badge = document.getElementById('activeFilterBadge');
@@ -579,11 +577,9 @@ function applyFilters() {
         else badge.classList.add('d-none');
 
         let filtered = allData.filter(row => {
-            // Global Search
             let rowStr = Object.values(row).join(" ").toLowerCase();
             if (!rowStr.includes(searchInputVal)) return false;
 
-            // --- BAGIAN INI YANG HILANG SEBELUMNYA (LOOPING) ---
             for (let filter of activeFilters) { 
                 
                 // Date Logic
@@ -592,36 +588,30 @@ function applyFilters() {
                     const parts = row.date.split('/');
                     if(parts.length !== 3) continue;
                     
-                    // 1. Buat tanggal data (Set jam ke 00:00:00 agar murni tanggal)
                     const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
                     rowDate.setHours(0,0,0,0);
                     
-                    // 2. Cek Start Date
                     if (filter.start) {
                         const s = filter.start.split('-'); 
                         const startDate = new Date(s[0], s[1]-1, s[2]);
                         startDate.setHours(0,0,0,0);
-                        
                         if (rowDate < startDate) return false;
                     }
 
-                    // 3. Cek End Date
                     if (filter.end) {
                         const e = filter.end.split('-'); 
                         const endDate = new Date(e[0], e[1]-1, e[2]);
                         endDate.setHours(23,59,59,999); 
-                        
                         if (rowDate > endDate) return false;
                     }
                 }
                 // Multi Select Logic
                 else if (filter.type === 'multi_select') {
                      if (filter.values.length > 0) {
-                         // Must match ONE of the selected values
                          if (!filter.values.includes(row[filter.key])) return false;
                      }
                 }
-            } // --- AKHIR LOOPING ---
+            } 
 
             return true;
         });
@@ -631,14 +621,10 @@ function applyFilters() {
         updateSummary(); 
     }
 
-    // --- SUMMARY & TABLE RENDER (UNCHANGED LOGIC) ---
+    // --- SUMMARY & TABLE RENDER ---
     function updateSummary() {
         const container = document.getElementById('summarySection');
         let html = '';
-
-        // Gunakan displayedData (data yg sudah difilter) untuk summary yang dinamis?
-        // Biasanya summary card menampilkan total dataset atau filtered dataset. 
-        // Di sini saya gunakan displayedData agar angka berubah sesuai filter.
         const dataSet = displayedData; 
 
         if (currentTab === 'receiving') {
@@ -670,24 +656,9 @@ function applyFilters() {
             const totalProducts = dataSet.reduce((sum, d) => sum + (parseFloat(d.qtyNow) || 0), 0);
 
             html = `
-               <div class="col-md-3">
-                   <div class="summary-card border-purple">
-                       <span class="summary-label">Total Penerimaan</span>
-                       <span class="summary-value text-purple">${uniqueIDs}</span>
-                   </div>
-               </div>
-               <div class="col-md-3">
-                   <div class="summary-card border-blue">
-                       <span class="summary-label">Total Container</span>
-                       <span class="summary-value text-blue">${uniqueContainers}</span>
-                   </div>
-               </div>
-               <div class="col-md-3">
-                   <div class="summary-card border-green">
-                       <span class="summary-label">Total Produk (Qty)</span>
-                       <span class="summary-value text-green">${totalProducts.toLocaleString('id-ID')}</span>
-                   </div>
-               </div>
+               <div class="col-md-3"><div class="summary-card border-purple"><span class="summary-label">Total Penerimaan</span><span class="summary-value text-purple">${uniqueIDs}</span></div></div>
+               <div class="col-md-3"><div class="summary-card border-blue"><span class="summary-label">Total Container</span><span class="summary-value text-blue">${uniqueContainers}</span></div></div>
+               <div class="col-md-3"><div class="summary-card border-green"><span class="summary-label">Total Produk (Qty)</span><span class="summary-value text-green">${totalProducts.toLocaleString('id-ID')}</span></div></div>
             `;
         }
         container.innerHTML = html;
@@ -702,11 +673,10 @@ function applyFilters() {
         displayedData.sort((a, b) => {
             let valA = a[key] || ''; let valB = b[key] || '';
             
-            // Check if parsing date
             if (key === 'date') {
                 const parseD = (str) => {
-                     if(!str) return 0;
-                     const p = str.split('/'); return p.length===3 ? new Date(p[2],p[1]-1,p[0]).getTime() : 0;
+                      if(!str) return 0;
+                      const p = str.split('/'); return p.length===3 ? new Date(p[2],p[1]-1,p[0]).getTime() : 0;
                 };
                 valA = parseD(valA); valB = parseD(valB);
             }
@@ -777,7 +747,6 @@ function applyFilters() {
         });
     }
 
-    // --- MODAL DETAIL ---
     function showDetail(id) {
         const data = allData.find(d => d.id === id);
         if (!data) return;
@@ -796,6 +765,117 @@ function applyFilters() {
         }
         document.getElementById('modalTableBody').innerHTML = bodyHtml;
         new bootstrap.Modal(document.getElementById('detailModal')).show();
+    }
+
+    // --- EXPORT FUNCTIONS ---
+
+    function getExportMetadata() {
+        const conf = CONFIG[currentTab];
+        const companyName = "CV SUKSES JAYA MAKMUR LESTARI";
+        
+        let periodStr = "Semua Periode";
+        const dateFilter = activeFilters.find(f => f.type === 'date');
+        
+        if (dateFilter) {
+            const start = dateFilter.start ? formatDateID(dateFilter.start) : '...';
+            const end = dateFilter.end ? formatDateID(dateFilter.end) : '...';
+            periodStr = `Periode ${start} s.d ${end}`;
+        }
+
+        return {
+            title: conf.title.toUpperCase(),
+            company: companyName,
+            period: periodStr
+        };
+    }
+
+    function formatDateID(dateString) {
+        if (!dateString) return "";
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        return new Date(dateString).toLocaleDateString('id-ID', options);
+    }
+
+    function exportToExcel() {
+        if (displayedData.length === 0) { alert("Tidak ada data untuk diexport"); return; }
+        
+        const meta = getExportMetadata();
+        const conf = CONFIG[currentTab];
+        
+        const headerRows = [
+            [meta.title],           
+            [meta.company],         
+            [meta.period],          
+            ['']                    
+        ];
+
+        const tableHeaders = conf.columns
+            .filter(c => c.key !== null)
+            .map(c => c.label);
+
+        const tableBody = displayedData.map(row => {
+            return conf.columns
+                .filter(c => c.key !== null)
+                .map(c => {
+                    if (c.key === 'percent') return Math.round(row.percent) + '%';
+                    return row[c.key];
+                });
+        });
+
+        const finalData = [...headerRows, tableHeaders, ...tableBody];
+        const ws = XLSX.utils.aoa_to_sheet(finalData);
+        
+        if(!ws['!merges']) ws['!merges'] = [];
+        ws['!merges'].push({ s: {r:0, c:0}, e: {r:0, c:tableHeaders.length-1} }); 
+        ws['!merges'].push({ s: {r:1, c:0}, e: {r:1, c:tableHeaders.length-1} }); 
+        ws['!merges'].push({ s: {r:2, c:0}, e: {r:2, c:tableHeaders.length-1} }); 
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Report");
+        
+        XLSX.writeFile(wb, `${meta.title} - ${meta.period}.xlsx`);
+    }
+
+    function exportToPDF() {
+        if (displayedData.length === 0) { alert("Tidak ada data untuk diexport"); return; }
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4'); 
+        const meta = getExportMetadata();
+        const conf = CONFIG[currentTab];
+
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text(meta.title, 14, 15); 
+
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.text(meta.company, 14, 21); 
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(meta.period, 14, 26); 
+
+        const columns = conf.columns
+            .filter(c => c.key !== null)
+            .map(c => ({ header: c.label, dataKey: c.key }));
+
+        const body = displayedData.map(row => {
+            let cleanRow = {...row};
+            if(row.percent !== undefined) cleanRow.percent = Math.round(row.percent) + '%';
+            if(row.itemsCount !== undefined) cleanRow.itemsCount = row.itemsCount.toString();
+            return cleanRow;
+        });
+
+        doc.autoTable({
+            columns: columns,
+            body: body,
+            startY: 32,
+            theme: 'grid',
+            headStyles: { fillColor: [13, 110, 253] },
+            styles: { fontSize: 8, cellPadding: 2 },
+        });
+
+        doc.save(`${meta.title} - ${meta.period}.pdf`);
     }
 
     fetchData();
