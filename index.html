@@ -61,7 +61,7 @@
             transition: all 0.2s;
         }
         .filter-row:hover { border-color: #ced4da; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .filter-label { font-weight: 600; font-size: 0.8rem; color: #495057; min-width: 110px; }
+        .filter-label { font-weight: 600; font-size: 0.8rem; color: #495057; min-width: 120px; }
         .filter-input-container { flex-grow: 1; display: flex; gap: 10px; align-items: center; }
         .btn-remove-filter { color: #dc3545; cursor: pointer; padding: 4px; font-size: 1.1rem; opacity: 0.6; transition: 0.2s; }
         .btn-remove-filter:hover { opacity: 1; background-color: #ffe6e6; border-radius: 50%; }
@@ -140,7 +140,7 @@
             <div class="modal-body">
                 <div id="activeFiltersContainer" class="mb-3">
                     <p class="text-muted small fst-italic text-center py-4" id="emptyFilterMsg">
-                        No conditions applied. Click "Add Condition" to start filtering.
+                        No conditions applied. Click "Add Condition" to filter by specific columns.
                     </p>
                 </div>
 
@@ -191,8 +191,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // --- CONFIGURATION ---
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbygx-huClDPtnvgYaF9Tw0Z5iHuYd3S9m1036QSvBnftLQ9YPVcNuEQV57SUB5gK8az/exec'; 
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyy_EHVZQKLhqKTp_iPCsH79IPyae2-GXiZJn1Scucf63ULP-WVLSaIj8ZkFD9fEVbk/exec'; 
 
     let allData = [];
     let displayedData = [];
@@ -200,23 +199,31 @@
     let sortState = { key: 'id', direction: 'desc' };
     let activeFilters = []; 
 
-    // --- COLUMN & TABLE CONFIG ---
+    // --- CONFIGURATION DENGAN DEFINISI FILTER ---
+    // filterType: 'text' (input biasa), 'select' (dropdown unik), 'date' (rentang tanggal)
     const CONFIG = {
         'receiving': {
             columns: [
-                { label: 'Reference', key: 'id' }, { label: 'Vendor', key: 'vendor' },
-                { label: 'Date', key: 'date' }, { label: 'Items', key: 'itemsCount', isSortable: false },
-                { label: 'Total Qty', key: 'totalQty' }, { label: 'Action', key: null }
+                { label: 'Reference', key: 'id', filterType: 'text' }, 
+                { label: 'Vendor', key: 'vendor', filterType: 'select' },
+                { label: 'Date', key: 'date', filterType: 'date' }, 
+                { label: 'Items', key: 'itemsCount', filterType: null }, // Tidak difilter
+                { label: 'Total Qty', key: 'totalQty', filterType: 'text' }, 
+                { label: 'Action', key: null }
             ],
             title: 'Detail Penerimaan',
             modalCols: ['Tipe', 'Description', 'KPC', 'UoM', 'Ordered', 'Recv Before', 'This Rect']
         },
         'list_po': {
             columns: [
-                { label: 'Inv Number', key: 'id' }, { label: 'Vendor', key: 'vendor' },
-                { label: 'Inv Date', key: 'date' }, { label: 'Status', key: 'normalizedStatus' },
-                { label: 'Items', key: 'itemsCount' }, { label: 'Total Order', key: 'totalQty' },
-                { label: 'Arrived', key: 'totalArrived' }, { label: 'Progress', key: 'percent', isSortable: true },
+                { label: 'Inv Number', key: 'id', filterType: 'text' }, 
+                { label: 'Vendor', key: 'vendor', filterType: 'select' },
+                { label: 'Inv Date', key: 'date', filterType: 'date' }, 
+                { label: 'Status', key: 'normalizedStatus', filterType: 'select' },
+                { label: 'Items', key: 'itemsCount', filterType: null }, 
+                { label: 'Total Order', key: 'totalQty', filterType: 'text' },
+                { label: 'Arrived', key: 'totalArrived', filterType: 'text' }, 
+                { label: 'Progress', key: 'percent', isSortable: true, filterType: null },
                 { label: 'Action', key: null }
             ],
             title: 'Detail Invoice',
@@ -224,26 +231,22 @@
         },
         'detail': {
             columns: [
-                { label: 'Rec ID', key: 'id' }, { label: 'Date', key: 'date' },
-                { label: 'Supplier', key: 'vendor' }, { label: 'Inv Number', key: 'inv' },
-                { label: 'PO Number', key: 'po' }, { label: 'Item Name', key: 'item' },
-                { label: 'Ordered', key: 'qtyOrder' }, { label: 'Recv Bef', key: 'qtyBefore' },
-                { label: 'This Rect', key: 'qtyNow' }, { label: 'UoM', key: 'uom' },
-                { label: 'Container', key: 'container' }
+                { label: 'Rec ID', key: 'id', filterType: 'text' }, 
+                { label: 'Date', key: 'date', filterType: 'date' },
+                { label: 'Supplier', key: 'vendor', filterType: 'select' }, 
+                { label: 'Inv Number', key: 'inv', filterType: 'text' },
+                { label: 'PO Number', key: 'po', filterType: 'text' }, 
+                { label: 'KPC Number', key: 'kpc', filterType: 'text' }, // <--- KOLOM BARU
+                { label: 'Item Name', key: 'item', filterType: 'text' },
+                { label: 'Ordered', key: 'qtyOrder', filterType: 'text' }, 
+                { label: 'Recv Bef', key: 'qtyBefore', filterType: 'text' },
+                { label: 'This Rect', key: 'qtyNow', filterType: 'text' }, 
+                { label: 'UoM', key: 'uom', filterType: 'select' },
+                { label: 'Container', key: 'container', filterType: 'select' }
             ],
             title: 'Laporan Detail',
             modalCols: []
         }
-    };
-
-    // --- FILTER CONFIG (Mapping Tipe Input) ---
-    const FILTER_CONFIG = {
-        'date':      { label: 'Date',      type: 'date_range' },
-        'vendor':    { label: 'Vendor',    type: 'select',    sourceKey: 'vendor' },
-        'id':        { label: 'ID / Ref',  type: 'text' },
-        'item':      { label: 'Item Name', type: 'text' },
-        'container': { label: 'Container', type: 'select',    sourceKey: 'container' },
-        'normalizedStatus': { label: 'Status', type: 'select', sourceKey: 'normalizedStatus' }
     };
 
     // --- INIT ---
@@ -252,7 +255,6 @@
         element.classList.add('active');
         currentTab = tabName;
         
-        // Reset state
         resetDynamicFilters(false);
         sortState = { key: 'id', direction: 'desc' };
         
@@ -316,8 +318,8 @@
 
         if (currentTab === 'receiving') {
             const total = allData.length;
-            const todayStr = new Date().toLocaleDateString('en-GB'); // Just simple check
-            const todayCount = allData.filter(d => d.date.startsWith(todayStr.substring(0,2))).length; // Approximate
+            const todayStr = new Date().toLocaleDateString('en-GB'); 
+            const todayCount = allData.filter(d => d.date.startsWith(todayStr.substring(0,2))).length; 
 
             html = `
                <div class="col-md-3"><div class="summary-card border-purple"><span class="summary-label">Total Penerimaan</span><span class="summary-value text-purple">${total}</span></div></div>
@@ -338,18 +340,8 @@
             `;
         } 
         else if (currentTab === 'detail') {
-            // --- LOGIC SUMMARY BARU UNTUK DETAIL ---
-            
-            // 1. Total Penerimaan (Unique Receiving ID)
             const uniqueIDs = new Set(allData.map(d => d.id)).size;
-            
-            // 2. Total Container (Unique Container, exclude null/empty/-)
-            const uniqueContainers = new Set(
-                allData.map(d => d.container)
-                       .filter(c => c && c.trim() !== '' && c.trim() !== '-')
-            ).size;
-            
-            // 3. Total Produk (Sum of This Receipt Qty)
+            const uniqueContainers = new Set(allData.map(d => d.container).filter(c => c && c.trim() !== '' && c.trim() !== '-')).size;
             const totalProducts = allData.reduce((sum, d) => sum + (parseFloat(d.qtyNow) || 0), 0);
 
             html = `
@@ -401,58 +393,57 @@
         return new Date(parts[2], parts[1]-1, parts[0]).getTime();
     }
 
-    // --- DYNAMIC FILTER SYSTEM ---
+    // --- SMART DYNAMIC FILTER SYSTEM ---
     
-    // 1. Setup Dropdown (Dipanggil saat modal buka)
+    // 1. Setup Dropdown OTOMATIS berdasarkan CONFIG
     document.getElementById('filterModal').addEventListener('show.bs.modal', setupConditionDropdown);
 
     function setupConditionDropdown() {
         const dropdown = document.getElementById('conditionDropdown');
         dropdown.innerHTML = '';
         
-        let availableKeys = [];
-        if (currentTab === 'receiving') availableKeys = ['id', 'vendor', 'date'];
-        else if (currentTab === 'list_po') availableKeys = ['id', 'vendor', 'date', 'normalizedStatus'];
-        else if (currentTab === 'detail') availableKeys = ['id', 'vendor', 'date', 'item', 'container'];
+        // Ambil definisi kolom dari tab yang sedang aktif
+        const activeColumns = CONFIG[currentTab].columns;
 
-        availableKeys.forEach(key => {
-            const config = FILTER_CONFIG[key];
-            if (config) {
+        // Loop setiap kolom, jika ada filterType, tambahkan ke dropdown
+        activeColumns.forEach(col => {
+            if (col.filterType) {
                 const li = document.createElement('li');
-                li.innerHTML = `<a class="dropdown-item small" href="#" onclick="addFilterRow('${key}')">${config.label}</a>`;
+                // Simpan metadata (key dan type) untuk dipakai saat diklik
+                li.innerHTML = `<a class="dropdown-item small" href="#" onclick="addFilterRow('${col.key}', '${col.filterType}', '${col.label}')">${col.label}</a>`;
                 dropdown.appendChild(li);
             }
         });
     }
 
-    // 2. Add Row
-    function addFilterRow(key) {
-        const config = FILTER_CONFIG[key];
+    // 2. Add Row (Generic)
+    function addFilterRow(key, type, label) {
         document.getElementById('emptyFilterMsg').style.display = 'none';
 
         const filterId = Date.now(); 
-        activeFilters.push({ id: filterId, key: key, type: config.type, value: null, value2: null });
+        activeFilters.push({ id: filterId, key: key, type: type, value: null, value2: null });
 
         const container = document.getElementById('activeFiltersContainer');
         const row = document.createElement('div');
         row.className = 'filter-row';
         row.id = `filter-row-${filterId}`;
-        row.innerHTML = `<div class="filter-label">${config.label}</div>`;
+        row.innerHTML = `<div class="filter-label">${label}</div>`;
 
         const inputContainer = document.createElement('div');
         inputContainer.className = 'filter-input-container';
 
-        if (config.type === 'text') {
+        if (type === 'text') {
             inputContainer.innerHTML = `<input type="text" class="form-control form-control-sm" placeholder="Contains..." oninput="updateFilterVal(${filterId}, this.value)">`;
         } 
-        else if (config.type === 'date_range') {
+        else if (type === 'date') {
             inputContainer.innerHTML = `
                 <input type="date" class="form-control form-control-sm" onchange="updateFilterVal(${filterId}, this.value, 'start')">
                 <span class="text-muted small">to</span>
                 <input type="date" class="form-control form-control-sm" onchange="updateFilterVal(${filterId}, this.value, 'end')">`;
         }
-        else if (config.type === 'select') {
-            const uniqueValues = [...new Set(allData.map(item => item[config.sourceKey]))].sort();
+        else if (type === 'select') {
+            // Populate unik values dari data
+            const uniqueValues = [...new Set(allData.map(item => item[key]))].sort();
             let options = `<option value="">-- All --</option>`;
             uniqueValues.forEach(val => { if (val && val !== '-') options += `<option value="${val}">${val}</option>`; });
             inputContainer.innerHTML = `<select class="form-select form-select-sm" onchange="updateFilterVal(${filterId}, this.value)">${options}</select>`;
@@ -476,7 +467,7 @@
     function updateFilterVal(id, val, rangeType = null) {
         const filter = activeFilters.find(f => f.id === id);
         if(filter) {
-            if (filter.type === 'date_range') {
+            if (filter.type === 'date') {
                 if (rangeType === 'start') filter.value = val;
                 if (rangeType === 'end') filter.value2 = val;
             } else { filter.value = val; }
@@ -500,18 +491,20 @@
         else badge.classList.add('d-none');
 
         let filtered = allData.filter(row => {
-            // Global Search
-            let rowStr = "";
-             if (currentTab === 'detail') rowStr = (row.id + " " + row.vendor + " " + row.item + " " + (row.container||"") + " " + (row.inv||"")).toLowerCase();
-            else rowStr = (row.id + " " + row.vendor + " " + row.date).toLowerCase();
+            // Global Search (Cari di semua kolom visible)
+            let rowStr = Object.values(row).join(" ").toLowerCase();
             if (!rowStr.includes(searchInputVal)) return false;
 
             // Condition Check
             for (let filter of activeFilters) {
                 if (!filter.value && !filter.value2) continue; 
+                
+                // Ambil nilai dari baris data berdasarkan key filter
+                const cellValue = row[filter.key]; 
 
-                if (filter.type === 'date_range') {
-                    const parts = row.date.split('/');
+                if (filter.type === 'date') {
+                    if(!cellValue) continue;
+                    const parts = cellValue.split('/');
                     if(parts.length !== 3) continue;
                     const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
                     
@@ -522,11 +515,11 @@
                     }
                 }
                 else if (filter.type === 'text') {
-                     const cellVal = String(row[filter.key] || "").toLowerCase();
-                     if (!cellVal.includes(String(filter.value).toLowerCase())) return false;
+                     const cellStr = String(cellValue || "").toLowerCase();
+                     if (!cellStr.includes(String(filter.value).toLowerCase())) return false;
                 }
                 else if (filter.type === 'select') {
-                    if (row[filter.key] !== filter.value) return false;
+                    if (cellValue !== filter.value) return false;
                 }
             }
             return true;
@@ -536,7 +529,7 @@
         handleSort(sortState.key, false);
     }
 
-    // --- RENDER ---
+    // --- RENDER TABLE ---
     function renderTable(data) {
         const thead = document.getElementById('tableHead');
         const tbody = document.getElementById('tableBody');
@@ -576,7 +569,7 @@
 
                 inner = `<td class="fw-bold text-primary">${row.id}</td><td>${row.vendor}</td><td>${row.date}</td><td><span class="badge-status ${badgeClass}">${row.normalizedStatus}</span></td><td class="text-center">${row.itemsCount}</td><td class="fw-bold">${row.totalQty}</td><td class="fw-bold text-success">${row.totalArrived}</td><td><div class="d-flex align-items-center" style="width:120px"><div class="progress progress-thin flex-grow-1"><div class="progress-bar ${barColor}" style="width: ${pctDisp}%"></div></div><span class="ms-2 small fw-bold">${pctDisp}%</span></div></td><td class="text-end"><button class="btn btn-sm btn-light text-primary" onclick="showDetail('${row.id}')"><i class="bi bi-eye-fill"></i></button></td>`;
             } else if (currentTab === 'detail') {
-                inner = `<td class="text-primary fw-bold small text-nowrap">${row.id}</td><td class="small text-nowrap">${row.date}</td><td class="small text-nowrap">${row.vendor}</td><td class="small text-nowrap">${row.inv || '-'}</td><td class="small text-nowrap">${row.po || '-'}</td><td class="fw-bold small">${row.item}</td><td class="text-end small">${row.qtyOrder}</td><td class="text-end small text-muted">${row.qtyBefore}</td><td class="text-end fw-bold text-success bg-light">${row.qtyNow}</td><td class="small">${row.uom}</td><td class="small text-nowrap text-primary fw-bold">${row.container || '-'}</td>`;
+                inner = `<td class="text-primary fw-bold small text-nowrap">${row.id}</td><td class="small text-nowrap">${row.date}</td><td class="small text-nowrap">${row.vendor}</td><td class="small text-nowrap">${row.inv || '-'}</td><td class="small text-nowrap">${row.po || '-'}</td><td class="small text-nowrap font-monospace text-muted">${row.kpc || '-'}</td><td class="fw-bold small">${row.item}</td><td class="text-end small">${row.qtyOrder}</td><td class="text-end small text-muted">${row.qtyBefore}</td><td class="text-end fw-bold text-success bg-light">${row.qtyNow}</td><td class="small">${row.uom}</td><td class="small text-nowrap text-primary fw-bold">${row.container || '-'}</td>`;
             }
             tr.innerHTML = inner;
             tbody.appendChild(tr);
