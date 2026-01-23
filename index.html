@@ -24,6 +24,7 @@
         .border-purple { border-left-color: #6f42c1; } .text-purple { color: #6f42c1; }
         .border-green { border-left-color: #198754; } .text-green { color: #198754; }
         .border-orange { border-left-color: #fd7e14; } .text-orange { color: #fd7e14; }
+        .border-blue { border-left-color: #0d6efd; } .text-blue { color: #0d6efd; }
 
         /* Nav Tabs */
         .nav-tabs { border-bottom: 1px solid #eef0f3; }
@@ -35,13 +36,11 @@
         .table-custom thead th { 
             background-color: #ffffff; color: #888; font-weight: 700; font-size: 0.75rem; 
             text-transform: uppercase; padding: 15px 10px; border-bottom: 2px solid #f0f0f0; 
-            cursor: pointer; user-select: none; /* Make header clickable */
-            white-space: nowrap;
+            cursor: pointer; user-select: none; white-space: nowrap;
         }
         .table-custom thead th:hover { background-color: #f8f9fa; color: #0d6efd; }
         .table-custom tbody td { padding: 12px 10px; vertical-align: middle; border-bottom: 1px solid #f7f9fc; font-weight: 500; }
         
-        /* Sort Icons */
         .sort-icon { display: inline-block; margin-left: 5px; font-size: 0.7rem; opacity: 0.3; }
         .sort-active .sort-icon { opacity: 1; color: #0d6efd; }
 
@@ -51,14 +50,22 @@
         .badge-success { background-color: #e6f7ee; color: #198754; border: 1px solid #d1e7dd; }
         .badge-partial { background-color: #f3e8ff; color: #6f42c1; border: 1px solid #e0cffc; }
         
-        /* Header & Modal */
-        .header-icon-box { width: 45px; height: 45px; background: linear-gradient(135deg, #0d6efd, #0043a8); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-right: 15px; }
-        .info-label { color: #999; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-        .info-value { color: #333; font-weight: 600; font-size: 1.05rem; }
-        
         /* Loading */
         #loading { display: none; }
         .progress-thin { height: 6px; border-radius: 10px; }
+
+        /* --- XERO STYLE DYNAMIC FILTER --- */
+        .filter-row {
+            background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px;
+            padding: 8px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+            transition: all 0.2s;
+        }
+        .filter-row:hover { border-color: #ced4da; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .filter-label { font-weight: 600; font-size: 0.8rem; color: #495057; min-width: 110px; }
+        .filter-input-container { flex-grow: 1; display: flex; gap: 10px; align-items: center; }
+        .btn-remove-filter { color: #dc3545; cursor: pointer; padding: 4px; font-size: 1.1rem; opacity: 0.6; transition: 0.2s; }
+        .btn-remove-filter:hover { opacity: 1; background-color: #ffe6e6; border-radius: 50%; }
+        .dropdown-menu-filter { max-height: 250px; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -87,12 +94,12 @@
         <div class="d-flex justify-content-between align-items-center p-3 border-bottom gap-2">
             <div class="position-relative flex-grow-1" style="max-width: 400px;">
                 <i class="bi bi-search position-absolute text-muted" style="top: 10px; left: 12px;"></i>
-                <input type="text" id="searchInput" class="form-control ps-5 border-0 bg-light" placeholder="Search (ID, Vendor, Item)..." onkeyup="applyFilters()">
+                <input type="text" id="searchInput" class="form-control ps-5 border-0 bg-light" placeholder="Search anything..." onkeyup="applyDynamicFilters()">
             </div>
             
             <div class="d-flex gap-2">
                 <button class="btn btn-outline-primary btn-sm position-relative" data-bs-toggle="modal" data-bs-target="#filterModal">
-                    <i class="bi bi-funnel-fill me-1"></i> Filter Criteria
+                    <i class="bi bi-funnel-fill me-1"></i> Filter Conditions
                     <span id="activeFilterBadge" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle d-none">
                         <span class="visually-hidden">New alerts</span>
                     </span>
@@ -123,53 +130,32 @@
 </div>
 
 <div class="modal fade" id="filterModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header border-bottom-0 pb-0">
                 <h5 class="modal-title fs-6 fw-bold"><i class="bi bi-funnel me-2"></i>Filter Data</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+            
             <div class="modal-body">
-                <form id="filterForm">
-                    <div class="mb-3">
-                        <label class="form-label-sm d-block text-muted mb-2">Periode Tanggal</label>
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text">Start</span>
-                            <input type="date" id="filterStartDate" class="form-control">
-                            <span class="input-group-text">End</span>
-                            <input type="date" id="filterEndDate" class="form-control">
-                        </div>
-                    </div>
+                <div id="activeFiltersContainer" class="mb-3">
+                    <p class="text-muted small fst-italic text-center py-4" id="emptyFilterMsg">
+                        No conditions applied. Click "Add Condition" to start filtering.
+                    </p>
+                </div>
 
-                    <div class="mb-3">
-                        <label class="form-label-sm d-block text-muted mb-2">Vendor / Supplier</label>
-                        <select id="filterVendor" class="form-select form-select-sm">
-                            <option value="">-- Semua Vendor --</option>
-                        </select>
-                    </div>
-
-                    <div id="statusFilterGroup" class="mb-3 d-none">
-                        <label class="form-label-sm d-block text-muted mb-2">Status PO</label>
-                        <div class="d-flex flex-wrap gap-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="Sudah Diterima" id="checkSudah" checked>
-                                <label class="form-check-label small" for="checkSudah">Sudah</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="Sebagian Diterima" id="checkSebagian" checked>
-                                <label class="form-check-label small" for="checkSebagian">Sebagian</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="Belum Diterima" id="checkBelum" checked>
-                                <label class="form-check-label small" for="checkBelum">Belum</label>
-                            </div>
-                        </div>
-                    </div>
-                </form>
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-plus-circle me-1"></i> Add Condition
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-filter" id="conditionDropdown">
+                        </ul>
+                </div>
             </div>
+
             <div class="modal-footer bg-light p-2">
-                <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none me-auto" onclick="resetFilters()">Reset All</button>
-                <button type="button" class="btn btn-sm btn-primary px-4" onclick="applyFilters();" data-bs-dismiss="modal">Apply Filter</button>
+                <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none me-auto" onclick="resetDynamicFilters()">Clear All</button>
+                <button type="button" class="btn btn-sm btn-primary px-4" onclick="applyDynamicFilters()" data-bs-dismiss="modal">Apply Filter</button>
             </div>
         </div>
     </div>
@@ -183,7 +169,6 @@
                     <div class="header-icon-box" id="modalIconBox"><i class="bi bi-file-earmark-text"></i></div>
                     <div>
                         <h5 class="modal-title-custom mb-0" id="modalTitle">Detail Data</h5>
-                        <p class="modal-subtitle mb-0 text-muted small">Review detail item</p>
                     </div>
                     <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
                 </div>
@@ -206,38 +191,32 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // --- CONFIG ---
+    // --- CONFIGURATION ---
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbygx-huClDPtnvgYaF9Tw0Z5iHuYd3S9m1036QSvBnftLQ9YPVcNuEQV57SUB5gK8az/exec'; 
 
     let allData = [];
     let displayedData = [];
     let currentTab = 'receiving'; 
-    let sortState = { key: 'id', direction: 'desc' }; // Default Sort
+    let sortState = { key: 'id', direction: 'desc' };
+    let activeFilters = []; 
 
-    // STRUCTURE UPDATE: Menambahkan 'key' untuk sorting
+    // --- COLUMN & TABLE CONFIG ---
     const CONFIG = {
         'receiving': {
             columns: [
-                { label: 'Reference', key: 'id' },
-                { label: 'Vendor', key: 'vendor' },
-                { label: 'Date', key: 'date' },
-                { label: 'Items', key: 'itemsCount', isSortable: false }, // Computed
-                { label: 'Total Qty', key: 'totalQty' },
-                { label: 'Action', key: null }
+                { label: 'Reference', key: 'id' }, { label: 'Vendor', key: 'vendor' },
+                { label: 'Date', key: 'date' }, { label: 'Items', key: 'itemsCount', isSortable: false },
+                { label: 'Total Qty', key: 'totalQty' }, { label: 'Action', key: null }
             ],
             title: 'Detail Penerimaan',
             modalCols: ['Tipe', 'Description', 'KPC', 'UoM', 'Ordered', 'Recv Before', 'This Rect']
         },
         'list_po': {
             columns: [
-                { label: 'Inv Number', key: 'id' },
-                { label: 'Vendor', key: 'vendor' },
-                { label: 'Inv Date', key: 'date' },
-                { label: 'Status', key: 'normalizedStatus' },
-                { label: 'Items', key: 'itemsCount' },
-                { label: 'Total Order', key: 'totalQty' },
-                { label: 'Arrived', key: 'totalArrived' }, // Computed
-                { label: 'Progress', key: 'percent', isSortable: true }, // Computed
+                { label: 'Inv Number', key: 'id' }, { label: 'Vendor', key: 'vendor' },
+                { label: 'Inv Date', key: 'date' }, { label: 'Status', key: 'normalizedStatus' },
+                { label: 'Items', key: 'itemsCount' }, { label: 'Total Order', key: 'totalQty' },
+                { label: 'Arrived', key: 'totalArrived' }, { label: 'Progress', key: 'percent', isSortable: true },
                 { label: 'Action', key: null }
             ],
             title: 'Detail Invoice',
@@ -245,21 +224,26 @@
         },
         'detail': {
             columns: [
-                { label: 'Rec ID', key: 'id' },
-                { label: 'Date', key: 'date' },
-                { label: 'Supplier', key: 'vendor' },
-                { label: 'Inv Number', key: 'inv' },
-                { label: 'PO Number', key: 'po' },
-                { label: 'Item Name', key: 'item' },
-                { label: 'Ordered', key: 'qtyOrder' },
-                { label: 'Recv Bef', key: 'qtyBefore' },
-                { label: 'This Rect', key: 'qtyNow' },
-                { label: 'UoM', key: 'uom' },
+                { label: 'Rec ID', key: 'id' }, { label: 'Date', key: 'date' },
+                { label: 'Supplier', key: 'vendor' }, { label: 'Inv Number', key: 'inv' },
+                { label: 'PO Number', key: 'po' }, { label: 'Item Name', key: 'item' },
+                { label: 'Ordered', key: 'qtyOrder' }, { label: 'Recv Bef', key: 'qtyBefore' },
+                { label: 'This Rect', key: 'qtyNow' }, { label: 'UoM', key: 'uom' },
                 { label: 'Container', key: 'container' }
             ],
             title: 'Laporan Detail',
             modalCols: []
         }
+    };
+
+    // --- FILTER CONFIG (Mapping Tipe Input) ---
+    const FILTER_CONFIG = {
+        'date':      { label: 'Date',      type: 'date_range' },
+        'vendor':    { label: 'Vendor',    type: 'select',    sourceKey: 'vendor' },
+        'id':        { label: 'ID / Ref',  type: 'text' },
+        'item':      { label: 'Item Name', type: 'text' },
+        'container': { label: 'Container', type: 'select',    sourceKey: 'container' },
+        'normalizedStatus': { label: 'Status', type: 'select', sourceKey: 'normalizedStatus' }
     };
 
     // --- INIT ---
@@ -268,25 +252,10 @@
         element.classList.add('active');
         currentTab = tabName;
         
-        // Reset Filter UI & Sort saat ganti tab
-        resetFilters(false); 
+        // Reset state
+        resetDynamicFilters(false);
         sortState = { key: 'id', direction: 'desc' };
         
-        // Show/Hide filter components specific to tab
-        const statusFilter = document.getElementById('statusFilterGroup');
-        const summarySec = document.getElementById('summarySection');
-        
-        if (currentTab === 'list_po') {
-            statusFilter.classList.remove('d-none');
-            summarySec.classList.remove('d-none');
-        } else if (currentTab === 'detail') {
-            statusFilter.classList.add('d-none');
-            summarySec.classList.add('d-none');
-        } else {
-            statusFilter.classList.add('d-none');
-            summarySec.classList.remove('d-none');
-        }
-
         fetchData();
     }
 
@@ -297,6 +266,7 @@
         loading.style.display = 'block';
         table.classList.add('d-none');
         document.getElementById('tableBody').innerHTML = '';
+        document.getElementById('summarySection').innerHTML = '';
 
         try {
             const response = await fetch(`${WEB_APP_URL}?type=${currentTab}`);
@@ -304,18 +274,12 @@
             
             if (data.error) { alert("Error: " + data.error); return; }
 
-            // Pre-process Data (tambah computed fields agar bisa disort)
             data = data.map(normalizeData);
-            
             allData = data;
-            displayedData = [...allData]; // Copy array
-            
-            // Populate Vendor Filter Dropdown
-            populateVendorFilter();
+            displayedData = [...allData];
 
-            // Initial Sort & Render
-            handleSort(sortState.key, false); 
-            if(currentTab !== 'detail') updateSummary();
+            handleSort(sortState.key, false);
+            updateSummary();
             
             loading.style.display = 'none';
             table.classList.remove('d-none');
@@ -326,12 +290,8 @@
         }
     }
 
-    // Helper: Hitung data tambahan untuk sorting
     function normalizeData(row) {
-        // Hitung items count
         row.itemsCount = row.items ? row.items.length : 0;
-        
-        // Parse Angka untuk sorting yang benar
         row.totalQty = parseFloat(row.totalQty) || 0;
         row.qtyOrder = parseFloat(row.qtyOrder) || 0;
         row.qtyNow = parseFloat(row.qtyNow) || 0;
@@ -341,7 +301,6 @@
             if (s === "") s = "Belum Diterima";
             row.normalizedStatus = s;
 
-            // Hitung Arrived & Percent untuk List PO
             let arr = 0;
             if(row.items) arr = row.items.reduce((sum, item) => sum + (parseFloat(item.val2) || 0), 0);
             row.totalArrived = arr;
@@ -350,317 +309,298 @@
         return row;
     }
 
-    // --- SORTING LOGIC ---
-    function handleSort(key, toggle = true) {
-        if (!key) return; // Column not sortable
+    // --- SUMMARY LOGIC ---
+    function updateSummary() {
+        const container = document.getElementById('summarySection');
+        let html = '';
 
-        if (toggle) {
-            if (sortState.key === key) {
-                sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortState.key = key;
-                sortState.direction = 'asc';
-            }
+        if (currentTab === 'receiving') {
+            const total = allData.length;
+            const todayStr = new Date().toLocaleDateString('en-GB'); // Just simple check
+            const todayCount = allData.filter(d => d.date.startsWith(todayStr.substring(0,2))).length; // Approximate
+
+            html = `
+               <div class="col-md-3"><div class="summary-card border-purple"><span class="summary-label">Total Penerimaan</span><span class="summary-value text-purple">${total}</span></div></div>
+               <div class="col-md-3"><div class="summary-card border-green"><span class="summary-label">Hari Ini (Est)</span><span class="summary-value text-green">${todayCount}</span></div></div>
+            `;
+        } 
+        else if (currentTab === 'list_po') {
+            let s=0, p=0, b=0;
+            allData.forEach(d => {
+                if(d.normalizedStatus==='Sudah Diterima') s++;
+                else if(d.normalizedStatus==='Sebagian Diterima') p++;
+                else b++;
+            });
+            html = `
+               <div class="col-md-3"><div class="summary-card border-purple"><span class="summary-label">Sudah</span><span class="summary-value text-purple">${s}</span></div></div>
+               <div class="col-md-3"><div class="summary-card border-green"><span class="summary-label">Sebagian</span><span class="summary-value text-green">${p}</span></div></div>
+               <div class="col-md-3"><div class="summary-card border-orange"><span class="summary-label">Belum</span><span class="summary-value text-orange">${b}</span></div></div>
+            `;
+        } 
+        else if (currentTab === 'detail') {
+            // --- LOGIC SUMMARY BARU UNTUK DETAIL ---
+            
+            // 1. Total Penerimaan (Unique Receiving ID)
+            const uniqueIDs = new Set(allData.map(d => d.id)).size;
+            
+            // 2. Total Container (Unique Container, exclude null/empty/-)
+            const uniqueContainers = new Set(
+                allData.map(d => d.container)
+                       .filter(c => c && c.trim() !== '' && c.trim() !== '-')
+            ).size;
+            
+            // 3. Total Produk (Sum of This Receipt Qty)
+            const totalProducts = allData.reduce((sum, d) => sum + (parseFloat(d.qtyNow) || 0), 0);
+
+            html = `
+               <div class="col-md-3">
+                   <div class="summary-card border-purple">
+                       <span class="summary-label">Total Penerimaan</span>
+                       <span class="summary-value text-purple">${uniqueIDs}</span>
+                   </div>
+               </div>
+               <div class="col-md-3">
+                   <div class="summary-card border-blue">
+                       <span class="summary-label">Total Container</span>
+                       <span class="summary-value text-blue">${uniqueContainers}</span>
+                   </div>
+               </div>
+               <div class="col-md-3">
+                   <div class="summary-card border-green">
+                       <span class="summary-label">Total Produk (Qty)</span>
+                       <span class="summary-value text-green">${totalProducts.toLocaleString('id-ID')}</span>
+                   </div>
+               </div>
+            `;
         }
+        container.innerHTML = html;
+    }
 
+    // --- SORTING ---
+    function handleSort(key, toggle = true) {
+        if (!key) return;
+        if (toggle) {
+            if (sortState.key === key) sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+            else { sortState.key = key; sortState.direction = 'asc'; }
+        }
         displayedData.sort((a, b) => {
-            let valA = a[key] || '';
-            let valB = b[key] || '';
-
-            // Handle Date Sorting (dd/mm/yyyy)
-            if (key === 'date') {
-                valA = parseDate(valA);
-                valB = parseDate(valB);
-            }
-            // Handle String (Case Insensitive)
-            else if (typeof valA === 'string') {
-                valA = valA.toLowerCase();
-                valB = valB.toLowerCase();
-            }
-
+            let valA = a[key] || ''; let valB = b[key] || '';
+            if (key === 'date') { valA = parseDate(valA); valB = parseDate(valB); }
+            else if (typeof valA === 'string') { valA = valA.toLowerCase(); valB = valB.toLowerCase(); }
             if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
             if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
             return 0;
         });
-
         renderTable(displayedData);
     }
 
     function parseDate(dateStr) {
         if (!dateStr) return 0;
-        const parts = dateStr.split('/'); // Asumsi dd/mm/yyyy
+        const parts = dateStr.split('/');
         if (parts.length !== 3) return dateStr;
         return new Date(parts[2], parts[1]-1, parts[0]).getTime();
     }
 
-    // --- RENDER TABLE ---
+    // --- DYNAMIC FILTER SYSTEM ---
+    
+    // 1. Setup Dropdown (Dipanggil saat modal buka)
+    document.getElementById('filterModal').addEventListener('show.bs.modal', setupConditionDropdown);
+
+    function setupConditionDropdown() {
+        const dropdown = document.getElementById('conditionDropdown');
+        dropdown.innerHTML = '';
+        
+        let availableKeys = [];
+        if (currentTab === 'receiving') availableKeys = ['id', 'vendor', 'date'];
+        else if (currentTab === 'list_po') availableKeys = ['id', 'vendor', 'date', 'normalizedStatus'];
+        else if (currentTab === 'detail') availableKeys = ['id', 'vendor', 'date', 'item', 'container'];
+
+        availableKeys.forEach(key => {
+            const config = FILTER_CONFIG[key];
+            if (config) {
+                const li = document.createElement('li');
+                li.innerHTML = `<a class="dropdown-item small" href="#" onclick="addFilterRow('${key}')">${config.label}</a>`;
+                dropdown.appendChild(li);
+            }
+        });
+    }
+
+    // 2. Add Row
+    function addFilterRow(key) {
+        const config = FILTER_CONFIG[key];
+        document.getElementById('emptyFilterMsg').style.display = 'none';
+
+        const filterId = Date.now(); 
+        activeFilters.push({ id: filterId, key: key, type: config.type, value: null, value2: null });
+
+        const container = document.getElementById('activeFiltersContainer');
+        const row = document.createElement('div');
+        row.className = 'filter-row';
+        row.id = `filter-row-${filterId}`;
+        row.innerHTML = `<div class="filter-label">${config.label}</div>`;
+
+        const inputContainer = document.createElement('div');
+        inputContainer.className = 'filter-input-container';
+
+        if (config.type === 'text') {
+            inputContainer.innerHTML = `<input type="text" class="form-control form-control-sm" placeholder="Contains..." oninput="updateFilterVal(${filterId}, this.value)">`;
+        } 
+        else if (config.type === 'date_range') {
+            inputContainer.innerHTML = `
+                <input type="date" class="form-control form-control-sm" onchange="updateFilterVal(${filterId}, this.value, 'start')">
+                <span class="text-muted small">to</span>
+                <input type="date" class="form-control form-control-sm" onchange="updateFilterVal(${filterId}, this.value, 'end')">`;
+        }
+        else if (config.type === 'select') {
+            const uniqueValues = [...new Set(allData.map(item => item[config.sourceKey]))].sort();
+            let options = `<option value="">-- All --</option>`;
+            uniqueValues.forEach(val => { if (val && val !== '-') options += `<option value="${val}">${val}</option>`; });
+            inputContainer.innerHTML = `<select class="form-select form-select-sm" onchange="updateFilterVal(${filterId}, this.value)">${options}</select>`;
+        }
+
+        row.appendChild(inputContainer);
+        const removeBtn = document.createElement('i');
+        removeBtn.className = 'bi bi-x-circle btn-remove-filter';
+        removeBtn.onclick = () => removeFilterRow(filterId);
+        row.appendChild(removeBtn);
+        container.appendChild(row);
+    }
+
+    // 3. Helper Functions
+    function removeFilterRow(id) {
+        document.getElementById(`filter-row-${id}`).remove();
+        activeFilters = activeFilters.filter(f => f.id !== id);
+        if(activeFilters.length === 0) document.getElementById('emptyFilterMsg').style.display = 'block';
+    }
+
+    function updateFilterVal(id, val, rangeType = null) {
+        const filter = activeFilters.find(f => f.id === id);
+        if(filter) {
+            if (filter.type === 'date_range') {
+                if (rangeType === 'start') filter.value = val;
+                if (rangeType === 'end') filter.value2 = val;
+            } else { filter.value = val; }
+        }
+    }
+
+    function resetDynamicFilters(refresh = true) {
+        activeFilters = [];
+        document.getElementById('activeFiltersContainer').innerHTML = `<p class="text-muted small fst-italic text-center py-4" id="emptyFilterMsg">No conditions applied.</p>`;
+        document.getElementById('searchInput').value = '';
+        document.getElementById('activeFilterBadge').classList.add('d-none');
+        if(refresh) { displayedData = allData; renderTable(displayedData); }
+    }
+
+    // 4. Engine Apply
+    function applyDynamicFilters() {
+        const searchInputVal = document.getElementById('searchInput').value.toLowerCase();
+        
+        const badge = document.getElementById('activeFilterBadge');
+        if(activeFilters.length > 0 || searchInputVal) badge.classList.remove('d-none');
+        else badge.classList.add('d-none');
+
+        let filtered = allData.filter(row => {
+            // Global Search
+            let rowStr = "";
+             if (currentTab === 'detail') rowStr = (row.id + " " + row.vendor + " " + row.item + " " + (row.container||"") + " " + (row.inv||"")).toLowerCase();
+            else rowStr = (row.id + " " + row.vendor + " " + row.date).toLowerCase();
+            if (!rowStr.includes(searchInputVal)) return false;
+
+            // Condition Check
+            for (let filter of activeFilters) {
+                if (!filter.value && !filter.value2) continue; 
+
+                if (filter.type === 'date_range') {
+                    const parts = row.date.split('/');
+                    if(parts.length !== 3) continue;
+                    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
+                    
+                    if (filter.value && rowDate < new Date(filter.value)) return false;
+                    if (filter.value2) {
+                        const end = new Date(filter.value2); end.setHours(23,59,59);
+                        if (rowDate > end) return false;
+                    }
+                }
+                else if (filter.type === 'text') {
+                     const cellVal = String(row[filter.key] || "").toLowerCase();
+                     if (!cellVal.includes(String(filter.value).toLowerCase())) return false;
+                }
+                else if (filter.type === 'select') {
+                    if (row[filter.key] !== filter.value) return false;
+                }
+            }
+            return true;
+        });
+
+        displayedData = filtered;
+        handleSort(sortState.key, false);
+    }
+
+    // --- RENDER ---
     function renderTable(data) {
         const thead = document.getElementById('tableHead');
         const tbody = document.getElementById('tableBody');
         const conf = CONFIG[currentTab];
 
-        // 1. Render Header dengan Sorting Click
         let headerHtml = '<tr>';
         conf.columns.forEach(col => {
-            let sortIcon = '';
-            let clickAttr = '';
-            let sortClass = '';
-
+            let sortIcon = ''; let sortClass = ''; let clickAttr = '';
             if (col.key && col.isSortable !== false) {
                 clickAttr = `onclick="handleSort('${col.key}')"`;
-                // Cek status sort aktif
                 if (sortState.key === col.key) {
                     sortClass = 'sort-active';
-                    sortIcon = sortState.direction === 'asc' 
-                        ? '<i class="bi bi-sort-up sort-icon"></i>' 
-                        : '<i class="bi bi-sort-down sort-icon"></i>';
-                } else {
-                    sortIcon = '<i class="bi bi-arrow-down-up sort-icon"></i>';
-                }
+                    sortIcon = sortState.direction === 'asc' ? '<i class="bi bi-sort-up sort-icon"></i>' : '<i class="bi bi-sort-down sort-icon"></i>';
+                } else { sortIcon = '<i class="bi bi-arrow-down-up sort-icon"></i>'; }
             }
-
             headerHtml += `<th class="${sortClass}" ${clickAttr}>${col.label} ${sortIcon}</th>`;
         });
-        headerHtml += '</tr>';
-        thead.innerHTML = headerHtml;
+        thead.innerHTML = headerHtml + '</tr>';
 
-        // 2. Render Body
         tbody.innerHTML = '';
         document.getElementById('shownCount').innerText = data.length;
         document.getElementById('totalCount').innerText = allData.length;
 
-        if(data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${conf.columns.length}" class="text-center py-4 text-muted">Tidak ada data ditemukan</td></tr>`;
-            return;
-        }
+        if(data.length === 0) { tbody.innerHTML = `<tr><td colspan="${conf.columns.length}" class="text-center py-4 text-muted">Tidak ada data ditemukan</td></tr>`; return; }
 
         data.forEach(row => {
             let tr = document.createElement('tr');
             let inner = '';
-
-            // Render Cell Logic
             if (currentTab === 'receiving') {
-                inner = `
-                    <td class="fw-bold text-primary">${row.id}</td>
-                    <td>${row.vendor}</td>
-                    <td>${row.date}</td>
-                    <td class="text-center"><span class="badge bg-light text-dark border">${row.itemsCount}</span></td>
-                    <td class="fw-bold">${row.totalQty}</td>
-                    <td class="text-end"><button class="btn btn-sm btn-light text-primary" onclick="showDetail('${row.id}')"><i class="bi bi-eye-fill"></i></button></td>
-                `;
+                inner = `<td class="fw-bold text-primary">${row.id}</td><td>${row.vendor}</td><td>${row.date}</td><td class="text-center"><span class="badge bg-light text-dark border">${row.itemsCount}</span></td><td class="fw-bold">${row.totalQty}</td><td class="text-end"><button class="btn btn-sm btn-light text-primary" onclick="showDetail('${row.id}')"><i class="bi bi-eye-fill"></i></button></td>`;
             } else if (currentTab === 'list_po') {
                 let badgeClass = "badge-pending";
                 if (row.normalizedStatus === "Sudah Diterima") badgeClass = "badge-success";
                 if (row.normalizedStatus === "Sebagian Diterima") badgeClass = "badge-partial";
-                
-                let barColor = row.percent === 100 ? 'bg-success' : 'bg-primary';
                 let pctDisp = Math.round(row.percent);
+                let barColor = pctDisp === 100 ? 'bg-success' : 'bg-primary';
 
-                inner = `
-                    <td class="fw-bold text-primary">${row.id}</td>
-                    <td>${row.vendor}</td>
-                    <td>${row.date}</td>
-                    <td><span class="badge-status ${badgeClass}">${row.normalizedStatus}</span></td>
-                    <td class="text-center">${row.itemsCount}</td>
-                    <td class="fw-bold">${row.totalQty}</td>
-                    <td class="fw-bold text-success">${row.totalArrived}</td>
-                    <td>
-                        <div class="d-flex align-items-center" style="width:120px">
-                            <div class="progress progress-thin flex-grow-1">
-                                <div class="progress-bar ${barColor}" style="width: ${pctDisp}%"></div>
-                            </div>
-                            <span class="ms-2 small fw-bold">${pctDisp}%</span>
-                        </div>
-                    </td>
-                    <td class="text-end"><button class="btn btn-sm btn-light text-primary" onclick="showDetail('${row.id}')"><i class="bi bi-eye-fill"></i></button></td>
-                `;
+                inner = `<td class="fw-bold text-primary">${row.id}</td><td>${row.vendor}</td><td>${row.date}</td><td><span class="badge-status ${badgeClass}">${row.normalizedStatus}</span></td><td class="text-center">${row.itemsCount}</td><td class="fw-bold">${row.totalQty}</td><td class="fw-bold text-success">${row.totalArrived}</td><td><div class="d-flex align-items-center" style="width:120px"><div class="progress progress-thin flex-grow-1"><div class="progress-bar ${barColor}" style="width: ${pctDisp}%"></div></div><span class="ms-2 small fw-bold">${pctDisp}%</span></div></td><td class="text-end"><button class="btn btn-sm btn-light text-primary" onclick="showDetail('${row.id}')"><i class="bi bi-eye-fill"></i></button></td>`;
             } else if (currentTab === 'detail') {
-                inner = `
-                    <td class="text-primary fw-bold small text-nowrap">${row.id}</td>
-                    <td class="small text-nowrap">${row.date}</td>
-                    <td class="small text-nowrap">${row.vendor}</td>
-                    <td class="small text-nowrap">${row.inv || '-'}</td>
-                    <td class="small text-nowrap">${row.po || '-'}</td>
-                    <td class="fw-bold small">${row.item}</td>
-                    <td class="text-end small">${row.qtyOrder}</td>
-                    <td class="text-end small text-muted">${row.qtyBefore}</td>
-                    <td class="text-end fw-bold text-success bg-light">${row.qtyNow}</td>
-                    <td class="small">${row.uom}</td>
-                    <td class="small text-nowrap text-primary">${row.container || '-'}</td>
-                `;
+                inner = `<td class="text-primary fw-bold small text-nowrap">${row.id}</td><td class="small text-nowrap">${row.date}</td><td class="small text-nowrap">${row.vendor}</td><td class="small text-nowrap">${row.inv || '-'}</td><td class="small text-nowrap">${row.po || '-'}</td><td class="fw-bold small">${row.item}</td><td class="text-end small">${row.qtyOrder}</td><td class="text-end small text-muted">${row.qtyBefore}</td><td class="text-end fw-bold text-success bg-light">${row.qtyNow}</td><td class="small">${row.uom}</td><td class="small text-nowrap text-primary fw-bold">${row.container || '-'}</td>`;
             }
             tr.innerHTML = inner;
             tbody.appendChild(tr);
         });
     }
 
-    // --- FILTER LOGIC (POPUP & SEARCH) ---
-    function populateVendorFilter() {
-        const select = document.getElementById('filterVendor');
-        // Simpan seleksi saat ini jika ada
-        const currentVal = select.value;
-        select.innerHTML = '<option value="">-- Semua Vendor --</option>';
-
-        // Ambil unique vendors
-        const vendors = [...new Set(allData.map(item => item.vendor))].sort();
-        
-        vendors.forEach(v => {
-            if(v) {
-                const opt = document.createElement('option');
-                opt.value = v;
-                opt.innerText = v;
-                select.appendChild(opt);
-            }
-        });
-        select.value = currentVal;
-    }
-
-    function applyFilters() {
-        const searchVal = document.getElementById('searchInput').value.toLowerCase();
-        
-        // Ambil nilai dari Modal
-        const startDate = document.getElementById('filterStartDate').value;
-        const endDate = document.getElementById('filterEndDate').value;
-        const vendorFilter = document.getElementById('filterVendor').value;
-        
-        // Cek Badge Merah (Indikator Filter Aktif)
-        const hasFilter = startDate || endDate || vendorFilter;
-        const badge = document.getElementById('activeFilterBadge');
-        if(hasFilter) badge.classList.remove('d-none');
-        else badge.classList.add('d-none');
-
-        let filtered = allData.filter(row => {
-            // 1. Text Search
-            let str = "";
-            if (currentTab === 'detail') {
-                 str = (row.id + " " + row.vendor + " " + row.item + " " + (row.container||"") + " " + (row.inv||"")).toLowerCase();
-            } else {
-                 str = (row.id + " " + row.vendor + " " + row.date).toLowerCase();
-            }
-            if (!str.includes(searchVal)) return false;
-
-            // 2. Filter Vendor Dropdown
-            if (vendorFilter && row.vendor !== vendorFilter) return false;
-
-            // 3. Filter Date Range
-            if (startDate && endDate) {
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                end.setHours(23,59,59); 
-                
-                const parts = row.date.split('/'); // dd/mm/yyyy
-                if(parts.length === 3) {
-                    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
-                    if (rowDate < start || rowDate > end) return false;
-                }
-            }
-            
-            // 4. Filter Status (Hanya List PO)
-            if (currentTab === 'list_po') {
-                const checkSudah = document.getElementById('checkSudah').checked;
-                const checkSebagian = document.getElementById('checkSebagian').checked;
-                const checkBelum = document.getElementById('checkBelum').checked;
-                
-                let allowed = [];
-                if (checkSudah) allowed.push("Sudah Diterima");
-                if (checkSebagian) allowed.push("Sebagian Diterima");
-                if (checkBelum) allowed.push("Belum Diterima");
-                
-                if (!allowed.includes(row.normalizedStatus)) return false;
-            }
-
-            return true;
-        });
-
-        displayedData = filtered;
-        // Re-apply sort after filter
-        handleSort(sortState.key, false);
-    }
-
-    function resetFilters(refresh = true) {
-        document.getElementById('searchInput').value = '';
-        document.getElementById('filterStartDate').value = '';
-        document.getElementById('filterEndDate').value = '';
-        document.getElementById('filterVendor').value = '';
-        document.getElementById('checkSudah').checked = true;
-        document.getElementById('checkSebagian').checked = true;
-        document.getElementById('checkBelum').checked = true;
-        document.getElementById('activeFilterBadge').classList.add('d-none');
-        
-        if(refresh) applyFilters();
-    }
-
-    // --- SUMMARY LOGIC (Sama seperti sebelumnya) ---
-    function updateSummary() {
-        const container = document.getElementById('summarySection');
-        let html = '';
-        // ... (Logic Summary Card Existing Tetap Sama)
-        // Saya sederhanakan disini agar kode tidak terlalu panjang, 
-        // tapi jika anda copas, logika card di script lama anda bisa dimasukkan disini 
-        // atau pakai default logic di bawah:
-
-        if (currentTab === 'receiving') {
-             const total = allData.length;
-             const todayStr = new Date().toLocaleDateString('en-GB'); // dd/mm/yyyy roughly
-             // Note: locale string formatting varies, better use manual construct like previous code
-             const today = new Date();
-             const dStr = String(today.getDate()).padStart(2,'0') + '/' + String(today.getMonth()+1).padStart(2,'0') + '/' + today.getFullYear();
-             const todayCount = allData.filter(d => d.date === dStr).length;
-
-             html = `
-                <div class="col-md-3"><div class="summary-card border-purple"><span class="summary-label">Total Penerimaan</span><span class="summary-value text-purple">${total}</span></div></div>
-                <div class="col-md-3"><div class="summary-card border-green"><span class="summary-label">Hari Ini</span><span class="summary-value text-green">${todayCount}</span></div></div>
-             `;
-        } else if (currentTab === 'list_po') {
-             let s=0, p=0, b=0;
-             allData.forEach(d => {
-                 if(d.normalizedStatus==='Sudah Diterima') s++;
-                 else if(d.normalizedStatus==='Sebagian Diterima') p++;
-                 else b++;
-             });
-             html = `
-                <div class="col-md-3"><div class="summary-card border-purple"><span class="summary-label">Sudah</span><span class="summary-value text-purple">${s}</span></div></div>
-                <div class="col-md-3"><div class="summary-card border-green"><span class="summary-label">Sebagian</span><span class="summary-value text-green">${p}</span></div></div>
-                <div class="col-md-3"><div class="summary-card border-orange"><span class="summary-label">Belum</span><span class="summary-value text-orange">${b}</span></div></div>
-             `;
-        }
-        container.innerHTML = html;
-    }
-
-    // --- MODAL DETAIL (Sama seperti sebelumnya) ---
+    // --- MODAL DETAIL ---
     function showDetail(id) {
         const data = allData.find(d => d.id === id);
         if (!data) return;
-
-        const conf = CONFIG[currentTab];
-        document.getElementById('modalTitle').innerText = conf.title;
+        document.getElementById('modalTitle').innerText = CONFIG[currentTab].title;
+        document.getElementById('modalInfoSection').innerHTML = `<div class="row g-3"><div class="col-6"><span class="info-label">ID</span><div class="info-value text-primary">${data.id}</div></div><div class="col-6"><span class="info-label">Vendor</span><div class="fw-bold">${data.vendor}</div></div></div>`;
         
-        const info = document.getElementById('modalInfoSection');
-        let infoHtml = `<div class="row g-3"><div class="col-6"><span class="info-label">ID</span><div class="info-value text-primary">${data.id}</div></div><div class="col-6"><span class="info-label">Vendor</span><div class="fw-bold">${data.vendor}</div></div></div>`;
-        info.innerHTML = infoHtml;
-
-        const mHead = document.getElementById('modalTableHead');
-        let headHtml = '<tr>';
-        conf.modalCols.forEach(h => headHtml += `<th class="py-2 px-3 border-bottom">${h}</th>`);
-        headHtml += '</tr>';
-        mHead.innerHTML = headHtml;
-
-        const mBody = document.getElementById('modalTableBody');
-        mBody.innerHTML = '';
+        let headHtml = '<tr>'; CONFIG[currentTab].modalCols.forEach(h => headHtml += `<th class="py-2 px-3 border-bottom">${h}</th>`);
+        document.getElementById('modalTableHead').innerHTML = headHtml + '</tr>';
         
+        let bodyHtml = '';
         if(data.items) {
             data.items.forEach(item => {
-                let row = '<tr>';
-                // Simplified rendering for brevity logic based on tabs
-                if(currentTab==='receiving') {
-                    row += `<td class="px-3">${item.col1}</td><td class="px-3 fw-bold">${item.col2}</td><td class="px-3">${item.col3}</td><td class="px-3">${item.col4}</td><td class="px-3 text-end">${item.val1}</td><td class="px-3 text-end">${item.val2}</td><td class="px-3 text-end fw-bold text-success bg-light">${item.val3}</td>`;
-                } else {
-                    row += `<td class="px-3">${item.col1}</td><td class="px-3 fw-bold">${item.col2}</td><td class="px-3 text-end">${item.val1}</td><td class="px-3 text-end fw-bold text-success">${item.val2}</td><td class="px-3 text-end fw-bold text-danger">${item.val3}</td>`;
-                }
-                row += '</tr>';
-                mBody.innerHTML += row;
+                if(currentTab==='receiving') bodyHtml += `<tr><td class="px-3">${item.col1}</td><td class="px-3 fw-bold">${item.col2}</td><td class="px-3">${item.col3}</td><td class="px-3">${item.col4}</td><td class="px-3 text-end">${item.val1}</td><td class="px-3 text-end">${item.val2}</td><td class="px-3 text-end fw-bold text-success bg-light">${item.val3}</td></tr>`;
+                else bodyHtml += `<tr><td class="px-3">${item.col1}</td><td class="px-3 fw-bold">${item.col2}</td><td class="px-3 text-end">${item.val1}</td><td class="px-3 text-end fw-bold text-success">${item.val2}</td><td class="px-3 text-end fw-bold text-danger">${item.val3}</td></tr>`;
             });
         }
+        document.getElementById('modalTableBody').innerHTML = bodyHtml;
         new bootstrap.Modal(document.getElementById('detailModal')).show();
     }
 
