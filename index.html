@@ -1362,14 +1362,43 @@
     recalcParentTotal(idx);
   }
 
-  function validateForm() {
+function validateForm() {
+    // 1. Cek apakah terkunci
     if (isLocked) return "Locked.";
-    if (!receivingDate.value) return "Receiving Date required.";
-    if (!isEditMode && !currentINV) return "Invoice required.";
     
+    // 2. Cek Tanggal Receiving
+    if (!receivingDate.value) {
+        showAlert("Receiving Date required.", "error");
+        return "ERROR";
+    }
+
+    // 3. Cek Invoice (Kecuali sedang Mode Edit)
+    if (!isEditMode && !currentINV) {
+        showAlert("Invoice required.", "error");
+        return "ERROR";
+    }
+
+    // --- [BARU] CEK KETERANGAN TAMBAHAN WAJIB DIISI ---
+    const noteInput = document.getElementById("headerNote");
+    if (noteInput.value.trim() === "") {
+        // Ubah border jadi merah
+        noteInput.style.border = "2px solid #d92d20"; 
+        // Arahkan kursor otomatis ke kotak tersebut
+        noteInput.focus(); 
+        
+        showAlert("Keterangan Tambahan WAJIB diisi!", "error");
+        return "ERROR";
+    } else {
+        // Jika sudah diisi, kembalikan border ke warna kuning/default
+        noteInput.style.border = "1px solid #fde047"; 
+    }
+    // --------------------------------------------------
+    
+    // 4. Cek Apakah Ada Baris Item
     const rows = [...document.querySelectorAll("#tableBody tr")];
     if (rows.length === 0) return "No lines.";
     
+    // 5. Validasi Per Item (KPC & Qty)
     const grp = {};
     
     for (let r of rows) {
@@ -1381,18 +1410,20 @@
       const q = Number(qtyInput.value) || 0;
       const k = kpcInput.value.trim();
       
+      // Cek KPC Wajib diisi jika Qty > 0
       if (q > 0 && !kpcInput.readOnly && k === "") {
-        kpcInput.style.border = "2px solid red";
+        kpcInput.style.border = "2px solid #d92d20";
         kpcInput.focus();
         showAlert("Internal Control: KPC Wajib Diisi untuk baris yang diterima!", "error"); 
         return "ERROR"; 
       }
       
+      // Hitung total untuk validasi split
       if (!grp[idx]) grp[idx] = { rem: Number(r.querySelector(".remaining").value)||0, tot:0 };
-      
       if (r.classList.contains("subline-row") || !r.dataset.hasSplit) grp[idx].tot += q;
     }
     
+    // 6. Cek Total Qty tidak boleh melebihi Sisa
     for (let idx in grp) { 
         if (grp[idx].tot > grp[idx].rem) {
             showAlert(`Total Qty melebihi sisa (Remaining) untuk salah satu item.`, "error");
@@ -1560,6 +1591,12 @@
     // Jangan sembunyikan loading overlay dulu, biarkan loader "Auxilium" yang handle
     await Promise.all([ loadNextReceivingId(), loadInvListAndRender() ]);
     // Loader handled by window.load event listener above
+  });
+  // Event Listener: Hilangkan garis merah saat user mulai mengetik di kotak kuning
+  document.getElementById("headerNote").addEventListener("input", function() {
+      if(this.value.trim() !== "") {
+          this.style.border = "1px solid #fde047"; // Balik ke warna kuning
+      }
   });
 </script>
 </body>
