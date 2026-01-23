@@ -248,7 +248,8 @@
                 { label: 'Total Qty', key: 'totalQty', filterType: null }, 
                 { label: 'Action', key: null }
             ],
-            title: 'Detail Penerimaan',
+            // JUDUL DISESUAIKAN DENGAN NAMA TAB
+            title: 'LAPORAN PENERIMAAN',
             modalCols: ['Tipe', 'Description', 'KPC', 'UoM', 'Ordered', 'Recv Before', 'This Rect']
         },
         'list_po': {
@@ -263,7 +264,8 @@
                 { label: 'Progress', key: 'percent', isSortable: true, filterType: null },
                 { label: 'Action', key: null }
             ],
-            title: 'Detail Invoice',
+            // JUDUL DISESUAIKAN DENGAN NAMA TAB
+            title: 'LAPORAN LIST PO',
             modalCols: ['Tipe', 'Item Name', 'Qty Order', 'Qty Arrived', 'Qty Remaining']
         },
         'detail': {
@@ -281,7 +283,8 @@
                 { label: 'KPC Number', key: 'kpc', filterType: 'multi_select' }, 
                 { label: 'Container', key: 'container', filterType: 'multi_select' }
             ],
-            title: 'Laporan Detail Penerimaan PO',
+            // JUDUL DISESUAIKAN DENGAN NAMA TAB
+            title: 'LAPORAN DETAIL PENERIMAAN PO',
             modalCols: []
         }
     };
@@ -783,7 +786,7 @@
         }
 
         return {
-            title: conf.title.toUpperCase(),
+            title: conf.title, // NAMA LAPORAN SESUAI TAB
             company: companyName,
             period: periodStr
         };
@@ -871,7 +874,8 @@
             body: body,
             startY: 32,
             theme: 'grid',
-            headStyles: { fillColor: [13, 110, 253] },
+            // GANTI WARNA HEADER PDF DI SINI (Dongker)
+            headStyles: { fillColor: [11, 37, 89] }, 
             styles: { fontSize: 8, cellPadding: 2 },
         });
 
