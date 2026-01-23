@@ -11,7 +11,7 @@
     
     <style>
         /* --- THEME & UTILS --- */
-        body { background-color: #f8f9fc; font-family: 'Inter', sans-serif; color: #333; font-size: 0.88rem; }
+        body { background-color: #f8f9fc; font-family: 'Inter', sans-serif; color: #333; font-size: 0.85rem; }
         
         .card-custom { background: #fff; border: 1px solid #eef0f3; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
         
@@ -39,33 +39,54 @@
             cursor: pointer; user-select: none; white-space: nowrap;
         }
         .table-custom thead th:hover { background-color: #f8f9fa; color: #0d6efd; }
-        .table-custom tbody td { padding: 12px 10px; vertical-align: middle; border-bottom: 1px solid #f7f9fc; font-weight: 500; }
+        .table-custom tbody td { padding: 10px 10px; vertical-align: middle; border-bottom: 1px solid #f7f9fc; font-weight: 500; }
         
         .sort-icon { display: inline-block; margin-left: 5px; font-size: 0.7rem; opacity: 0.3; }
         .sort-active .sort-icon { opacity: 1; color: #0d6efd; }
 
         /* Badges */
-        .badge-status { padding: 6px 12px; border-radius: 30px; font-size: 0.7rem; font-weight: 600; }
+        .badge-status { padding: 5px 10px; border-radius: 30px; font-size: 0.7rem; font-weight: 600; }
         .badge-pending { background-color: #fff4e5; color: #fd7e14; border: 1px solid #ffe5d0; }
         .badge-success { background-color: #e6f7ee; color: #198754; border: 1px solid #d1e7dd; }
         .badge-partial { background-color: #f3e8ff; color: #6f42c1; border: 1px solid #e0cffc; }
         
-        /* Loading */
         #loading { display: none; }
         .progress-thin { height: 6px; border-radius: 10px; }
 
-        /* --- XERO STYLE DYNAMIC FILTER --- */
+        /* --- ADVANCED FILTER STYLES --- */
         .filter-row {
-            background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px;
-            padding: 8px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
-            transition: all 0.2s;
+            background-color: #fff; border: 1px solid #e9ecef; border-radius: 8px;
+            padding: 10px 15px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
-        .filter-row:hover { border-color: #ced4da; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .filter-label { font-weight: 600; font-size: 0.8rem; color: #495057; min-width: 120px; }
-        .filter-input-container { flex-grow: 1; display: flex; gap: 10px; align-items: center; }
-        .btn-remove-filter { color: #dc3545; cursor: pointer; padding: 4px; font-size: 1.1rem; opacity: 0.6; transition: 0.2s; }
-        .btn-remove-filter:hover { opacity: 1; background-color: #ffe6e6; border-radius: 50%; }
-        .dropdown-menu-filter { max-height: 250px; overflow-y: auto; }
+        .filter-label { font-weight: 600; font-size: 0.8rem; color: #495057; min-width: 100px; padding-top: 6px; }
+        .filter-input-container { flex-grow: 1; width: 100%; }
+        .btn-remove-filter { color: #dc3545; cursor: pointer; font-size: 1.2rem; opacity: 0.5; transition: 0.2s; margin-top: 2px; }
+        .btn-remove-filter:hover { opacity: 1; transform: scale(1.1); }
+
+        /* Custom Multi Select Dropdown */
+        .multi-select-dropdown {
+            position: relative;
+            width: 100%;
+        }
+        .multi-select-btn {
+            width: 100%; text-align: left; background: #fff; border: 1px solid #dee2e6;
+            padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; color: #333;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .multi-select-menu {
+            position: absolute; top: 100%; left: 0; width: 100%; z-index: 1000;
+            background: #fff; border: 1px solid #dee2e6; border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none; margin-top: 2px;
+        }
+        .multi-select-menu.show { display: block; }
+        .multi-select-search { padding: 8px; border-bottom: 1px solid #eee; background: #f8f9fa; }
+        .multi-select-options { max-height: 200px; overflow-y: auto; padding: 5px 0; }
+        .multi-select-option {
+            padding: 6px 12px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;
+        }
+        .multi-select-option:hover { background-color: #f1f4f9; }
+        .multi-select-option input[type="checkbox"] { cursor: pointer; width: 14px; height: 14px; }
     </style>
 </head>
 <body>
@@ -94,11 +115,11 @@
         <div class="d-flex justify-content-between align-items-center p-3 border-bottom gap-2">
             <div class="position-relative flex-grow-1" style="max-width: 400px;">
                 <i class="bi bi-search position-absolute text-muted" style="top: 10px; left: 12px;"></i>
-                <input type="text" id="searchInput" class="form-control ps-5 border-0 bg-light" placeholder="Search anything..." onkeyup="applyDynamicFilters()">
+                <input type="text" id="searchInput" class="form-control ps-5 border-0 bg-light" placeholder="Search anything (contains)..." onkeyup="applyFilters()">
             </div>
             
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary btn-sm position-relative" data-bs-toggle="modal" data-bs-target="#filterModal">
+                <button class="btn btn-primary btn-sm position-relative shadow-sm" data-bs-toggle="modal" data-bs-target="#filterModal">
                     <i class="bi bi-funnel-fill me-1"></i> Filter Conditions
                     <span id="activeFilterBadge" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle d-none">
                         <span class="visually-hidden">New alerts</span>
@@ -133,29 +154,30 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fs-6 fw-bold"><i class="bi bi-funnel me-2"></i>Filter Data</h5>
+                <h5 class="modal-title fs-6 fw-bold"><i class="bi bi-funnel me-2"></i> Filter Data (Cascading)</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             
-            <div class="modal-body">
-                <div id="activeFiltersContainer" class="mb-3">
-                    <p class="text-muted small fst-italic text-center py-4" id="emptyFilterMsg">
-                        No conditions applied. Click "Add Condition" to filter by specific columns.
-                    </p>
+            <div class="modal-body bg-light">
+                <div id="activeFiltersContainer">
+                    <div class="text-center py-5" id="emptyFilterMsg">
+                        <i class="bi bi-filter-circle text-muted fs-1 mb-2"></i>
+                        <p class="text-muted small">No active filters. Click "Add Condition" to filter data.</p>
+                    </div>
                 </div>
 
-                <div class="dropdown">
+                <div class="dropdown mt-3">
                     <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="bi bi-plus-circle me-1"></i> Add Condition
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-filter" id="conditionDropdown">
+                    <ul class="dropdown-menu shadow" id="conditionDropdown">
                         </ul>
                 </div>
             </div>
 
-            <div class="modal-footer bg-light p-2">
-                <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none me-auto" onclick="resetDynamicFilters()">Clear All</button>
-                <button type="button" class="btn btn-sm btn-primary px-4" onclick="applyDynamicFilters()" data-bs-dismiss="modal">Apply Filter</button>
+            <div class="modal-footer border-top-0">
+                <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none me-auto" onclick="resetDynamicFilters()">Reset All</button>
+                <button type="button" class="btn btn-sm btn-primary px-4" onclick="applyFilters()" data-bs-dismiss="modal">Apply Filter</button>
             </div>
         </div>
     </div>
@@ -191,24 +213,26 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyy_EHVZQKLhqKTp_iPCsH79IPyae2-GXiZJn1Scucf63ULP-WVLSaIj8ZkFD9fEVbk/exec'; 
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyEDVCUPc41LBUK8G-FBSQDfLVDiPOv0cHI3PfHNTe6BKQ0j36yMLzB-sp6I5ZSGBZQ/exec'; 
 
     let allData = [];
     let displayedData = [];
     let currentTab = 'receiving'; 
     let sortState = { key: 'id', direction: 'desc' };
+    
+    // Structure: { id: timestamp, key: columnKey, type: 'date'|'multi_select', values: [] }
     let activeFilters = []; 
 
-    // --- CONFIGURATION DENGAN DEFINISI FILTER ---
-    // filterType: 'text' (input biasa), 'select' (dropdown unik), 'date' (rentang tanggal)
+    // --- CONFIGURATION ---
+    // filterType: 'multi_select' (Checkbox Dropdown), 'date' (Range), null (No filter)
     const CONFIG = {
         'receiving': {
             columns: [
-                { label: 'Reference', key: 'id', filterType: 'text' }, 
-                { label: 'Vendor', key: 'vendor', filterType: 'select' },
+                { label: 'Reference', key: 'id', filterType: 'multi_select' }, 
+                { label: 'Vendor', key: 'vendor', filterType: 'multi_select' },
                 { label: 'Date', key: 'date', filterType: 'date' }, 
-                { label: 'Items', key: 'itemsCount', filterType: null }, // Tidak difilter
-                { label: 'Total Qty', key: 'totalQty', filterType: 'text' }, 
+                { label: 'Items', key: 'itemsCount', filterType: null }, 
+                { label: 'Total Qty', key: 'totalQty', filterType: null }, 
                 { label: 'Action', key: null }
             ],
             title: 'Detail Penerimaan',
@@ -216,13 +240,13 @@
         },
         'list_po': {
             columns: [
-                { label: 'Inv Number', key: 'id', filterType: 'text' }, 
-                { label: 'Vendor', key: 'vendor', filterType: 'select' },
+                { label: 'Inv Number', key: 'id', filterType: 'multi_select' }, 
+                { label: 'Vendor', key: 'vendor', filterType: 'multi_select' },
                 { label: 'Inv Date', key: 'date', filterType: 'date' }, 
-                { label: 'Status', key: 'normalizedStatus', filterType: 'select' },
+                { label: 'Status', key: 'normalizedStatus', filterType: 'multi_select' },
                 { label: 'Items', key: 'itemsCount', filterType: null }, 
-                { label: 'Total Order', key: 'totalQty', filterType: 'text' },
-                { label: 'Arrived', key: 'totalArrived', filterType: 'text' }, 
+                { label: 'Total Order', key: 'totalQty', filterType: null },
+                { label: 'Arrived', key: 'totalArrived', filterType: null }, 
                 { label: 'Progress', key: 'percent', isSortable: true, filterType: null },
                 { label: 'Action', key: null }
             ],
@@ -231,18 +255,19 @@
         },
         'detail': {
             columns: [
-                { label: 'Rec ID', key: 'id', filterType: 'text' }, 
+                { label: 'Rec ID', key: 'id', filterType: 'multi_select' }, 
                 { label: 'Date', key: 'date', filterType: 'date' },
-                { label: 'Supplier', key: 'vendor', filterType: 'select' }, 
-                { label: 'Inv Number', key: 'inv', filterType: 'text' },
-                { label: 'PO Number', key: 'po', filterType: 'text' }, 
-                { label: 'KPC Number', key: 'kpc', filterType: 'text' }, // <--- KOLOM BARU
-                { label: 'Item Name', key: 'item', filterType: 'text' },
-                { label: 'Ordered', key: 'qtyOrder', filterType: 'text' }, 
-                { label: 'Recv Bef', key: 'qtyBefore', filterType: 'text' },
-                { label: 'This Rect', key: 'qtyNow', filterType: 'text' }, 
-                { label: 'UoM', key: 'uom', filterType: 'select' },
-                { label: 'Container', key: 'container', filterType: 'select' }
+                { label: 'Supplier', key: 'vendor', filterType: 'multi_select' }, 
+                { label: 'Inv Number', key: 'inv', filterType: 'multi_select' },
+                { label: 'PO Number', key: 'po', filterType: 'multi_select' }, 
+                { label: 'Item Name', key: 'item', filterType: 'multi_select' },
+                { label: 'Ordered', key: 'qtyOrder', filterType: null }, 
+                { label: 'Recv Bef', key: 'qtyBefore', filterType: null },
+                { label: 'This Rect', key: 'qtyNow', filterType: null }, 
+                { label: 'UoM', key: 'uom', filterType: 'multi_select' },
+                // CHANGE: KPC Moved AFTER UOM
+                { label: 'KPC Number', key: 'kpc', filterType: 'multi_select' }, 
+                { label: 'Container', key: 'container', filterType: 'multi_select' }
             ],
             title: 'Laporan Detail',
             modalCols: []
@@ -254,10 +279,8 @@
         document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
         element.classList.add('active');
         currentTab = tabName;
-        
         resetDynamicFilters(false);
         sortState = { key: 'id', direction: 'desc' };
-        
         fetchData();
     }
 
@@ -295,7 +318,6 @@
     function normalizeData(row) {
         row.itemsCount = row.items ? row.items.length : 0;
         row.totalQty = parseFloat(row.totalQty) || 0;
-        row.qtyOrder = parseFloat(row.qtyOrder) || 0;
         row.qtyNow = parseFloat(row.qtyNow) || 0;
         
         if (currentTab === 'list_po') {
@@ -311,15 +333,290 @@
         return row;
     }
 
-    // --- SUMMARY LOGIC ---
+    // --- DYNAMIC FILTER SYSTEM (CASCADING & MULTI-SELECT) ---
+
+    document.getElementById('filterModal').addEventListener('show.bs.modal', setupConditionDropdown);
+
+    function setupConditionDropdown() {
+        const dropdown = document.getElementById('conditionDropdown');
+        dropdown.innerHTML = '';
+        const activeColumns = CONFIG[currentTab].columns;
+        activeColumns.forEach(col => {
+            if (col.filterType) {
+                const li = document.createElement('li');
+                li.innerHTML = `<a class="dropdown-item small" href="#" onclick="addFilterRow('${col.key}', '${col.filterType}', '${col.label}')">${col.label}</a>`;
+                dropdown.appendChild(li);
+            }
+        });
+    }
+
+    function addFilterRow(key, type, label) {
+        // Prevent duplicate filters for same key
+        if(activeFilters.find(f => f.key === key)) {
+            alert("Filter for " + label + " already active.");
+            return;
+        }
+
+        document.getElementById('emptyFilterMsg').style.display = 'none';
+        const filterId = Date.now(); 
+        
+        // Initial state
+        activeFilters.push({ id: filterId, key: key, type: type, values: [], start: null, end: null });
+
+        const container = document.getElementById('activeFiltersContainer');
+        const row = document.createElement('div');
+        row.className = 'filter-row';
+        row.id = `filter-row-${filterId}`;
+        
+        let inputHtml = '';
+
+        if (type === 'date') {
+            inputHtml = `
+                <div class="d-flex align-items-center gap-2">
+                    <input type="date" class="form-control form-control-sm" onchange="updateFilterVal(${filterId}, 'date', this.value, 'start')">
+                    <span class="text-muted small">to</span>
+                    <input type="date" class="form-control form-control-sm" onchange="updateFilterVal(${filterId}, 'date', this.value, 'end')">
+                </div>
+            `;
+        } 
+        else if (type === 'multi_select') {
+            // Placeholder for Multi Select, options will be loaded dynamically
+            inputHtml = `
+                <div class="multi-select-dropdown" id="ms-dropdown-${filterId}">
+                    <button class="multi-select-btn" onclick="toggleMultiSelect(${filterId})">
+                        <span id="ms-label-${filterId}">Select options...</span>
+                        <i class="bi bi-chevron-down small text-muted"></i>
+                    </button>
+                    <div class="multi-select-menu shadow-sm" id="ms-menu-${filterId}">
+                        <div class="multi-select-search">
+                            <input type="text" class="form-control form-control-sm" placeholder="Search..." onkeyup="filterMultiSelectOptions(${filterId}, this.value)">
+                        </div>
+                        <div class="multi-select-options" id="ms-options-${filterId}">
+                            </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        row.innerHTML = `
+            <div class="filter-label">${label}</div>
+            <div class="filter-input-container">${inputHtml}</div>
+            <i class="bi bi-x-circle btn-remove-filter" onclick="removeFilterRow(${filterId})"></i>
+        `;
+
+        container.appendChild(row);
+
+        if (type === 'multi_select') {
+            // Load options initially (Cascading happens here)
+            loadMultiSelectOptions(filterId, key);
+        }
+    }
+
+    function removeFilterRow(id) {
+        document.getElementById(`filter-row-${id}`).remove();
+        activeFilters = activeFilters.filter(f => f.id !== id);
+        if(activeFilters.length === 0) document.getElementById('emptyFilterMsg').style.display = 'block';
+    }
+
+    // --- CASCADING LOGIC CORE ---
+    function getCascadingOptions(targetKey) {
+        // Filter data based on ALL active filters EXCEPT the current one
+        // This ensures cascading (e.g., Date limits Vendor), but allows modifying the current filter
+        let filteredContext = allData.filter(row => {
+            for (let filter of activeFilters) {
+                if (filter.key === targetKey) continue; // Skip self
+
+                // Date Check
+                if (filter.type === 'date') {
+                    if(!row.date) continue; 
+                    const parts = row.date.split('/');
+                    if(parts.length !== 3) continue;
+                    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
+                    if (filter.start && rowDate < new Date(filter.start)) return false;
+                    if (filter.end) {
+                        const end = new Date(filter.end); end.setHours(23,59,59);
+                        if (rowDate > end) return false;
+                    }
+                }
+                // Multi Select Check
+                else if (filter.type === 'multi_select' && filter.values.length > 0) {
+                     if (!filter.values.includes(row[filter.key])) return false;
+                }
+            }
+            return true;
+        });
+
+        // Get unique values for the target column from the filtered context
+        const uniqueValues = [...new Set(filteredContext.map(item => item[targetKey]))].sort();
+        // Remove empty/null
+        return uniqueValues.filter(v => v && v !== '-' && v.trim() !== '');
+    }
+
+    function loadMultiSelectOptions(filterId, key) {
+        const optionsContainer = document.getElementById(`ms-options-${filterId}`);
+        const availableOptions = getCascadingOptions(key);
+        
+        let html = '';
+        if (availableOptions.length === 0) {
+            html = '<div class="p-2 text-muted small fst-italic">No options available based on other filters.</div>';
+        } else {
+            availableOptions.forEach(val => {
+                html += `
+                    <label class="multi-select-option">
+                        <input type="checkbox" value="${val}" onchange="updateFilterVal(${filterId}, 'multi_select', '${val}', null, this.checked)">
+                        <span>${val}</span>
+                    </label>
+                `;
+            });
+        }
+        optionsContainer.innerHTML = html;
+    }
+
+    function toggleMultiSelect(id) {
+        // Close others
+        document.querySelectorAll('.multi-select-menu').forEach(el => {
+            if(el.id !== `ms-menu-${id}`) el.classList.remove('show');
+        });
+
+        const menu = document.getElementById(`ms-menu-${id}`);
+        // Refresh options when opening to ensure cascading is up to date
+        const filter = activeFilters.find(f => f.id === id);
+        if(filter && !menu.classList.contains('show')) {
+            // Re-load options to reflect changes in other filters
+            // But we need to keep selected ones checked
+            const currentSelection = filter.values;
+            const optionsContainer = document.getElementById(`ms-options-${id}`);
+            const availableOptions = getCascadingOptions(filter.key);
+            
+            let html = '';
+            availableOptions.forEach(val => {
+                const isChecked = currentSelection.includes(val) ? 'checked' : '';
+                html += `
+                    <label class="multi-select-option">
+                        <input type="checkbox" value="${val}" ${isChecked} onchange="updateFilterVal(${id}, 'multi_select', '${val}', null, this.checked)">
+                        <span>${val}</span>
+                    </label>
+                `;
+            });
+            optionsContainer.innerHTML = html;
+        }
+        menu.classList.toggle('show');
+    }
+
+    // Close dropdowns when clicking outside
+    window.onclick = function(event) {
+        if (!event.target.closest('.multi-select-dropdown')) {
+            document.querySelectorAll('.multi-select-menu').forEach(el => el.classList.remove('show'));
+        }
+    }
+
+    function filterMultiSelectOptions(id, text) {
+        const container = document.getElementById(`ms-options-${id}`);
+        const labels = container.getElementsByTagName('label');
+        const filter = text.toLowerCase();
+        
+        for (let label of labels) {
+            const txt = label.textContent || label.innerText;
+            if (txt.toLowerCase().indexOf(filter) > -1) {
+                label.style.display = "";
+            } else {
+                label.style.display = "none";
+            }
+        }
+    }
+
+    function updateFilterVal(id, type, val, dateType, isChecked) {
+        const filter = activeFilters.find(f => f.id === id);
+        if(!filter) return;
+
+        if (type === 'date') {
+            if (dateType === 'start') filter.start = val;
+            if (dateType === 'end') filter.end = val;
+        } 
+        else if (type === 'multi_select') {
+            if (isChecked) {
+                if (!filter.values.includes(val)) filter.values.push(val);
+            } else {
+                filter.values = filter.values.filter(v => v !== val);
+            }
+            
+            // Update Label Button
+            const btnLabel = document.getElementById(`ms-label-${id}`);
+            if (filter.values.length === 0) btnLabel.innerText = "Select options...";
+            else if (filter.values.length === 1) btnLabel.innerText = filter.values[0];
+            else btnLabel.innerText = `${filter.values.length} selected`;
+        }
+    }
+
+    function resetDynamicFilters(refresh = true) {
+        activeFilters = [];
+        document.getElementById('activeFiltersContainer').innerHTML = `
+            <div class="text-center py-5" id="emptyFilterMsg">
+                <i class="bi bi-filter-circle text-muted fs-1 mb-2"></i>
+                <p class="text-muted small">No active filters. Click "Add Condition" to filter data.</p>
+            </div>`;
+        document.getElementById('searchInput').value = '';
+        document.getElementById('activeFilterBadge').classList.add('d-none');
+        if(refresh) { displayedData = allData; renderTable(displayedData); updateSummary(); }
+    }
+
+    function applyFilters() {
+        const searchInputVal = document.getElementById('searchInput').value.toLowerCase();
+        
+        const badge = document.getElementById('activeFilterBadge');
+        if(activeFilters.length > 0 || searchInputVal) badge.classList.remove('d-none');
+        else badge.classList.add('d-none');
+
+        let filtered = allData.filter(row => {
+            // Global Search
+            let rowStr = Object.values(row).join(" ").toLowerCase();
+            if (!rowStr.includes(searchInputVal)) return false;
+
+            // Apply Active Filters
+            for (let filter of activeFilters) {
+                // Date Logic
+                if (filter.type === 'date') {
+                    if(!row.date) continue;
+                    const parts = row.date.split('/');
+                    if(parts.length !== 3) continue;
+                    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
+                    
+                    if (filter.start && rowDate < new Date(filter.start)) return false;
+                    if (filter.end) {
+                        const end = new Date(filter.end); end.setHours(23,59,59);
+                        if (rowDate > end) return false;
+                    }
+                }
+                // Multi Select Logic
+                else if (filter.type === 'multi_select') {
+                     if (filter.values.length > 0) {
+                         // Must match ONE of the selected values (OR logic within the filter)
+                         if (!filter.values.includes(row[filter.key])) return false;
+                     }
+                }
+            }
+            return true;
+        });
+
+        displayedData = filtered;
+        handleSort(sortState.key, false);
+        updateSummary(); // Update summary based on filtered data
+    }
+
+    // --- SUMMARY & TABLE RENDER (UNCHANGED LOGIC) ---
     function updateSummary() {
         const container = document.getElementById('summarySection');
         let html = '';
 
+        // Gunakan displayedData (data yg sudah difilter) untuk summary yang dinamis?
+        // Biasanya summary card menampilkan total dataset atau filtered dataset. 
+        // Di sini saya gunakan displayedData agar angka berubah sesuai filter.
+        const dataSet = displayedData; 
+
         if (currentTab === 'receiving') {
-            const total = allData.length;
+            const total = dataSet.length;
             const todayStr = new Date().toLocaleDateString('en-GB'); 
-            const todayCount = allData.filter(d => d.date.startsWith(todayStr.substring(0,2))).length; 
+            const todayCount = dataSet.filter(d => d.date && d.date.startsWith(todayStr.substring(0,2))).length; 
 
             html = `
                <div class="col-md-3"><div class="summary-card border-purple"><span class="summary-label">Total Penerimaan</span><span class="summary-value text-purple">${total}</span></div></div>
@@ -328,7 +625,7 @@
         } 
         else if (currentTab === 'list_po') {
             let s=0, p=0, b=0;
-            allData.forEach(d => {
+            dataSet.forEach(d => {
                 if(d.normalizedStatus==='Sudah Diterima') s++;
                 else if(d.normalizedStatus==='Sebagian Diterima') p++;
                 else b++;
@@ -340,9 +637,9 @@
             `;
         } 
         else if (currentTab === 'detail') {
-            const uniqueIDs = new Set(allData.map(d => d.id)).size;
-            const uniqueContainers = new Set(allData.map(d => d.container).filter(c => c && c.trim() !== '' && c.trim() !== '-')).size;
-            const totalProducts = allData.reduce((sum, d) => sum + (parseFloat(d.qtyNow) || 0), 0);
+            const uniqueIDs = new Set(dataSet.map(d => d.id)).size;
+            const uniqueContainers = new Set(dataSet.map(d => d.container).filter(c => c && c.trim() !== '' && c.trim() !== '-')).size;
+            const totalProducts = dataSet.reduce((sum, d) => sum + (parseFloat(d.qtyNow) || 0), 0);
 
             html = `
                <div class="col-md-3">
@@ -368,7 +665,6 @@
         container.innerHTML = html;
     }
 
-    // --- SORTING ---
     function handleSort(key, toggle = true) {
         if (!key) return;
         if (toggle) {
@@ -377,8 +673,17 @@
         }
         displayedData.sort((a, b) => {
             let valA = a[key] || ''; let valB = b[key] || '';
-            if (key === 'date') { valA = parseDate(valA); valB = parseDate(valB); }
+            
+            // Check if parsing date
+            if (key === 'date') {
+                const parseD = (str) => {
+                     if(!str) return 0;
+                     const p = str.split('/'); return p.length===3 ? new Date(p[2],p[1]-1,p[0]).getTime() : 0;
+                };
+                valA = parseD(valA); valB = parseD(valB);
+            }
             else if (typeof valA === 'string') { valA = valA.toLowerCase(); valB = valB.toLowerCase(); }
+            
             if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
             if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
             return 0;
@@ -386,150 +691,6 @@
         renderTable(displayedData);
     }
 
-    function parseDate(dateStr) {
-        if (!dateStr) return 0;
-        const parts = dateStr.split('/');
-        if (parts.length !== 3) return dateStr;
-        return new Date(parts[2], parts[1]-1, parts[0]).getTime();
-    }
-
-    // --- SMART DYNAMIC FILTER SYSTEM ---
-    
-    // 1. Setup Dropdown OTOMATIS berdasarkan CONFIG
-    document.getElementById('filterModal').addEventListener('show.bs.modal', setupConditionDropdown);
-
-    function setupConditionDropdown() {
-        const dropdown = document.getElementById('conditionDropdown');
-        dropdown.innerHTML = '';
-        
-        // Ambil definisi kolom dari tab yang sedang aktif
-        const activeColumns = CONFIG[currentTab].columns;
-
-        // Loop setiap kolom, jika ada filterType, tambahkan ke dropdown
-        activeColumns.forEach(col => {
-            if (col.filterType) {
-                const li = document.createElement('li');
-                // Simpan metadata (key dan type) untuk dipakai saat diklik
-                li.innerHTML = `<a class="dropdown-item small" href="#" onclick="addFilterRow('${col.key}', '${col.filterType}', '${col.label}')">${col.label}</a>`;
-                dropdown.appendChild(li);
-            }
-        });
-    }
-
-    // 2. Add Row (Generic)
-    function addFilterRow(key, type, label) {
-        document.getElementById('emptyFilterMsg').style.display = 'none';
-
-        const filterId = Date.now(); 
-        activeFilters.push({ id: filterId, key: key, type: type, value: null, value2: null });
-
-        const container = document.getElementById('activeFiltersContainer');
-        const row = document.createElement('div');
-        row.className = 'filter-row';
-        row.id = `filter-row-${filterId}`;
-        row.innerHTML = `<div class="filter-label">${label}</div>`;
-
-        const inputContainer = document.createElement('div');
-        inputContainer.className = 'filter-input-container';
-
-        if (type === 'text') {
-            inputContainer.innerHTML = `<input type="text" class="form-control form-control-sm" placeholder="Contains..." oninput="updateFilterVal(${filterId}, this.value)">`;
-        } 
-        else if (type === 'date') {
-            inputContainer.innerHTML = `
-                <input type="date" class="form-control form-control-sm" onchange="updateFilterVal(${filterId}, this.value, 'start')">
-                <span class="text-muted small">to</span>
-                <input type="date" class="form-control form-control-sm" onchange="updateFilterVal(${filterId}, this.value, 'end')">`;
-        }
-        else if (type === 'select') {
-            // Populate unik values dari data
-            const uniqueValues = [...new Set(allData.map(item => item[key]))].sort();
-            let options = `<option value="">-- All --</option>`;
-            uniqueValues.forEach(val => { if (val && val !== '-') options += `<option value="${val}">${val}</option>`; });
-            inputContainer.innerHTML = `<select class="form-select form-select-sm" onchange="updateFilterVal(${filterId}, this.value)">${options}</select>`;
-        }
-
-        row.appendChild(inputContainer);
-        const removeBtn = document.createElement('i');
-        removeBtn.className = 'bi bi-x-circle btn-remove-filter';
-        removeBtn.onclick = () => removeFilterRow(filterId);
-        row.appendChild(removeBtn);
-        container.appendChild(row);
-    }
-
-    // 3. Helper Functions
-    function removeFilterRow(id) {
-        document.getElementById(`filter-row-${id}`).remove();
-        activeFilters = activeFilters.filter(f => f.id !== id);
-        if(activeFilters.length === 0) document.getElementById('emptyFilterMsg').style.display = 'block';
-    }
-
-    function updateFilterVal(id, val, rangeType = null) {
-        const filter = activeFilters.find(f => f.id === id);
-        if(filter) {
-            if (filter.type === 'date') {
-                if (rangeType === 'start') filter.value = val;
-                if (rangeType === 'end') filter.value2 = val;
-            } else { filter.value = val; }
-        }
-    }
-
-    function resetDynamicFilters(refresh = true) {
-        activeFilters = [];
-        document.getElementById('activeFiltersContainer').innerHTML = `<p class="text-muted small fst-italic text-center py-4" id="emptyFilterMsg">No conditions applied.</p>`;
-        document.getElementById('searchInput').value = '';
-        document.getElementById('activeFilterBadge').classList.add('d-none');
-        if(refresh) { displayedData = allData; renderTable(displayedData); }
-    }
-
-    // 4. Engine Apply
-    function applyDynamicFilters() {
-        const searchInputVal = document.getElementById('searchInput').value.toLowerCase();
-        
-        const badge = document.getElementById('activeFilterBadge');
-        if(activeFilters.length > 0 || searchInputVal) badge.classList.remove('d-none');
-        else badge.classList.add('d-none');
-
-        let filtered = allData.filter(row => {
-            // Global Search (Cari di semua kolom visible)
-            let rowStr = Object.values(row).join(" ").toLowerCase();
-            if (!rowStr.includes(searchInputVal)) return false;
-
-            // Condition Check
-            for (let filter of activeFilters) {
-                if (!filter.value && !filter.value2) continue; 
-                
-                // Ambil nilai dari baris data berdasarkan key filter
-                const cellValue = row[filter.key]; 
-
-                if (filter.type === 'date') {
-                    if(!cellValue) continue;
-                    const parts = cellValue.split('/');
-                    if(parts.length !== 3) continue;
-                    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
-                    
-                    if (filter.value && rowDate < new Date(filter.value)) return false;
-                    if (filter.value2) {
-                        const end = new Date(filter.value2); end.setHours(23,59,59);
-                        if (rowDate > end) return false;
-                    }
-                }
-                else if (filter.type === 'text') {
-                     const cellStr = String(cellValue || "").toLowerCase();
-                     if (!cellStr.includes(String(filter.value).toLowerCase())) return false;
-                }
-                else if (filter.type === 'select') {
-                    if (cellValue !== filter.value) return false;
-                }
-            }
-            return true;
-        });
-
-        displayedData = filtered;
-        handleSort(sortState.key, false);
-    }
-
-    // --- RENDER TABLE ---
     function renderTable(data) {
         const thead = document.getElementById('tableHead');
         const tbody = document.getElementById('tableBody');
@@ -569,7 +730,19 @@
 
                 inner = `<td class="fw-bold text-primary">${row.id}</td><td>${row.vendor}</td><td>${row.date}</td><td><span class="badge-status ${badgeClass}">${row.normalizedStatus}</span></td><td class="text-center">${row.itemsCount}</td><td class="fw-bold">${row.totalQty}</td><td class="fw-bold text-success">${row.totalArrived}</td><td><div class="d-flex align-items-center" style="width:120px"><div class="progress progress-thin flex-grow-1"><div class="progress-bar ${barColor}" style="width: ${pctDisp}%"></div></div><span class="ms-2 small fw-bold">${pctDisp}%</span></div></td><td class="text-end"><button class="btn btn-sm btn-light text-primary" onclick="showDetail('${row.id}')"><i class="bi bi-eye-fill"></i></button></td>`;
             } else if (currentTab === 'detail') {
-                inner = `<td class="text-primary fw-bold small text-nowrap">${row.id}</td><td class="small text-nowrap">${row.date}</td><td class="small text-nowrap">${row.vendor}</td><td class="small text-nowrap">${row.inv || '-'}</td><td class="small text-nowrap">${row.po || '-'}</td><td class="small text-nowrap font-monospace text-muted">${row.kpc || '-'}</td><td class="fw-bold small">${row.item}</td><td class="text-end small">${row.qtyOrder}</td><td class="text-end small text-muted">${row.qtyBefore}</td><td class="text-end fw-bold text-success bg-light">${row.qtyNow}</td><td class="small">${row.uom}</td><td class="small text-nowrap text-primary fw-bold">${row.container || '-'}</td>`;
+                inner = `
+                    <td class="text-primary fw-bold small text-nowrap">${row.id}</td>
+                    <td class="small text-nowrap">${row.date}</td>
+                    <td class="small text-nowrap">${row.vendor}</td>
+                    <td class="small text-nowrap">${row.inv || '-'}</td>
+                    <td class="small text-nowrap">${row.po || '-'}</td>
+                    <td class="fw-bold small text-nowrap">${row.item}</td>
+                    <td class="text-end small">${row.qtyOrder}</td>
+                    <td class="text-end small text-muted">${row.qtyBefore}</td>
+                    <td class="text-end fw-bold text-success bg-light">${row.qtyNow}</td>
+                    <td class="small">${row.uom}</td>
+                    <td class="small text-nowrap font-monospace text-muted">${row.kpc || '-'}</td>
+                    <td class="small text-nowrap text-primary fw-bold">${row.container || '-'}</td>`;
             }
             tr.innerHTML = inner;
             tbody.appendChild(tr);
