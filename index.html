@@ -426,18 +426,29 @@
             for (let filter of activeFilters) {
                 if (filter.key === targetKey) continue; // Skip self
 
-                // Date Check
-                if (filter.type === 'date') {
-                    if(!row.date) continue; 
-                    const parts = row.date.split('/');
-                    if(parts.length !== 3) continue;
-                    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
-                    if (filter.start && rowDate < new Date(filter.start)) return false;
-                    if (filter.end) {
-                        const end = new Date(filter.end); end.setHours(23,59,59);
-                        if (rowDate > end) return false;
-                    }
-                }
+// Date Check
+if (filter.type === 'date') {
+    if(!row.date) continue; 
+    const parts = row.date.split('/');
+    if(parts.length !== 3) continue;
+    
+    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
+    rowDate.setHours(0,0,0,0);
+
+    if (filter.start) {
+        const s = filter.start.split('-');
+        const startDate = new Date(s[0], s[1]-1, s[2]);
+        startDate.setHours(0,0,0,0);
+        if (rowDate < startDate) return false;
+    }
+    
+    if (filter.end) {
+        const e = filter.end.split('-');
+        const endDate = new Date(e[0], e[1]-1, e[2]);
+        endDate.setHours(23,59,59,999);
+        if (rowDate > endDate) return false;
+    }
+}
                 // Multi Select Check
                 else if (filter.type === 'multi_select' && filter.values.length > 0) {
                      if (!filter.values.includes(row[filter.key])) return false;
@@ -560,7 +571,7 @@
         if(refresh) { displayedData = allData; renderTable(displayedData); updateSummary(); }
     }
 
-    function applyFilters() {
+function applyFilters() {
         const searchInputVal = document.getElementById('searchInput').value.toLowerCase();
         
         const badge = document.getElementById('activeFilterBadge');
@@ -572,35 +583,52 @@
             let rowStr = Object.values(row).join(" ").toLowerCase();
             if (!rowStr.includes(searchInputVal)) return false;
 
-            // Apply Active Filters
-            for (let filter of activeFilters) {
+            // --- BAGIAN INI YANG HILANG SEBELUMNYA (LOOPING) ---
+            for (let filter of activeFilters) { 
+                
                 // Date Logic
                 if (filter.type === 'date') {
                     if(!row.date) continue;
                     const parts = row.date.split('/');
                     if(parts.length !== 3) continue;
-                    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
                     
-                    if (filter.start && rowDate < new Date(filter.start)) return false;
+                    // 1. Buat tanggal data (Set jam ke 00:00:00 agar murni tanggal)
+                    const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
+                    rowDate.setHours(0,0,0,0);
+                    
+                    // 2. Cek Start Date
+                    if (filter.start) {
+                        const s = filter.start.split('-'); 
+                        const startDate = new Date(s[0], s[1]-1, s[2]);
+                        startDate.setHours(0,0,0,0);
+                        
+                        if (rowDate < startDate) return false;
+                    }
+
+                    // 3. Cek End Date
                     if (filter.end) {
-                        const end = new Date(filter.end); end.setHours(23,59,59);
-                        if (rowDate > end) return false;
+                        const e = filter.end.split('-'); 
+                        const endDate = new Date(e[0], e[1]-1, e[2]);
+                        endDate.setHours(23,59,59,999); 
+                        
+                        if (rowDate > endDate) return false;
                     }
                 }
                 // Multi Select Logic
                 else if (filter.type === 'multi_select') {
                      if (filter.values.length > 0) {
-                         // Must match ONE of the selected values (OR logic within the filter)
+                         // Must match ONE of the selected values
                          if (!filter.values.includes(row[filter.key])) return false;
                      }
                 }
-            }
+            } // --- AKHIR LOOPING ---
+
             return true;
         });
 
         displayedData = filtered;
         handleSort(sortState.key, false);
-        updateSummary(); // Update summary based on filtered data
+        updateSummary(); 
     }
 
     // --- SUMMARY & TABLE RENDER (UNCHANGED LOGIC) ---
