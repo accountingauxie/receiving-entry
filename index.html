@@ -493,7 +493,7 @@
         }
 
         // ================= CONFIGURATION =================
-        const API_URL = "https://script.google.com/macros/s/AKfycbwyBi_Rp9bmtT9Xi5l9cc8hJ-XjU20XD-h80ktJ0BrtjAvXZ42YgwVBOG1ns0NJ60iH/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbydbui8iMge9V2tmPWNawjF1Hguu1mwyKCASUl24W3LFeSN_o7x48sasHNcVW7po90Q/exec"; 
         const TAX_RATE = 0.11;
 
         // ================= GLOBAL VARIABLES =================
@@ -801,7 +801,33 @@
                 fetchData();
             }
         }
+    // ================= REOPEN PO LOGIC (UNDO FORCE CLOSE) =================
+        async function reopenPO(idPO) {
+            if (!confirm("Apakah Anda yakin ingin membuka kembali PO ini?\n\nSistem akan menghitung ulang status berdasarkan sisa barang (Pending/Partial).")) return;
 
+            document.getElementById('loadingText').innerText = "Mengaktifkan kembali PO...";
+            document.getElementById('modalLoading').classList.remove('hidden');
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'reopen_po', idPO: idPO })
+                });
+                const json = await res.json();
+                if (json.status === 'success') {
+                    closeModal(); 
+                    await fetchData(); 
+                    showNotification(`PO Berhasil Dibuka Kembali.\nStatus sekarang: ${json.newStatus}`);
+                } else {
+                    showNotification("Gagal: " + json.message);
+                }
+            } catch (e) {
+                console.error(e);
+                showNotification("Terjadi kesalahan koneksi.");
+            } finally {
+                document.getElementById('modalLoading').classList.add('hidden');
+            }
+        }
         // ================= BILL MODAL FUNCTIONS =================
         async function openBillModal(idPO) {
             const poFromList = allData.find(d => d.id === idPO);
@@ -869,7 +895,7 @@
             document.getElementById('force-close-container').classList.add('hidden');
         }
 
-        function setupViewMode(bill, history) {
+         function setupViewMode(bill, history) {
             document.getElementById('bill-inv-number').value = bill.invNumber || '';
             if(bill.invDate) document.getElementById('bill-date').value = new Date(bill.invDate).toISOString().split('T')[0];
             if(bill.dueDate) document.getElementById('bill-due-date').value = new Date(bill.dueDate).toISOString().split('T')[0];
@@ -884,27 +910,38 @@
             }
 
             currentItems = bill.items.map(item => ({
-                ...item,
-                poQty: item.qty, 
-                qty: Number(item.qty),
-                maxQty: Number(item.qty),
-                price: Number(item.price),
-                disc: Number(item.disc),
-                typeProduk: item.typeProduk || "", 
-                checked: true,
-                alreadyBilled: history[item.namaItem] || 0,
-                isCustom: (item.spec || "").includes("Ad-hoc") 
+                ...item, poQty: item.qty, qty: Number(item.qty), maxQty: Number(item.qty),
+                price: Number(item.price), disc: Number(item.disc), typeProduk: item.typeProduk || "", 
+                checked: true, alreadyBilled: history[item.namaItem] || 0, isCustom: (item.spec || "").includes("Ad-hoc") 
             }));
             
             setFormState(false); 
             
-            if (bill.status === 'Billed' || bill.status === 'PO Diselesaikan' || bill.status.includes('Import')) {
-                document.getElementById('banner-container').innerHTML = `<div class="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm font-bold flex items-center gap-3 border border-red-200"><i class="fas fa-lock"></i> Bill Locked. Data is Read-Only.</div>`;
+            const bannerContainer = document.getElementById('banner-container');
+            // --- LOGIKA UNDO / REOPEN PO ---
+            if (bill.status === 'PO Diselesaikan') {
+                bannerContainer.innerHTML = `
+                <div class="mb-4 p-3 bg-teal-50 text-teal-800 rounded-lg text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-teal-200">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white p-1.5 rounded-full shadow-sm"><i class="fas fa-check text-teal-600"></i></div>
+                        <div>
+                            <span class="font-bold block">PO Diselesaikan (Manual)</span>
+                            <span class="text-xs opacity-80">Anda menandai ini selesai meskipun barang belum lengkap.</span>
+                        </div>
+                    </div>
+                    <button onclick="reopenPO('${bill.idPO}')" class="whitespace-nowrap text-xs bg-white border border-teal-200 text-teal-700 px-3 py-2 rounded-lg font-bold hover:bg-teal-600 hover:text-white hover:border-teal-600 transition shadow-sm flex items-center gap-2">
+                        <i class="fas fa-undo"></i> Buka Kembali PO
+                    </button>
+                </div>`;
+                document.getElementById('btn-save').classList.add('hidden');
+            } else if (bill.status === 'Billed' || bill.status.includes('Import')) {
+                bannerContainer.innerHTML = `<div class="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm font-bold flex items-center gap-3 border border-red-200"><i class="fas fa-lock"></i> Bill Locked. Data is Read-Only.</div>`;
                 document.getElementById('btn-save').classList.add('hidden');
             } else {
-                document.getElementById('banner-container').innerHTML = `<div class="mb-4 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold flex items-center gap-3 border border-blue-200"><i class="fas fa-info-circle"></i> Status: ${bill.status}</div>`;
+                bannerContainer.innerHTML = `<div class="mb-4 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold flex items-center gap-3 border border-blue-200"><i class="fas fa-info-circle"></i> Status: ${bill.status}</div>`;
             }
         }
+
 
         function setupCreateMode(po, history) {
             document.getElementById('btn-save').classList.remove('hidden');
