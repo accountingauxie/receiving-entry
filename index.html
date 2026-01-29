@@ -855,6 +855,8 @@
                 }
 
                 if (existingBillData && !isCreateMode) {
+                    // --- FIX: Sinkronkan status modal dengan status list utama ---
+                    existingBillData.status = poFromList.status; 
                     setupViewMode(existingBillData, history);
                 } else {
                     setupCreateMode(poFromList, history);
