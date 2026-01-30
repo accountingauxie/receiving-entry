@@ -3,128 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Stok Persediaan</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <title>Smart Stock Portal</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        body { background-color: #f0f2f5; min-height: 100vh; padding: 20px; }
-        .card-header-title { background-color: #3e8ed0; color: white; }
-        .positive-val { color: #2ecc71; font-weight: bold; } /* Hijau untuk Masuk */
-        .negative-val { color: #e74c3c; font-weight: bold; } /* Merah untuk Keluar */
-        .table-container { max-height: 60vh; overflow-y: auto; }
-        
-        /* Loading Spinner */
-        .loader-wrapper {
-            display: none;
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.8); z-index: 99;
-            justify-content: center; align-items: center;
-        }
-        .loader-wrapper.is-active { display: flex; }
+        /* Custom Scrollbar agar rapi */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
 
-    <div class="loader-wrapper" id="loader">
-        <div class="button is-loading is-large is-info is-outlined" style="border:none;">Sedang Mengambil Data...</div>
-    </div>
-
-    <div class="container">
-        <h1 class="title has-text-centered mb-6">📦 Portal Kartu Stok</h1>
-
-        <div class="box">
-            <div class="field">
-                <label class="label">Pilih Nama Barang (Item Name)</label>
-                <div class="control">
-                    <div class="select is-fullwidth is-medium">
-                        <select id="itemSelect" onchange="renderCard()">
-                            <option value="">-- Menunggu Data... --</option>
-                        </select>
-                    </div>
+    <nav class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-boxes-stacked text-blue-600 text-2xl mr-3"></i>
+                    <span class="font-bold text-xl tracking-tight text-slate-700">Stock Portal <span class="text-blue-600">Pro</span></span>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-xs font-medium bg-green-100 text-green-700 py-1 px-3 rounded-full animate-pulse" id="statusBadge">
+                        ● System Online
+                    </span>
                 </div>
             </div>
         </div>
+    </nav>
 
-        <div id="stockCard" class="card" style="display:none;">
-            <header class="card-header">
-                <p class="card-header-title" id="cardTitle">Nama Barang</p>
-            </header>
-            <div class="card-content">
-                <nav class="level is-mobile">
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="heading">Total Masuk</p>
-                            <p class="title is-4 has-text-success" id="sumIn">0</p>
-                        </div>
-                    </div>
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="heading">Total Keluar</p>
-                            <p class="title is-4 has-text-danger" id="sumOut">0</p>
-                        </div>
-                    </div>
-                    <div class="level-item has-text-centered">
-                        <div>
-                            <p class="heading">Sisa Stok</p>
-                            <p class="title is-4 has-text-info" id="sumBal">0</p>
-                        </div>
-                    </div>
-                </nav>
-                <hr>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div id="loadingOverlay" class="fixed inset-0 bg-white/80 z-[60] flex flex-col items-center justify-center transition-opacity duration-300">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+            <p class="text-slate-500 font-medium animate-pulse">Menghubungkan ke Google Sheet...</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                 
-                <div class="table-container">
-                    <table class="table is-fullwidth is-striped is-hoverable">
-                        <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Kontak</th>
-                                <th class="has-text-right">Masuk</th>
-                                <th class="has-text-right">Keluar</th>
-                                <th class="has-text-right">Saldo</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            </tbody>
-                    </table>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Cari Nama Barang</label>
+                    <select id="itemSelect" placeholder="Ketik untuk mencari..." autocomplete="off">
+                        <option value="">Memuat data...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Dari Tanggal (Opsional)</label>
+                    <input type="date" id="startDate" class="w-full rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2 text-sm">
+                </div>
+                
+                <div>
+                     <button onclick="resetFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
+
+        <div id="dashboardArea" class="hidden space-y-6">
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h2 id="displayItemName" class="text-2xl font-bold text-slate-800">Nama Barang</h2>
+                    <p class="text-slate-500 text-sm mt-1">Kode: <span id="displayItemCode">-</span></p>
+                </div>
+                <button onclick="downloadCSV()" class="mt-4 md:mt-0 bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-file-excel"></i> Download Excel/CSV
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl p-5 border-l-4 border-green-500 shadow-sm">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium uppercase">Total Masuk</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-1" id="kpiIn">0</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full text-green-600">
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-5 border-l-4 border-red-500 shadow-sm">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-slate-500 font-medium uppercase">Total Keluar</p>
+                            <p class="text-2xl font-bold text-slate-800 mt-1" id="kpiOut">0</p>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-full text-red-600">
+                            <i class="fa-solid fa-arrow-up"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-600 rounded-xl p-5 shadow-lg text-white relative overflow-hidden">
+                    <div class="relative z-10 flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-blue-100 font-medium uppercase">Stok Akhir</p>
+                            <p class="text-3xl font-bold mt-1" id="kpiBalance">0</p>
+                        </div>
+                        <div class="bg-white/20 p-3 rounded-full text-white">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <div class="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <h3 class="text-lg font-bold text-slate-700 mb-4">Tren Pergerakan Stok</h3>
+                    <div class="h-64 w-full">
+                        <canvas id="stockChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-slate-700">Rincian Transaksi</h3>
+                        <span class="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded">Terurut: Tanggal Lama → Baru</span>
+                    </div>
+                    
+                    <div class="overflow-x-auto max-h-[500px]">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-6 py-3">Tanggal</th>
+                                    <th class="px-6 py-3">Kontak / Keterangan</th>
+                                    <th class="px-6 py-3 text-right text-green-600">Masuk</th>
+                                    <th class="px-6 py-3 text-right text-red-600">Keluar</th>
+                                    <th class="px-6 py-3 text-right font-bold text-blue-700">Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-100">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="emptyState" class="text-center py-20">
+            <div class="inline-block p-6 rounded-full bg-slate-100 mb-4 text-slate-400">
+                <i class="fa-solid fa-magnifying-glass text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-slate-600">Silakan pilih Barang di atas</h3>
+            <p class="text-slate-400 text-sm">Data stok akan muncul secara otomatis.</p>
+        </div>
+
+    </main>
 
     <script>
-        // --- KONFIGURASI ---
-        // Link API yang kamu berikan sudah saya masukkan di sini:
-        const API_URL = "https://script.google.com/macros/s/AKfycby4xFw3kLd0H9wLqWyMfG71iTi9JsBae-k1FH26lhU4seBxtA1JqGsyd5P5ryVcS4AP/exec"; 
-
+        // --- KONFIGURASI API ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbz4hylz_E0u-ZlZrQeX7xXLRgL0RSJFPh6aBssww8qrHK-tJNCk-OXbQ4sIqiGkk6dL/exec";
+        
         let globalData = [];
         let groupedData = {};
+        let tomSelectInstance = null;
+        let chartInstance = null;
 
-        // 1. Fetch Data saat Web Dibuka
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', async () => {
-            const loader = document.getElementById('loader');
-            const select = document.getElementById('itemSelect');
-            
-            loader.classList.add('is-active');
-
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                
-                globalData = data;
-                processDataForDropdown(data);
-                
-                loader.classList.remove('is-active');
-            } catch (error) {
-                console.error("Gagal mengambil data:", error);
-                // Pesan error lebih jelas untuk user
-                alert("Gagal mengambil data. Pastikan izin Deploy AppScript adalah 'Anyone' (Siapa Saja).");
-                loader.classList.remove('is-active');
-                select.innerHTML = '<option>Error Memuat Data</option>';
-            }
+            await fetchData();
         });
 
-        // 2. Mengelompokkan Data untuk Dropdown
-        function processDataForDropdown(data) {
-            // Grouping by itemName
+        // 1. Fetch Data
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL);
+                const result = await response.json();
+                
+                // Cek Error dari Apps Script
+                if (result.error) {
+                    alert("System Error: " + result.error + "\n" + (result.message || ""));
+                    document.getElementById('loadingOverlay').innerHTML = `<p class="text-red-500 font-bold">Gagal Memuat Data</p>`;
+                    return;
+                }
+
+                globalData = result;
+                processData(globalData);
+
+                // Sembunyikan Loading
+                document.getElementById('loadingOverlay').classList.add('opacity-0');
+                setTimeout(() => {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                }, 300);
+
+            } catch (error) {
+                console.error(error);
+                alert("Gagal koneksi ke server. Cek internet atau URL API.");
+            }
+        }
+
+        // 2. Process & Group Data
+        function processData(data) {
+            // Group data by itemName
             groupedData = data.reduce((acc, curr) => {
                 const key = curr.itemName;
                 if (!acc[key]) acc[key] = [];
@@ -132,84 +215,203 @@
                 return acc;
             }, {});
 
-            // Isi Dropdown dan urutkan A-Z
-            const select = document.getElementById('itemSelect');
-            select.innerHTML = '<option value="">-- Pilih Barang --</option>';
+            initDropdown();
+        }
+
+        // 3. Setup Dropdown Canggih (Tom Select)
+        function initDropdown() {
+            const selectEl = document.getElementById('itemSelect');
+            selectEl.innerHTML = '<option value="">Cari Barang...</option>';
             
+            // Sort A-Z
             Object.keys(groupedData).sort().forEach(key => {
                 const option = document.createElement('option');
                 option.value = key;
                 option.text = key;
-                select.appendChild(option);
+                selectEl.appendChild(option);
+            });
+
+            // Aktifkan Plugin TomSelect
+            tomSelectInstance = new TomSelect("#itemSelect", {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                placeholder: "Ketik nama barang...",
+                onChange: function(value) {
+                    renderDashboard(value);
+                }
             });
         }
 
-        // 3. Render Kartu Stok saat Dropdown Dipilih
-        function renderCard() {
-            const selectedItem = document.getElementById('itemSelect').value;
-            const cardArea = document.getElementById('stockCard');
-            
-            if (!selectedItem) {
-                cardArea.style.display = 'none';
+        // 4. Render Dashboard (Tabel, Chart, KPI)
+        function renderDashboard(itemName) {
+            if (!itemName) {
+                document.getElementById('dashboardArea').classList.add('hidden');
+                document.getElementById('emptyState').classList.remove('hidden');
                 return;
             }
 
-            // Ambil transaksi barang tersebut
-            let transactions = groupedData[selectedItem];
+            // UI Toggle
+            document.getElementById('dashboardArea').classList.remove('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('displayItemName').innerText = itemName;
 
-            // Sort berdasarkan Tanggal (Terlama ke Terbaru)
+            // Filter Data & Sort Date
+            let transactions = groupedData[itemName];
+            
+            // Filter Tanggal (Jika user input)
+            const startDateVal = document.getElementById('startDate').value;
+            if (startDateVal) {
+                const start = new Date(startDateVal);
+                transactions = transactions.filter(t => new Date(t.date) >= start);
+            }
+
+            // Sort Chronological
             transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-
+            // Variable Hitungan
             let runningBalance = 0;
             let totalIn = 0;
             let totalOut = 0;
+            
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            // Data untuk Chart
+            const chartLabels = [];
+            const chartData = [];
 
             transactions.forEach(row => {
-                // Parsing Data
                 const qty = parseFloat(row.qty) || 0;
-                const dateRaw = new Date(row.date);
-                const dateStr = dateRaw.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
-                
-                // --- LOGIKA STOK (Masuk/Keluar) ---
+                const dateObj = new Date(row.date);
+                const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' });
+
+                // Logic Masuk/Keluar
                 let inVal = 0;
                 let outVal = 0;
 
-                // Logika: Jika Status "Positive" DAN qty positif = MASUK
-                // Jika tidak (Status Negative atau qty minus) = KELUAR
                 if (row.status === 'Positive' && qty >= 0) {
                     inVal = qty;
+                    totalIn += inVal;
+                    runningBalance += inVal;
                 } else {
-                    outVal = Math.abs(qty); 
+                    outVal = Math.abs(qty);
+                    totalOut += outVal;
+                    runningBalance -= outVal;
                 }
 
-                // Update Saldo
-                runningBalance = runningBalance + inVal - outVal;
-                totalIn += inVal;
-                totalOut += outVal;
+                // Push ke Chart
+                chartLabels.push(dateStr);
+                chartData.push(runningBalance);
 
-                // Render Baris Tabel
+                // Render Tabel
                 const tr = document.createElement('tr');
+                tr.className = "bg-white border-b hover:bg-slate-50 transition";
                 tr.innerHTML = `
-                    <td>${dateStr}</td>
-                    <td><small>${row.contact}</small></td>
-                    <td class="has-text-right positive-val">${inVal > 0 ? inVal.toLocaleString('id-ID') : '-'}</td>
-                    <td class="has-text-right negative-val">${outVal > 0 ? outVal.toLocaleString('id-ID') : '-'}</td>
-                    <td class="has-text-right"><strong>${runningBalance.toLocaleString('id-ID')}</strong></td>
+                    <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${dateStr}</td>
+                    <td class="px-6 py-4 truncate max-w-xs" title="${row.contact}">${row.contact}</td>
+                    <td class="px-6 py-4 text-right text-green-600 font-semibold">${inVal > 0 ? inVal.toLocaleString('id-ID') : '-'}</td>
+                    <td class="px-6 py-4 text-right text-red-600 font-semibold">${outVal > 0 ? outVal.toLocaleString('id-ID') : '-'}</td>
+                    <td class="px-6 py-4 text-right font-bold text-blue-700 bg-blue-50/50">${runningBalance.toLocaleString('id-ID')}</td>
                 `;
-                tbody.appendChild(tr);
+                tableBody.appendChild(tr);
             });
 
-            // Update Header & Summary
-            document.getElementById('cardTitle').innerText = selectedItem;
-            document.getElementById('sumIn').innerText = totalIn.toLocaleString('id-ID');
-            document.getElementById('sumOut').innerText = totalOut.toLocaleString('id-ID');
-            document.getElementById('sumBal').innerText = runningBalance.toLocaleString('id-ID');
+            // Update KPI
+            animateValue("kpiIn", totalIn);
+            animateValue("kpiOut", totalOut);
+            animateValue("kpiBalance", runningBalance);
 
-            cardArea.style.display = 'block';
+            // Update Chart
+            updateChart(chartLabels, chartData, itemName);
         }
+
+        // 5. Update Grafik Chart.js
+        function updateChart(labels, data, labelName) {
+            const ctx = document.getElementById('stockChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Saldo Stok: ' + labelName,
+                        data: data,
+                        borderColor: '#2563eb', // Blue 600
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3, // Curve smoothing
+                        fill: true,
+                        pointRadius: 2,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // 6. Fungsi Download CSV
+        function downloadCSV() {
+            const itemName = document.getElementById('displayItemName').innerText;
+            const rows = document.querySelectorAll("table tr");
+            let csv = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                let row = [], cols = rows[i].querySelectorAll("td, th");
+                for (let j = 0; j < cols.length; j++) 
+                    row.push('"' + cols[j].innerText.replace(/"/g, '""') + '"'); // Escape quotes
+                csv.push(row.join(","));
+            }
+
+            const csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
+            const downloadLink = document.createElement("a");
+            downloadLink.download = `Stok_${itemName}.csv`;
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+        }
+
+        // Helper: Animasi Angka
+        function animateValue(id, end) {
+            const obj = document.getElementById(id);
+            obj.innerText = end.toLocaleString('id-ID');
+            // Bisa ditambahkan efek counting jika mau
+        }
+
+        // Helper: Reset Filter
+        function resetFilters() {
+            document.getElementById('startDate').value = '';
+            if(tomSelectInstance) {
+                const currentVal = tomSelectInstance.getValue();
+                if(currentVal) renderDashboard(currentVal);
+            }
+        }
+
+        // Event Listener: Filter Tanggal berubah
+        document.getElementById('startDate').addEventListener('change', () => {
+            if(tomSelectInstance) {
+                const currentVal = tomSelectInstance.getValue();
+                if(currentVal) renderDashboard(currentVal);
+            }
+        });
+
     </script>
 </body>
 </html>
