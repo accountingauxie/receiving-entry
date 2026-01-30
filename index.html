@@ -4,21 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Stock & COGS Portal</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <style>
-        /* Custom Scrollbar yang rapi */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Utility untuk menyembunyikan elemen */
         .hidden { display: none !important; }
     </style>
 </head>
@@ -29,58 +22,41 @@
             <i class="fa-solid fa-cube text-blue-600 text-xl mr-3"></i>
             <span class="font-bold text-lg text-slate-800">Smart Portal</span>
         </div>
-        
         <nav class="p-4 space-y-2 flex-1">
-            <button onclick="switchModule('stock')" id="btnNavStock" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm">
+            <button onclick="switchModule('stock')" id="btnNavStock" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition bg-blue-50 text-blue-700 font-medium border border-blue-100">
                 <i class="fa-solid fa-boxes-stacked w-5"></i> Kartu Stock
             </button>
-            <button onclick="switchModule('cogs')" id="btnNavCogs" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+            <button onclick="switchModule('cogs')" id="btnNavCogs" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition text-slate-600 hover:bg-slate-50 border border-transparent">
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
             </button>
         </nav>
-
-        <div class="p-4 border-t border-slate-100">
-            <div class="text-xs text-slate-400 text-center">System v2.1 Beta</div>
-        </div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v1.0</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
-        
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm z-10 flex-shrink-0">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm flex-shrink-0">
             <h1 id="pageTitle" class="text-xl font-bold text-slate-700">Kartu Stock</h1>
             <span class="text-xs font-medium bg-green-100 text-green-700 py-1 px-3 rounded-full flex items-center gap-2 border border-green-200">
-                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Connected
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> API Connected
             </span>
         </header>
 
         <div class="flex-1 overflow-auto p-4 md:p-8 relative">
-            
             <div id="loadingOverlay" class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
                 <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
-                <p class="text-slate-500 font-medium animate-pulse">Sinkronisasi Data...</p>
+                <p class="text-slate-500 font-medium animate-pulse">Mengambil data dari Server...</p>
             </div>
 
             <div id="moduleStock" class="fade-in">
-                
                 <div id="stockListView">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                            <div>
-                                <h2 class="text-lg font-bold text-slate-700">Pencarian Barang</h2>
-                                <p class="text-slate-400 text-xs">Total Item: <span id="totalStockItems">0</span></p>
-                            </div>
-                            <div class="relative w-full md:w-96">
-                                <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-400"></i>
-                                <input type="text" id="searchStock" placeholder="Ketik nama atau kode barang..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-                            </div>
-                        </div>
+                        <input type="text" id="searchStock" placeholder="Cari barang..." class="w-full p-3 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
-
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm text-left text-slate-600">
-                            <thead class="bg-slate-50 border-b border-slate-200 uppercase text-xs font-bold text-slate-700">
+                            <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
                                 <tr>
-                                    <th class="px-6 py-4">Kode Barang</th>
+                                    <th class="px-6 py-4">Kode</th>
                                     <th class="px-6 py-4">Nama Barang</th>
                                     <th class="px-6 py-4 text-right">Stok Akhir</th>
                                     <th class="px-6 py-4 text-center">Aksi</th>
@@ -88,476 +64,260 @@
                             </thead>
                             <tbody id="stockTableBody"></tbody>
                         </table>
-                        <div id="stockEmptyState" class="hidden p-12 text-center text-slate-400">
-                            <i class="fa-solid fa-box-open text-4xl mb-3 opacity-50"></i>
-                            <p>Barang tidak ditemukan</p>
-                        </div>
                     </div>
                 </div>
-
                 <div id="stockDetailView" class="hidden">
-                    <button onclick="backToStockList()" class="mb-6 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium transition group">
-                        <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition"></i> Kembali ke Daftar
-                    </button>
-                    
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-                        <div>
-                            <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Nama Barang</h2>
-                            <p class="text-slate-500 text-sm mt-1">Kode: <span id="detailItemCode" class="font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700 text-xs">-</span></p>
-                        </div>
-                        <button onclick="downloadCSVStock()" class="mt-4 md:mt-0 bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition flex items-center gap-2">
-                            <i class="fa-solid fa-file-excel"></i> Download Excel
-                        </button>
+                    <button onclick="backToStockList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Item Name</h2>
+                        <button onclick="downloadCSVStock()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
                     </div>
-
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div class="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm flex justify-between items-center">
-                            <div>
-                                <p class="text-xs text-slate-500 font-bold uppercase">Total Masuk</p>
-                                <p class="text-2xl font-bold text-slate-800 mt-1" id="kpiIn">0</p>
-                            </div>
-                            <div class="bg-green-50 p-3 rounded-full text-green-600"><i class="fa-solid fa-arrow-down"></i></div>
-                        </div>
-                        <div class="bg-white p-5 rounded-xl border-l-4 border-red-500 shadow-sm flex justify-between items-center">
-                            <div>
-                                <p class="text-xs text-slate-500 font-bold uppercase">Total Keluar</p>
-                                <p class="text-2xl font-bold text-slate-800 mt-1" id="kpiOut">0</p>
-                            </div>
-                            <div class="bg-red-50 p-3 rounded-full text-red-600"><i class="fa-solid fa-arrow-up"></i></div>
-                        </div>
-                        <div class="bg-gradient-to-br from-blue-600 to-blue-700 p-5 rounded-xl shadow-lg text-white relative overflow-hidden flex justify-between items-center">
-                            <div class="relative z-10">
-                                <p class="text-xs text-blue-100 font-bold uppercase">Stok Akhir</p>
-                                <p class="text-3xl font-bold mt-1" id="kpiBalance">0</p>
-                            </div>
-                            <div class="bg-white/20 p-3 rounded-full text-white backdrop-blur-sm relative z-10"><i class="fa-solid fa-box"></i></div>
-                            <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
-                        </div>
+                        <div class="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm"><p class="text-xs font-bold text-slate-500">MASUK</p><p id="kpiIn" class="text-2xl font-bold">0</p></div>
+                        <div class="bg-white p-5 rounded-xl border-l-4 border-red-500 shadow-sm"><p class="text-xs font-bold text-slate-500">KELUAR</p><p id="kpiOut" class="text-2xl font-bold">0</p></div>
+                        <div class="bg-blue-600 p-5 rounded-xl shadow-lg text-white"><p class="text-xs font-bold text-blue-100">SALDO AKHIR</p><p id="kpiBalance" class="text-3xl font-bold">0</p></div>
                     </div>
-
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 font-bold text-slate-700">
-                            <i class="fa-solid fa-list-check mr-2 text-slate-400"></i> Rincian Transaksi
-                        </div>
-                        <div class="overflow-x-auto max-h-[600px]">
-                            <table class="w-full text-sm text-left text-slate-600">
-                                <thead class="bg-slate-100 border-b border-slate-200 uppercase text-xs font-bold text-slate-700 sticky top-0 z-10">
-                                    <tr>
-                                        <th class="px-6 py-3">Tanggal</th>
-                                        <th class="px-6 py-3">Kontak/Ref</th>
-                                        <th class="px-6 py-3 text-right text-green-700">Masuk</th>
-                                        <th class="px-6 py-3 text-right text-red-700">Keluar</th>
-                                        <th class="px-6 py-3 text-right font-bold text-blue-700 bg-blue-50">Saldo</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="stockDetailBody" class="divide-y divide-slate-100"></tbody>
-                            </table>
-                        </div>
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="bg-slate-100 uppercase text-xs font-bold text-slate-700">
+                                <tr><th class="px-6 py-3">Tanggal</th><th class="px-6 py-3">Ref</th><th class="px-6 py-3 text-right text-green-700">Masuk</th><th class="px-6 py-3 text-right text-red-700">Keluar</th><th class="px-6 py-3 text-right font-bold text-blue-700">Saldo</th></tr>
+                            </thead>
+                            <tbody id="stockDetailBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
             <div id="moduleCogs" class="hidden fade-in">
-                
                 <div id="cogsListView">
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                            <div>
-                                <h2 class="text-lg font-bold text-slate-700">Daftar Invoice Pending</h2>
-                                <p class="text-slate-400 text-xs">Menunggu Approval: <span id="countCogs" class="font-bold text-blue-600">0</span></p>
-                            </div>
-                            <div class="relative w-full md:w-96">
-                                <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-400"></i>
-                                <input type="text" id="searchCogs" placeholder="Cari No Invoice atau Customer..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
-                            </div>
-                         </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 flex justify-between items-center">
+                        <input type="text" id="searchCogs" placeholder="Cari Invoice..." class="w-full md:w-1/2 p-3 border rounded-lg bg-slate-50 outline-none">
+                        <div class="text-sm text-slate-500">Pending: <span id="countCogs" class="font-bold text-blue-600">0</span></div>
                     </div>
-
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm text-left text-slate-600">
-                            <thead class="bg-slate-50 border-b border-slate-200 uppercase text-xs font-bold text-slate-700">
-                                <tr>
-                                    <th class="px-6 py-4">Order Number</th>
-                                    <th class="px-6 py-4">Customer</th>
-                                    <th class="px-6 py-4">Order Type</th>
-                                    <th class="px-6 py-4">Issue Date</th>
-                                    <th class="px-6 py-4 text-center">Total Item</th>
-                                    <th class="px-6 py-4 text-center">Aksi</th>
-                                </tr>
+                            <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
+                                <tr><th class="px-6 py-4">No Order</th><th class="px-6 py-4">Customer</th><th class="px-6 py-4">Type</th><th class="px-6 py-4">Date</th><th class="px-6 py-4 text-center">Items</th><th class="px-6 py-4 text-center">Aksi</th></tr>
                             </thead>
                             <tbody id="cogsTableBody"></tbody>
                         </table>
-                        <div id="cogsEmptyState" class="hidden p-16 text-center text-slate-400">
-                            <div class="inline-block p-4 rounded-full bg-green-50 mb-3">
-                                <i class="fa-solid fa-check-double text-4xl text-green-400"></i>
-                            </div>
-                            <p class="font-medium text-slate-600">Semua Beres!</p>
-                            <p class="text-sm">Tidak ada invoice yang perlu dihitung COGS-nya saat ini.</p>
-                        </div>
+                        <div id="cogsEmptyState" class="hidden p-10 text-center text-slate-400">Semua Invoice Aman!</div>
                     </div>
                 </div>
-
                 <div id="cogsDetailView" class="hidden">
-                    <button onclick="backToCogsList()" class="mb-6 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium transition group">
-                        <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition"></i> Kembali ke Daftar
-                    </button>
-                    
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
-                            <div>
-                                <h2 id="detailInvoiceNum" class="text-3xl font-bold text-slate-800">INV-001</h2>
-                                <p class="text-slate-500 text-sm mt-1 flex items-center gap-2">
-                                    <i class="fa-solid fa-user-tag text-blue-500"></i> <span id="detailCustomer">Customer Name</span>
-                                </p>
-                            </div>
-                            <button onclick="triggerApplyCOGS(this)" class="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md font-medium transition flex items-center gap-2 disabled:bg-slate-400 disabled:cursor-not-allowed">
-                                <i class="fa-solid fa-calculator"></i> Apply COGS
-                            </button>
+                    <button onclick="backToCogsList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 flex justify-between items-center">
+                        <div>
+                            <h2 id="detailInvoiceNum" class="text-2xl font-bold text-slate-800">INV-001</h2>
+                            <p id="detailCustomer" class="text-slate-500 text-sm">Customer</p>
                         </div>
+                        <button onclick="triggerApplyCOGS(this)" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-calculator"></i> Apply COGS
+                        </button>
                     </div>
-
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 font-bold text-slate-700 flex items-center gap-2">
-                            <i class="fa-solid fa-list-ol text-slate-400"></i> Item dalam Invoice
-                        </div>
                         <table class="w-full text-sm text-left text-slate-600">
-                            <thead class="bg-white border-b border-slate-100 uppercase text-xs font-bold text-slate-500">
-                                <tr>
-                                    <th class="px-6 py-3">Nama Item</th>
-                                    <th class="px-6 py-3 text-right">Qty</th>
-                                    <th class="px-6 py-3">Status Saat Ini</th>
-                                </tr>
+                            <thead class="bg-slate-50 uppercase text-xs font-bold text-slate-700">
+                                <tr><th class="px-6 py-3">Nama Item</th><th class="px-6 py-3 text-right">Qty</th><th class="px-6 py-3">Status</th></tr>
                             </thead>
-                            <tbody id="cogsDetailBody" class="divide-y divide-slate-100"></tbody>
+                            <tbody id="cogsDetailBody"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
-
         </div>
     </main>
 
     <script>
+        // --- PASTE URL WEB APP HASIL DEPLOY DI SINI ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbwdRI916vd2MWSLO76L86V_z0l7_X2motA0IfV-rYG1MPk_fCTPJbiinVeGPoej-S2N/exec"; 
+        
         let rawData = { stock: [], cogs: [] };
         let groupedStock = {};
         let summaryStock = [];
-        let currentCogsDetail = null; // Menyimpan data invoice yang sedang dibuka
+        let currentCogsDetail = null;
 
-        // --- INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchData();
-        });
+        document.addEventListener('DOMContentLoaded', fetchData);
 
-        // Menggunakan google.script.run (Native Web App)
-        function fetchData() {
-            google.script.run
-                .withSuccessHandler(onDataReceived)
-                .withFailureHandler(error => alert("Gagal mengambil data: " + error))
-                .getData();
-        }
-
-        function onDataReceived(jsonString) {
-            rawData = JSON.parse(jsonString);
-            
-            // Proses Data Stock
-            processStockData(); 
-            // Proses Data COGS
-            processCogsData(); 
-            
-            // Sembunyikan Loading
-            document.getElementById('loadingOverlay').classList.add('hidden');
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL);
+                const result = await response.json();
+                rawData = result;
+                processStockData();
+                processCogsData();
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            } catch (error) {
+                alert("Gagal koneksi ke API: " + error);
+            }
         }
 
         // --- NAVIGATION ---
-        function switchModule(moduleName) {
-            const btnStock = document.getElementById('btnNavStock');
-            const btnCogs = document.getElementById('btnNavCogs');
-            const viewStock = document.getElementById('moduleStock');
-            const viewCogs = document.getElementById('moduleCogs');
+        function switchModule(mod) {
+            const stockBtn = document.getElementById('btnNavStock');
+            const cogsBtn = document.getElementById('btnNavCogs');
+            const stockView = document.getElementById('moduleStock');
+            const cogsView = document.getElementById('moduleCogs');
             const title = document.getElementById('pageTitle');
 
-            // Reset Kelas Tombol
-            const activeClass = "bg-blue-50 text-blue-700 font-medium border-blue-100 shadow-sm";
-            const inactiveClass = "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-transparent";
-
-            if (moduleName === 'stock') {
-                btnStock.className = "w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition border " + activeClass;
-                btnCogs.className = "w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition border " + inactiveClass;
-                viewStock.classList.remove('hidden');
-                viewCogs.classList.add('hidden');
+            if (mod === 'stock') {
+                stockView.classList.remove('hidden'); cogsView.classList.add('hidden');
+                stockBtn.classList.replace('text-slate-600','text-blue-700'); stockBtn.classList.replace('border-transparent','bg-blue-50');
+                cogsBtn.classList.replace('text-blue-700','text-slate-600'); cogsBtn.classList.replace('bg-blue-50','border-transparent');
                 title.innerText = "Kartu Stock";
             } else {
-                btnCogs.className = "w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition border " + activeClass;
-                btnStock.className = "w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition border " + inactiveClass;
-                viewCogs.classList.remove('hidden');
-                viewStock.classList.add('hidden');
+                cogsView.classList.remove('hidden'); stockView.classList.add('hidden');
+                cogsBtn.classList.replace('text-slate-600','text-blue-700'); cogsBtn.classList.replace('border-transparent','bg-blue-50');
+                stockBtn.classList.replace('text-blue-700','text-slate-600'); stockBtn.classList.replace('bg-blue-50','border-transparent');
                 title.innerText = "Approval Invoice COGS";
             }
         }
 
-        // ================= LOGIC KARTU STOCK =================
+        // --- LOGIC STOCK ---
         function processStockData() {
-            // Grouping per Item Name
             groupedStock = rawData.stock.reduce((acc, curr) => {
-                const key = curr.itemName;
-                if(!acc[key]) acc[key] = [];
-                acc[key].push(curr);
-                return acc;
+                if(!acc[curr.itemName]) acc[curr.itemName] = [];
+                acc[curr.itemName].push(curr); return acc;
             }, {});
 
-            // Buat Summary untuk Tabel Depan
             summaryStock = Object.keys(groupedStock).map(key => {
-                const transactions = groupedStock[key];
-                const code = transactions[0]?.itemCode || '-';
-                
-                let balance = 0;
-                transactions.forEach(r => {
-                    let qty = parseFloat(r.qty) || 0;
-                    if(r.status === 'Positive' && qty >= 0) balance += qty;
-                    else balance -= Math.abs(qty);
-                });
+                const items = groupedStock[key];
+                let bal = 0;
+                items.forEach(i => bal += (i.status === 'Positive' && i.qty >= 0) ? parseFloat(i.qty) : -Math.abs(parseFloat(i.qty)));
+                return { name: key, code: items[0].itemCode, balance: bal };
+            }).sort((a,b) => a.name.localeCompare(b.name));
 
-                return { name: key, code: code, balance: balance };
-            });
+            renderStockList(summaryStock);
 
-            // Urutkan A-Z
-            summaryStock.sort((a,b) => a.name.localeCompare(b.name));
-            document.getElementById('totalStockItems').innerText = summaryStock.length;
-
-            renderStockTable(summaryStock);
-
-            // Listener Pencarian Stock
             document.getElementById('searchStock').addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase();
-                const filtered = summaryStock.filter(item => 
-                    item.name.toLowerCase().includes(term) || 
-                    item.code.toLowerCase().includes(term)
-                );
-                renderStockTable(filtered);
+                renderStockList(summaryStock.filter(i => i.name.toLowerCase().includes(term)));
             });
         }
 
-        function renderStockTable(data) {
-            const tbody = document.getElementById('stockTableBody');
-            tbody.innerHTML = "";
-            
-            if(data.length === 0) {
-                document.getElementById('stockEmptyState').classList.remove('hidden');
-                return;
-            }
-            document.getElementById('stockEmptyState').classList.add('hidden');
-
-            data.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-blue-50/50 transition border-slate-100 group";
-                tr.innerHTML = `
-                    <td class="px-6 py-4 font-mono text-xs text-slate-500 bg-slate-50/50">${item.code}</td>
-                    <td class="px-6 py-4 font-medium text-slate-700">${item.name}</td>
-                    <td class="px-6 py-4 text-right">
-                        <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-bold">${item.balance.toLocaleString('id-ID')}</span>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <button onclick="viewStockDetail('${item.name.replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-800 font-medium text-sm border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition">
-                            <i class="fa-regular fa-eye mr-1"></i> View
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+        function renderStockList(data) {
+            const tbody = document.getElementById('stockTableBody'); tbody.innerHTML = "";
+            data.forEach(i => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="px-6 py-4 text-xs font-mono text-slate-500">${i.code || '-'}</td>
+                        <td class="px-6 py-4 font-medium">${i.name}</td>
+                        <td class="px-6 py-4 text-right font-bold text-blue-600">${i.balance.toLocaleString('id-ID')}</td>
+                        <td class="px-6 py-4 text-center"><button onclick="viewStockDetail('${i.name.replace(/'/g, "\\'")}')" class="text-blue-600 hover:underline">View</button></td>
+                    </tr>`;
             });
         }
-        
-        function viewStockDetail(itemName) {
-            const transactions = groupedStock[itemName];
-            if(!transactions) return;
 
+        function viewStockDetail(name) {
             document.getElementById('stockListView').classList.add('hidden');
             document.getElementById('stockDetailView').classList.remove('hidden');
+            document.getElementById('detailItemName').innerText = name;
             
-            document.getElementById('detailItemName').innerText = itemName;
-            document.getElementById('detailItemCode').innerText = transactions[0]?.itemCode || '-';
+            const data = groupedStock[name].sort((a,b) => new Date(a.date) - new Date(b.date));
+            let runBal = 0, totIn = 0, totOut = 0;
+            const tbody = document.getElementById('stockDetailBody'); tbody.innerHTML = "";
 
-            // Hitung Running Balance untuk Detail View
-            let runningBalance = 0, totalIn = 0, totalOut = 0;
-            const tbody = document.getElementById('stockDetailBody');
-            tbody.innerHTML = "";
-
-            // Sort Tanggal (Lama ke Baru)
-            transactions.sort((a,b) => new Date(a.date) - new Date(b.date));
-
-            transactions.forEach(row => {
-                const qty = parseFloat(row.qty) || 0;
-                const dateStr = new Date(row.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' });
+            data.forEach(r => {
+                let qty = parseFloat(r.qty), inV = 0, outV = 0;
+                if(r.status === 'Positive' && qty >= 0) { inV = qty; runBal += qty; totIn += qty; }
+                else { outV = Math.abs(qty); runBal -= outV; totOut += outV; }
                 
-                let inVal = 0, outVal = 0;
-                if(row.status === 'Positive' && qty >= 0) {
-                    inVal = qty; totalIn += qty; runningBalance += qty;
-                } else {
-                    outVal = Math.abs(qty); totalOut += outVal; runningBalance -= outVal;
-                }
-
-                const tr = document.createElement('tr');
-                tr.className = "bg-white border-b hover:bg-slate-50 transition";
-                tr.innerHTML = `
-                    <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${dateStr}</td>
-                    <td class="px-6 py-4 text-slate-500 truncate max-w-[150px]" title="${row.contact}">${row.contact}</td>
-                    <td class="px-6 py-4 text-right text-green-600 font-medium">${inVal > 0 ? inVal.toLocaleString('id-ID') : '-'}</td>
-                    <td class="px-6 py-4 text-right text-red-600 font-medium">${outVal > 0 ? outVal.toLocaleString('id-ID') : '-'}</td>
-                    <td class="px-6 py-4 text-right font-bold text-blue-700 bg-blue-50/30">${runningBalance.toLocaleString('id-ID')}</td>
-                `;
-                tbody.appendChild(tr);
+                tbody.innerHTML += `
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                        <td class="px-6 py-4">${new Date(r.date).toLocaleDateString('id-ID')}</td>
+                        <td class="px-6 py-4 text-slate-500 truncate max-w-[150px]">${r.contact}</td>
+                        <td class="px-6 py-4 text-right text-green-600">${inV || '-'}</td>
+                        <td class="px-6 py-4 text-right text-red-600">${outV || '-'}</td>
+                        <td class="px-6 py-4 text-right font-bold text-blue-700 bg-blue-50/50">${runBal.toLocaleString('id-ID')}</td>
+                    </tr>`;
             });
-
-            document.getElementById('kpiIn').innerText = totalIn.toLocaleString('id-ID');
-            document.getElementById('kpiOut').innerText = totalOut.toLocaleString('id-ID');
-            document.getElementById('kpiBalance').innerText = runningBalance.toLocaleString('id-ID');
+            document.getElementById('kpiIn').innerText = totIn.toLocaleString('id-ID');
+            document.getElementById('kpiOut').innerText = totOut.toLocaleString('id-ID');
+            document.getElementById('kpiBalance').innerText = runBal.toLocaleString('id-ID');
         }
 
-        function backToStockList() {
-            document.getElementById('stockDetailView').classList.add('hidden');
-            document.getElementById('stockListView').classList.remove('hidden');
-        }
+        function backToStockList() { document.getElementById('stockDetailView').classList.add('hidden'); document.getElementById('stockListView').classList.remove('hidden'); }
         
         function downloadCSVStock() {
-             const itemName = document.getElementById('detailItemName').innerText;
-             const rows = document.querySelectorAll("#stockDetailBody tr");
-             let csv = ["Tanggal,Kontak,Masuk,Keluar,Saldo"];
-             rows.forEach(row => {
-                 let cols = row.querySelectorAll("td");
-                 let line = [];
-                 cols.forEach(c => line.push(`"${c.innerText}"`));
-                 csv.push(line.join(","));
-             });
-             const blob = new Blob([csv.join("\n")], {type: "text/csv"});
-             const link = document.createElement("a");
-             link.href = URL.createObjectURL(blob);
-             link.download = `Stock_${itemName}.csv`;
-             link.click();
+            const rows = document.querySelectorAll("#stockDetailBody tr");
+            let csv = ["Tanggal,Ref,Masuk,Keluar,Saldo"];
+            rows.forEach(r => {
+                let row = [], cols = r.querySelectorAll("td");
+                cols.forEach(c => row.push(`"${c.innerText}"`));
+                csv.push(row.join(","));
+            });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csv.join("\n")], {type: "text/csv"}));
+            link.download = "StockData.csv"; link.click();
         }
 
-
-        // ================= LOGIC COGS (MODUL 2) =================
+        // --- LOGIC COGS ---
         function processCogsData() {
-            // Grouping by Order Number
             const grouped = rawData.cogs.reduce((acc, curr) => {
-                const id = curr.orderNumber;
-                if (!acc[id]) {
-                    acc[id] = {
-                        orderNumber: id,
-                        customer: curr.customer,
-                        orderType: curr.orderType,
-                        issueDate: curr.issueDate,
-                        items: []
-                    };
-                }
-                acc[id].items.push(curr);
-                return acc;
+                if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
+                acc[curr.orderNumber].items.push(curr); return acc;
             }, {});
-
+            
             const list = Object.values(grouped);
             document.getElementById('countCogs').innerText = list.length;
+            const tbody = document.getElementById('cogsTableBody'); tbody.innerHTML = "";
             
-            const tbody = document.getElementById('cogsTableBody');
-            tbody.innerHTML = "";
-
-            if (list.length === 0) {
-                document.getElementById('cogsEmptyState').classList.remove('hidden');
-            } else {
+            if(list.length === 0) document.getElementById('cogsEmptyState').classList.remove('hidden');
+            else {
                 document.getElementById('cogsEmptyState').classList.add('hidden');
                 list.forEach(inv => {
-                    const dateStr = new Date(inv.issueDate).toLocaleDateString('id-ID');
-                    // Encode data untuk dikirim ke fungsi detail
-                    const dataString = encodeURIComponent(JSON.stringify(inv));
-
-                    const tr = document.createElement('tr');
-                    tr.className = "border-b hover:bg-slate-50 transition border-slate-100";
-                    tr.innerHTML = `
-                        <td class="px-6 py-4 font-medium text-blue-600">${inv.orderNumber}</td>
-                        <td class="px-6 py-4 font-medium text-slate-700">${inv.customer}</td>
-                        <td class="px-6 py-4"><span class="bg-slate-100 border border-slate-200 px-2 py-1 rounded text-xs text-slate-600">${inv.orderType}</span></td>
-                        <td class="px-6 py-4 text-slate-500">${dateStr}</td>
-                        <td class="px-6 py-4 text-center font-bold">${inv.items.length} Item</td>
-                        <td class="px-6 py-4 text-center">
-                            <button onclick="viewCogsDetail('${dataString}')" class="bg-white border border-slate-300 hover:bg-slate-50 hover:border-blue-300 text-slate-700 text-xs px-3 py-1.5 rounded shadow-sm transition">
-                                <i class="fa-solid fa-list mr-1"></i> Rincian
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
+                    const dataStr = encodeURIComponent(JSON.stringify(inv));
+                    tbody.innerHTML += `
+                        <tr class="border-b hover:bg-slate-50">
+                            <td class="px-6 py-4 font-medium text-blue-600">${inv.orderNumber}</td>
+                            <td class="px-6 py-4">${inv.customer}</td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs">${inv.orderType}</span></td>
+                            <td class="px-6 py-4">${new Date(inv.issueDate).toLocaleDateString('id-ID')}</td>
+                            <td class="px-6 py-4 text-center font-bold">${inv.items.length}</td>
+                            <td class="px-6 py-4 text-center"><button onclick="viewCogsDetail('${dataStr}')" class="text-xs border px-3 py-1 rounded hover:bg-slate-100">Rincian</button></td>
+                        </tr>`;
                 });
             }
-
-            // Search Listener COGS
             document.getElementById('searchCogs').addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                const rows = tbody.querySelectorAll('tr');
-                rows.forEach(row => {
-                    const text = row.innerText.toLowerCase();
-                    row.style.display = text.includes(term) ? '' : 'none';
-                });
+               // Simple filter logic here if needed
             });
         }
 
-        function viewCogsDetail(dataString) {
-            const invoice = JSON.parse(decodeURIComponent(dataString));
-            currentCogsDetail = invoice; // Simpan ke global var
-
+        function viewCogsDetail(str) {
+            currentCogsDetail = JSON.parse(decodeURIComponent(str));
             document.getElementById('cogsListView').classList.add('hidden');
             document.getElementById('cogsDetailView').classList.remove('hidden');
-
-            document.getElementById('detailInvoiceNum').innerText = invoice.orderNumber;
-            document.getElementById('detailCustomer').innerText = invoice.customer;
-
-            const tbody = document.getElementById('cogsDetailBody');
-            tbody.innerHTML = "";
-
-            invoice.items.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-slate-50 border-slate-100";
-                tr.innerHTML = `
-                    <td class="px-6 py-4 font-medium text-slate-700">${item.itemName}</td>
-                    <td class="px-6 py-4 text-right font-bold">${item.qty}</td>
-                    <td class="px-6 py-4 text-amber-600 text-xs italic bg-amber-50 w-fit px-2 rounded-full border border-amber-100">${item.status}</td>
-                `;
-                tbody.appendChild(tr);
+            document.getElementById('detailInvoiceNum').innerText = currentCogsDetail.orderNumber;
+            document.getElementById('detailCustomer').innerText = currentCogsDetail.customer;
+            
+            const tbody = document.getElementById('cogsDetailBody'); tbody.innerHTML = "";
+            currentCogsDetail.items.forEach(i => {
+                tbody.innerHTML += `<tr class="border-b"><td class="px-6 py-4">${i.itemName}</td><td class="px-6 py-4 text-right">${i.qty}</td><td class="px-6 py-4 italic text-xs">${i.status}</td></tr>`;
             });
         }
 
-        function backToCogsList() {
-            document.getElementById('cogsDetailView').classList.add('hidden');
-            document.getElementById('cogsListView').classList.remove('hidden');
+        function backToCogsList() { document.getElementById('cogsDetailView').classList.add('hidden'); document.getElementById('cogsListView').classList.remove('hidden'); }
+
+        async function triggerApplyCOGS(btn) {
+            if(!currentCogsDetail) return;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "Processing..."; btn.disabled = true;
+            
+            try {
+                // Fetch URL dengan parameter ACTION
+                const url = `${API_URL}?action=apply&inv=${currentCogsDetail.orderNumber}`;
+                const res = await fetch(url);
+                const json = await res.json();
+                
+                alert(json.message);
+                backToCogsList();
+                fetchData(); // Refresh data
+            } catch(e) {
+                alert("Error: " + e);
+            } finally {
+                btn.innerHTML = originalText; btn.disabled = false;
+            }
         }
-
-        function triggerApplyCOGS(btnElement) {
-            if(!currentCogsDetail || !currentCogsDetail.orderNumber) return;
-
-            const originalContent = btnElement.innerHTML;
-            btnElement.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
-            btnElement.disabled = true;
-            btnElement.classList.add('bg-slate-400');
-            btnElement.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-
-            // Panggil Server Side Function
-            google.script.run
-                .withSuccessHandler((response) => {
-                    alert(response.message); // Tampilkan pesan sukses
-                    
-                    // Reset tombol (atau redirect kembali ke list)
-                    btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Success';
-                    setTimeout(() => {
-                        backToCogsList(); // Kembali ke daftar
-                        fetchData(); // Refresh data karena status mungkin berubah
-                    }, 1000);
-                })
-                .withFailureHandler((err) => {
-                    alert("Error: " + err);
-                    btnElement.innerHTML = originalContent;
-                    btnElement.disabled = false;
-                    btnElement.classList.remove('bg-slate-400');
-                    btnElement.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                })
-                .applyCOGS(currentCogsDetail.orderNumber);
-        }
-
     </script>
 </body>
 </html>
