@@ -3,373 +3,561 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Stock Portal - List View</title>
+    <title>Smart Stock & COGS Portal</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        /* Custom Scrollbar yang rapi */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* Transisi halus saat pindah view */
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Utility untuk menyembunyikan elemen */
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+<body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
 
-    <nav class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <i class="fa-solid fa-warehouse text-blue-600 text-2xl mr-3"></i>
-                    <span class="font-bold text-xl tracking-tight text-slate-700">Stock Portal <span class="text-blue-600">List</span></span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-xs font-medium bg-green-100 text-green-700 py-1 px-3 rounded-full flex items-center gap-2">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Data Live
-                    </span>
-                </div>
-            </div>
+    <aside class="w-64 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col z-20 shadow-md">
+        <div class="h-16 flex items-center px-6 border-b border-slate-100">
+            <i class="fa-solid fa-cube text-blue-600 text-xl mr-3"></i>
+            <span class="font-bold text-lg text-slate-800">Smart Portal</span>
         </div>
-    </nav>
-
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <div id="loadingOverlay" class="fixed inset-0 bg-white/90 z-[100] flex flex-col items-center justify-center transition-opacity duration-300">
-            <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
-            <p class="text-slate-500 font-medium animate-pulse">Memuat data persediaan...</p>
-        </div>
-
-        <div id="listView" class="fade-in">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-800">Daftar Persediaan</h2>
-                        <p class="text-sm text-slate-500 mt-1">Total Item: <span id="totalItemsCount" class="font-bold text-slate-700">0</span></p>
-                    </div>
-                    <div class="relative w-full md:w-72">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fa-solid fa-search text-slate-400"></i>
-                        </div>
-                        <input type="text" id="searchInput" placeholder="Cari Kode atau Nama Barang..." 
-                            class="pl-10 w-full rounded-lg border-slate-300 border bg-slate-50 p-2.5 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm">
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-slate-600">
-                        <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
-                            <tr>
-                                <th class="px-6 py-4 font-bold">Kode Barang</th>
-                                <th class="px-6 py-4 font-bold">Nama Barang</th>
-                                <th class="px-6 py-4 text-right font-bold">Stok Akhir</th>
-                                <th class="px-6 py-4 text-center font-bold">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="summaryTableBody" class="divide-y divide-slate-100">
-                            </tbody>
-                    </table>
-                </div>
-                <div id="noResults" class="hidden p-8 text-center text-slate-500">
-                    <i class="fa-regular fa-folder-open text-4xl mb-3 text-slate-300"></i>
-                    <p>Barang tidak ditemukan.</p>
-                </div>
-            </div>
-        </div>
-
-        <div id="detailView" class="hidden fade-in">
-            
-            <button onclick="showListView()" class="mb-6 group flex items-center gap-2 text-slate-500 hover:text-blue-600 transition font-medium">
-                <i class="fa-solid fa-arrow-left transform group-hover:-translate-x-1 transition"></i> Kembali ke Daftar
+        <nav class="p-4 space-y-2 flex-1">
+            <button onclick="switchModule('stock')" id="btnNavStock" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition bg-blue-50 text-blue-700 font-medium border border-blue-100 shadow-sm">
+                <i class="fa-solid fa-boxes-stacked w-5"></i> Kartu Stock
             </button>
+            <button onclick="switchModule('cogs')" id="btnNavCogs" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent">
+                <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
+            </button>
+        </nav>
 
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-                <div>
-                    <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Nama Barang</h2>
-                    <p class="text-slate-500 text-sm mt-1">Kode: <span id="detailItemCode" class="font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">-</span></p>
-                </div>
-                <button onclick="downloadCSV()" class="mt-4 md:mt-0 bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition flex items-center gap-2">
-                    <i class="fa-solid fa-file-excel"></i> Download Excel
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white rounded-xl p-5 border-l-4 border-green-500 shadow-sm">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Masuk</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-1" id="kpiIn">0</p>
-                        </div>
-                        <div class="bg-green-50 p-3 rounded-full text-green-600"><i class="fa-solid fa-arrow-down"></i></div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl p-5 border-l-4 border-red-500 shadow-sm">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Keluar</p>
-                            <p class="text-2xl font-bold text-slate-800 mt-1" id="kpiOut">0</p>
-                        </div>
-                        <div class="bg-red-50 p-3 rounded-full text-red-600"><i class="fa-solid fa-arrow-up"></i></div>
-                    </div>
-                </div>
-                <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-5 shadow-lg text-white relative overflow-hidden">
-                    <div class="relative z-10 flex justify-between items-center">
-                        <div>
-                            <p class="text-xs text-blue-100 font-bold uppercase tracking-wider">Stok Akhir</p>
-                            <p class="text-3xl font-bold mt-1" id="kpiBalance">0</p>
-                        </div>
-                        <div class="bg-white/20 p-3 rounded-full text-white backdrop-blur-sm"><i class="fa-solid fa-box-open"></i></div>
-                    </div>
-                    <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
-                    <h3 class="text-lg font-bold text-slate-700 flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-slate-400"></i> Rincian Transaksi
-                    </h3>
-                </div>
-                <div class="overflow-x-auto max-h-[600px]">
-                    <table class="w-full text-sm text-left text-slate-600">
-                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-10 shadow-sm">
-                            <tr>
-                                <th class="px-6 py-3 font-semibold">Tanggal</th>
-                                <th class="px-6 py-3 font-semibold">Kontak/Keterangan</th>
-                                <th class="px-6 py-3 text-right">Harga Satuan</th>
-                                <th class="px-6 py-3 text-right text-green-700 font-semibold">Masuk</th>
-                                <th class="px-6 py-3 text-right text-red-700 font-semibold">Keluar</th>
-                                <th class="px-6 py-3 text-right">Total (IDR)</th>
-                                <th class="px-6 py-3 text-right font-bold text-blue-700 bg-blue-50">Saldo</th>
-                            </tr>
-                        </thead>
-                        <tbody id="detailTableBody" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="p-4 border-t border-slate-100">
+            <div class="text-xs text-slate-400 text-center">System v2.1 Beta</div>
         </div>
+    </aside>
 
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
+        
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm z-10 flex-shrink-0">
+            <h1 id="pageTitle" class="text-xl font-bold text-slate-700">Kartu Stock</h1>
+            <span class="text-xs font-medium bg-green-100 text-green-700 py-1 px-3 rounded-full flex items-center gap-2 border border-green-200">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Connected
+            </span>
+        </header>
+
+        <div class="flex-1 overflow-auto p-4 md:p-8 relative">
+            
+            <div id="loadingOverlay" class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+                <p class="text-slate-500 font-medium animate-pulse">Sinkronisasi Data...</p>
+            </div>
+
+            <div id="moduleStock" class="fade-in">
+                
+                <div id="stockListView">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-700">Pencarian Barang</h2>
+                                <p class="text-slate-400 text-xs">Total Item: <span id="totalStockItems">0</span></p>
+                            </div>
+                            <div class="relative w-full md:w-96">
+                                <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-400"></i>
+                                <input type="text" id="searchStock" placeholder="Ketik nama atau kode barang..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="bg-slate-50 border-b border-slate-200 uppercase text-xs font-bold text-slate-700">
+                                <tr>
+                                    <th class="px-6 py-4">Kode Barang</th>
+                                    <th class="px-6 py-4">Nama Barang</th>
+                                    <th class="px-6 py-4 text-right">Stok Akhir</th>
+                                    <th class="px-6 py-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockTableBody"></tbody>
+                        </table>
+                        <div id="stockEmptyState" class="hidden p-12 text-center text-slate-400">
+                            <i class="fa-solid fa-box-open text-4xl mb-3 opacity-50"></i>
+                            <p>Barang tidak ditemukan</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="stockDetailView" class="hidden">
+                    <button onclick="backToStockList()" class="mb-6 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium transition group">
+                        <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition"></i> Kembali ke Daftar
+                    </button>
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                        <div>
+                            <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Nama Barang</h2>
+                            <p class="text-slate-500 text-sm mt-1">Kode: <span id="detailItemCode" class="font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700 text-xs">-</span></p>
+                        </div>
+                        <button onclick="downloadCSVStock()" class="mt-4 md:mt-0 bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition flex items-center gap-2">
+                            <i class="fa-solid fa-file-excel"></i> Download Excel
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm flex justify-between items-center">
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase">Total Masuk</p>
+                                <p class="text-2xl font-bold text-slate-800 mt-1" id="kpiIn">0</p>
+                            </div>
+                            <div class="bg-green-50 p-3 rounded-full text-green-600"><i class="fa-solid fa-arrow-down"></i></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border-l-4 border-red-500 shadow-sm flex justify-between items-center">
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase">Total Keluar</p>
+                                <p class="text-2xl font-bold text-slate-800 mt-1" id="kpiOut">0</p>
+                            </div>
+                            <div class="bg-red-50 p-3 rounded-full text-red-600"><i class="fa-solid fa-arrow-up"></i></div>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-600 to-blue-700 p-5 rounded-xl shadow-lg text-white relative overflow-hidden flex justify-between items-center">
+                            <div class="relative z-10">
+                                <p class="text-xs text-blue-100 font-bold uppercase">Stok Akhir</p>
+                                <p class="text-3xl font-bold mt-1" id="kpiBalance">0</p>
+                            </div>
+                            <div class="bg-white/20 p-3 rounded-full text-white backdrop-blur-sm relative z-10"><i class="fa-solid fa-box"></i></div>
+                            <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 font-bold text-slate-700">
+                            <i class="fa-solid fa-list-check mr-2 text-slate-400"></i> Rincian Transaksi
+                        </div>
+                        <div class="overflow-x-auto max-h-[600px]">
+                            <table class="w-full text-sm text-left text-slate-600">
+                                <thead class="bg-slate-100 border-b border-slate-200 uppercase text-xs font-bold text-slate-700 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="px-6 py-3">Tanggal</th>
+                                        <th class="px-6 py-3">Kontak/Ref</th>
+                                        <th class="px-6 py-3 text-right text-green-700">Masuk</th>
+                                        <th class="px-6 py-3 text-right text-red-700">Keluar</th>
+                                        <th class="px-6 py-3 text-right font-bold text-blue-700 bg-blue-50">Saldo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stockDetailBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="moduleCogs" class="hidden fade-in">
+                
+                <div id="cogsListView">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-700">Daftar Invoice Pending</h2>
+                                <p class="text-slate-400 text-xs">Menunggu Approval: <span id="countCogs" class="font-bold text-blue-600">0</span></p>
+                            </div>
+                            <div class="relative w-full md:w-96">
+                                <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-400"></i>
+                                <input type="text" id="searchCogs" placeholder="Cari No Invoice atau Customer..." class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+                            </div>
+                         </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="bg-slate-50 border-b border-slate-200 uppercase text-xs font-bold text-slate-700">
+                                <tr>
+                                    <th class="px-6 py-4">Order Number</th>
+                                    <th class="px-6 py-4">Customer</th>
+                                    <th class="px-6 py-4">Order Type</th>
+                                    <th class="px-6 py-4">Issue Date</th>
+                                    <th class="px-6 py-4 text-center">Total Item</th>
+                                    <th class="px-6 py-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cogsTableBody"></tbody>
+                        </table>
+                        <div id="cogsEmptyState" class="hidden p-16 text-center text-slate-400">
+                            <div class="inline-block p-4 rounded-full bg-green-50 mb-3">
+                                <i class="fa-solid fa-check-double text-4xl text-green-400"></i>
+                            </div>
+                            <p class="font-medium text-slate-600">Semua Beres!</p>
+                            <p class="text-sm">Tidak ada invoice yang perlu dihitung COGS-nya saat ini.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cogsDetailView" class="hidden">
+                    <button onclick="backToCogsList()" class="mb-6 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium transition group">
+                        <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition"></i> Kembali ke Daftar
+                    </button>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                            <div>
+                                <h2 id="detailInvoiceNum" class="text-3xl font-bold text-slate-800">INV-001</h2>
+                                <p class="text-slate-500 text-sm mt-1 flex items-center gap-2">
+                                    <i class="fa-solid fa-user-tag text-blue-500"></i> <span id="detailCustomer">Customer Name</span>
+                                </p>
+                            </div>
+                            <button onclick="triggerApplyCOGS(this)" class="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md font-medium transition flex items-center gap-2 disabled:bg-slate-400 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-calculator"></i> Apply COGS
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 font-bold text-slate-700 flex items-center gap-2">
+                            <i class="fa-solid fa-list-ol text-slate-400"></i> Item dalam Invoice
+                        </div>
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="bg-white border-b border-slate-100 uppercase text-xs font-bold text-slate-500">
+                                <tr>
+                                    <th class="px-6 py-3">Nama Item</th>
+                                    <th class="px-6 py-3 text-right">Qty</th>
+                                    <th class="px-6 py-3">Status Saat Ini</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cogsDetailBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </main>
 
     <script>
-        // --- GANTI URL INI DENGAN DEPLOYMENT ID WEB APP ANDA ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbwJpfFn__gyTzgUMjH1dJq0_KdqrHv0HrrrMoWoH2sdjGMqrV0c7pw1QDlZI8pmNpiR/exec";
-        
-        let groupedData = {}; // Data mentah dikelompokkan per item
-        let summaryList = []; // Data ringkasan untuk tabel utama
+        let rawData = { stock: [], cogs: [] };
+        let groupedStock = {};
+        let summaryStock = [];
+        let currentCogsDetail = null; // Menyimpan data invoice yang sedang dibuka
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            await fetchData();
-            
-            // Setup Search Realtime
-            document.getElementById('searchInput').addEventListener('input', (e) => {
-                const keyword = e.target.value.toLowerCase();
-                const filtered = summaryList.filter(item => 
-                    item.itemName.toLowerCase().includes(keyword) || 
-                    item.itemCode.toLowerCase().includes(keyword)
-                );
-                renderSummaryTable(filtered);
-            });
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
         });
 
-        async function fetchData() {
-            try {
-                const response = await fetch(API_URL);
-                const result = await response.json();
-                
-                if (result.error) {
-                    alert("System Error: " + result.error);
-                    return;
-                }
+        // Menggunakan google.script.run (Native Web App)
+        function fetchData() {
+            google.script.run
+                .withSuccessHandler(onDataReceived)
+                .withFailureHandler(error => alert("Gagal mengambil data: " + error))
+                .getData();
+        }
 
-                processData(result);
+        function onDataReceived(jsonString) {
+            rawData = JSON.parse(jsonString);
+            
+            // Proses Data Stock
+            processStockData(); 
+            // Proses Data COGS
+            processCogsData(); 
+            
+            // Sembunyikan Loading
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
 
-                // Hilangkan Loading Overlay
-                const loader = document.getElementById('loadingOverlay');
-                loader.classList.add('opacity-0');
-                setTimeout(() => { loader.classList.add('hidden'); }, 300);
+        // --- NAVIGATION ---
+        function switchModule(moduleName) {
+            const btnStock = document.getElementById('btnNavStock');
+            const btnCogs = document.getElementById('btnNavCogs');
+            const viewStock = document.getElementById('moduleStock');
+            const viewCogs = document.getElementById('moduleCogs');
+            const title = document.getElementById('pageTitle');
 
-            } catch (error) {
-                console.error(error);
-                alert("Gagal koneksi. Cek script deployment.");
+            // Reset Kelas Tombol
+            const activeClass = "bg-blue-50 text-blue-700 font-medium border-blue-100 shadow-sm";
+            const inactiveClass = "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-transparent";
+
+            if (moduleName === 'stock') {
+                btnStock.className = "w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition border " + activeClass;
+                btnCogs.className = "w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition border " + inactiveClass;
+                viewStock.classList.remove('hidden');
+                viewCogs.classList.add('hidden');
+                title.innerText = "Kartu Stock";
+            } else {
+                btnCogs.className = "w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition border " + activeClass;
+                btnStock.className = "w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition border " + inactiveClass;
+                viewCogs.classList.remove('hidden');
+                viewStock.classList.add('hidden');
+                title.innerText = "Approval Invoice COGS";
             }
         }
 
-        function processData(data) {
-            // 1. Grouping Data per Nama Barang
-            groupedData = data.reduce((acc, curr) => {
+        // ================= LOGIC KARTU STOCK =================
+        function processStockData() {
+            // Grouping per Item Name
+            groupedStock = rawData.stock.reduce((acc, curr) => {
                 const key = curr.itemName;
-                if (!acc[key]) acc[key] = [];
+                if(!acc[key]) acc[key] = [];
                 acc[key].push(curr);
                 return acc;
             }, {});
 
-            // 2. Membuat Data Summary untuk List View
-            summaryList = Object.keys(groupedData).map(key => {
-                const transactions = groupedData[key];
+            // Buat Summary untuk Tabel Depan
+            summaryStock = Object.keys(groupedStock).map(key => {
+                const transactions = groupedStock[key];
+                const code = transactions[0]?.itemCode || '-';
                 
-                // Ambil Kode Barang dari data pertama
-                const code = transactions.length > 0 ? transactions[0].itemCode : "-";
-                
-                // Hitung Stok Akhir saja untuk List View agar cepat
                 let balance = 0;
-                transactions.forEach(row => {
-                    const qty = parseFloat(row.qty) || 0;
-                    if (row.status === 'Positive' && qty >= 0) {
-                        balance += qty;
-                    } else {
-                        balance -= Math.abs(qty);
-                    }
+                transactions.forEach(r => {
+                    let qty = parseFloat(r.qty) || 0;
+                    if(r.status === 'Positive' && qty >= 0) balance += qty;
+                    else balance -= Math.abs(qty);
                 });
 
-                return {
-                    itemName: key,
-                    itemCode: code,
-                    finalStock: balance
-                };
+                return { name: key, code: code, balance: balance };
             });
 
             // Urutkan A-Z
-            summaryList.sort((a, b) => a.itemName.localeCompare(b.itemName));
+            summaryStock.sort((a,b) => a.name.localeCompare(b.name));
+            document.getElementById('totalStockItems').innerText = summaryStock.length;
 
-            // Update Total Items Count
-            document.getElementById('totalItemsCount').innerText = summaryList.length;
+            renderStockTable(summaryStock);
 
-            // Render Tabel Utama
-            renderSummaryTable(summaryList);
+            // Listener Pencarian Stock
+            document.getElementById('searchStock').addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = summaryStock.filter(item => 
+                    item.name.toLowerCase().includes(term) || 
+                    item.code.toLowerCase().includes(term)
+                );
+                renderStockTable(filtered);
+            });
         }
 
-        function renderSummaryTable(data) {
-            const tbody = document.getElementById('summaryTableBody');
-            const noRes = document.getElementById('noResults');
-            tbody.innerHTML = '';
+        function renderStockTable(data) {
+            const tbody = document.getElementById('stockTableBody');
+            tbody.innerHTML = "";
+            
+            if(data.length === 0) {
+                document.getElementById('stockEmptyState').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('stockEmptyState').classList.add('hidden');
 
-            if (data.length === 0) {
-                noRes.classList.remove('hidden');
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-blue-50/50 transition border-slate-100 group";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-mono text-xs text-slate-500 bg-slate-50/50">${item.code}</td>
+                    <td class="px-6 py-4 font-medium text-slate-700">${item.name}</td>
+                    <td class="px-6 py-4 text-right">
+                        <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-bold">${item.balance.toLocaleString('id-ID')}</span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="viewStockDetail('${item.name.replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-800 font-medium text-sm border border-blue-200 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition">
+                            <i class="fa-regular fa-eye mr-1"></i> View
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function viewStockDetail(itemName) {
+            const transactions = groupedStock[itemName];
+            if(!transactions) return;
+
+            document.getElementById('stockListView').classList.add('hidden');
+            document.getElementById('stockDetailView').classList.remove('hidden');
+            
+            document.getElementById('detailItemName').innerText = itemName;
+            document.getElementById('detailItemCode').innerText = transactions[0]?.itemCode || '-';
+
+            // Hitung Running Balance untuk Detail View
+            let runningBalance = 0, totalIn = 0, totalOut = 0;
+            const tbody = document.getElementById('stockDetailBody');
+            tbody.innerHTML = "";
+
+            // Sort Tanggal (Lama ke Baru)
+            transactions.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            transactions.forEach(row => {
+                const qty = parseFloat(row.qty) || 0;
+                const dateStr = new Date(row.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' });
+                
+                let inVal = 0, outVal = 0;
+                if(row.status === 'Positive' && qty >= 0) {
+                    inVal = qty; totalIn += qty; runningBalance += qty;
+                } else {
+                    outVal = Math.abs(qty); totalOut += outVal; runningBalance -= outVal;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "bg-white border-b hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${dateStr}</td>
+                    <td class="px-6 py-4 text-slate-500 truncate max-w-[150px]" title="${row.contact}">${row.contact}</td>
+                    <td class="px-6 py-4 text-right text-green-600 font-medium">${inVal > 0 ? inVal.toLocaleString('id-ID') : '-'}</td>
+                    <td class="px-6 py-4 text-right text-red-600 font-medium">${outVal > 0 ? outVal.toLocaleString('id-ID') : '-'}</td>
+                    <td class="px-6 py-4 text-right font-bold text-blue-700 bg-blue-50/30">${runningBalance.toLocaleString('id-ID')}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('kpiIn').innerText = totalIn.toLocaleString('id-ID');
+            document.getElementById('kpiOut').innerText = totalOut.toLocaleString('id-ID');
+            document.getElementById('kpiBalance').innerText = runningBalance.toLocaleString('id-ID');
+        }
+
+        function backToStockList() {
+            document.getElementById('stockDetailView').classList.add('hidden');
+            document.getElementById('stockListView').classList.remove('hidden');
+        }
+        
+        function downloadCSVStock() {
+             const itemName = document.getElementById('detailItemName').innerText;
+             const rows = document.querySelectorAll("#stockDetailBody tr");
+             let csv = ["Tanggal,Kontak,Masuk,Keluar,Saldo"];
+             rows.forEach(row => {
+                 let cols = row.querySelectorAll("td");
+                 let line = [];
+                 cols.forEach(c => line.push(`"${c.innerText}"`));
+                 csv.push(line.join(","));
+             });
+             const blob = new Blob([csv.join("\n")], {type: "text/csv"});
+             const link = document.createElement("a");
+             link.href = URL.createObjectURL(blob);
+             link.download = `Stock_${itemName}.csv`;
+             link.click();
+        }
+
+
+        // ================= LOGIC COGS (MODUL 2) =================
+        function processCogsData() {
+            // Grouping by Order Number
+            const grouped = rawData.cogs.reduce((acc, curr) => {
+                const id = curr.orderNumber;
+                if (!acc[id]) {
+                    acc[id] = {
+                        orderNumber: id,
+                        customer: curr.customer,
+                        orderType: curr.orderType,
+                        issueDate: curr.issueDate,
+                        items: []
+                    };
+                }
+                acc[id].items.push(curr);
+                return acc;
+            }, {});
+
+            const list = Object.values(grouped);
+            document.getElementById('countCogs').innerText = list.length;
+            
+            const tbody = document.getElementById('cogsTableBody');
+            tbody.innerHTML = "";
+
+            if (list.length === 0) {
+                document.getElementById('cogsEmptyState').classList.remove('hidden');
             } else {
-                noRes.classList.add('hidden');
-                data.forEach(item => {
+                document.getElementById('cogsEmptyState').classList.add('hidden');
+                list.forEach(inv => {
+                    const dateStr = new Date(inv.issueDate).toLocaleDateString('id-ID');
+                    // Encode data untuk dikirim ke fungsi detail
+                    const dataString = encodeURIComponent(JSON.stringify(inv));
+
                     const tr = document.createElement('tr');
-                    tr.className = "bg-white hover:bg-slate-50 transition border-b border-slate-100 group";
+                    tr.className = "border-b hover:bg-slate-50 transition border-slate-100";
                     tr.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap font-mono text-xs text-slate-500">${item.itemCode || '-'}</td>
-                        <td class="px-6 py-4 font-medium text-slate-800">${item.itemName}</td>
-                        <td class="px-6 py-4 text-right">
-                            <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-blue-200">
-                                ${item.finalStock.toLocaleString('id-ID')}
-                            </span>
-                        </td>
+                        <td class="px-6 py-4 font-medium text-blue-600">${inv.orderNumber}</td>
+                        <td class="px-6 py-4 font-medium text-slate-700">${inv.customer}</td>
+                        <td class="px-6 py-4"><span class="bg-slate-100 border border-slate-200 px-2 py-1 rounded text-xs text-slate-600">${inv.orderType}</span></td>
+                        <td class="px-6 py-4 text-slate-500">${dateStr}</td>
+                        <td class="px-6 py-4 text-center font-bold">${inv.items.length} Item</td>
                         <td class="px-6 py-4 text-center">
-                            <button onclick="showDetail('${item.itemName.replace(/'/g, "\\'")}')" 
-                                class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 transition shadow-sm">
-                                <i class="fa-solid fa-eye mr-1"></i> View
+                            <button onclick="viewCogsDetail('${dataString}')" class="bg-white border border-slate-300 hover:bg-slate-50 hover:border-blue-300 text-slate-700 text-xs px-3 py-1.5 rounded shadow-sm transition">
+                                <i class="fa-solid fa-list mr-1"></i> Rincian
                             </button>
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
             }
+
+            // Search Listener COGS
+            document.getElementById('searchCogs').addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const rows = tbody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(term) ? '' : 'none';
+                });
+            });
         }
 
-        // --- FUNGSI NAVIGASI & DETAIL ---
+        function viewCogsDetail(dataString) {
+            const invoice = JSON.parse(decodeURIComponent(dataString));
+            currentCogsDetail = invoice; // Simpan ke global var
 
-        function showDetail(itemName) {
-            const transactions = groupedData[itemName];
-            if (!transactions) return;
+            document.getElementById('cogsListView').classList.add('hidden');
+            document.getElementById('cogsDetailView').classList.remove('hidden');
 
-            // 1. Hide List, Show Detail
-            document.getElementById('listView').classList.add('hidden');
-            document.getElementById('detailView').classList.remove('hidden');
-            
-            // 2. Set Header Info
-            document.getElementById('detailItemName').innerText = itemName;
-            document.getElementById('detailItemCode').innerText = transactions[0]?.itemCode || '-';
+            document.getElementById('detailInvoiceNum').innerText = invoice.orderNumber;
+            document.getElementById('detailCustomer').innerText = invoice.customer;
 
-            // 3. Hitung Kartu Stok (Rincian)
-            let runningBalance = 0;
-            let totalIn = 0;
-            let totalOut = 0;
+            const tbody = document.getElementById('cogsDetailBody');
+            tbody.innerHTML = "";
 
-            const tbody = document.getElementById('detailTableBody');
-            tbody.innerHTML = '';
-
-            // Sort Tanggal Ascending (Lama ke Baru)
-            transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            transactions.forEach(row => {
-                const qty = parseFloat(row.qty) || 0;
-                const price = parseFloat(row.price) || 0;
-                const total = parseFloat(row.total) || 0;
-                const dateObj = new Date(row.date);
-                const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' });
-
-                let inVal = 0, outVal = 0;
-
-                // Logika Debit/Kredit
-                if (row.status === 'Positive' && qty >= 0) {
-                    inVal = qty; 
-                    totalIn += inVal; 
-                    runningBalance += inVal;
-                } else {
-                    outVal = Math.abs(qty); 
-                    totalOut += outVal; 
-                    runningBalance -= outVal;
-                }
-
-                // Render Baris Detail
+            invoice.items.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.className = "bg-white border-b hover:bg-slate-50 transition";
+                tr.className = "border-b hover:bg-slate-50 border-slate-100";
                 tr.innerHTML = `
-                    <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${dateStr}</td>
-                    <td class="px-6 py-4 truncate max-w-xs text-slate-500" title="${row.contact}">${row.contact}</td>
-                    <td class="px-6 py-4 text-right text-slate-600">Rp ${price.toLocaleString('id-ID')}</td>
-                    <td class="px-6 py-4 text-right text-green-600 font-semibold">${inVal > 0 ? inVal.toLocaleString('id-ID') : '-'}</td>
-                    <td class="px-6 py-4 text-right text-red-600 font-semibold">${outVal > 0 ? outVal.toLocaleString('id-ID') : '-'}</td>
-                    <td class="px-6 py-4 text-right text-slate-600">Rp ${total.toLocaleString('id-ID')}</td>
-                    <td class="px-6 py-4 text-right font-bold text-blue-700 bg-blue-50/50">${runningBalance.toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 font-medium text-slate-700">${item.itemName}</td>
+                    <td class="px-6 py-4 text-right font-bold">${item.qty}</td>
+                    <td class="px-6 py-4 text-amber-600 text-xs italic bg-amber-50 w-fit px-2 rounded-full border border-amber-100">${item.status}</td>
                 `;
                 tbody.appendChild(tr);
             });
-
-            // 4. Update KPI Cards
-            document.getElementById('kpiIn').innerText = totalIn.toLocaleString('id-ID');
-            document.getElementById('kpiOut').innerText = totalOut.toLocaleString('id-ID');
-            document.getElementById('kpiBalance').innerText = runningBalance.toLocaleString('id-ID');
         }
 
-        function showListView() {
-            document.getElementById('detailView').classList.add('hidden');
-            document.getElementById('listView').classList.remove('hidden');
-            // Scroll ke atas
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        function backToCogsList() {
+            document.getElementById('cogsDetailView').classList.add('hidden');
+            document.getElementById('cogsListView').classList.remove('hidden');
         }
 
-        function downloadCSV() {
-            const itemName = document.getElementById('detailItemName').innerText;
-            const rows = document.querySelectorAll("#detailTableBody tr");
-            let csv = [];
-            
-            // Header CSV
-            csv.push("Tanggal,Kontak,Harga Satuan,Masuk,Keluar,Total (IDR),Saldo");
+        function triggerApplyCOGS(btnElement) {
+            if(!currentCogsDetail || !currentCogsDetail.orderNumber) return;
 
-            for (let i = 0; i < rows.length; i++) {
-                let row = [], cols = rows[i].querySelectorAll("td");
-                for (let j = 0; j < cols.length; j++) {
-                    // Bersihkan text dari Rp dan titik ribuan untuk format angka murni (opsional, disini kita ambil text raw)
-                    let text = cols[j].innerText.replace(/\n/g, '').trim();
-                    row.push('"' + text.replace(/"/g, '""') + '"');
-                }
-                csv.push(row.join(","));
-            }
-            const link = document.createElement("a");
-            link.href = window.URL.createObjectURL(new Blob([csv.join("\n")], {type: "text/csv"}));
-            link.download = `KartuStok_${itemName}.csv`;
-            link.click();
+            const originalContent = btnElement.innerHTML;
+            btnElement.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+            btnElement.disabled = true;
+            btnElement.classList.add('bg-slate-400');
+            btnElement.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+
+            // Panggil Server Side Function
+            google.script.run
+                .withSuccessHandler((response) => {
+                    alert(response.message); // Tampilkan pesan sukses
+                    
+                    // Reset tombol (atau redirect kembali ke list)
+                    btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Success';
+                    setTimeout(() => {
+                        backToCogsList(); // Kembali ke daftar
+                        fetchData(); // Refresh data karena status mungkin berubah
+                    }, 1000);
+                })
+                .withFailureHandler((err) => {
+                    alert("Error: " + err);
+                    btnElement.innerHTML = originalContent;
+                    btnElement.disabled = false;
+                    btnElement.classList.remove('bg-slate-400');
+                    btnElement.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                })
+                .applyCOGS(currentCogsDetail.orderNumber);
         }
+
     </script>
 </body>
 </html>
