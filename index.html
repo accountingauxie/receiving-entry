@@ -12,7 +12,7 @@
         .negative-val { color: #e74c3c; font-weight: bold; } /* Merah untuk Keluar */
         .table-container { max-height: 60vh; overflow-y: auto; }
         
-        /* Loading Spinner Sederhana */
+        /* Loading Spinner */
         .loader-wrapper {
             display: none;
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -25,7 +25,7 @@
 <body>
 
     <div class="loader-wrapper" id="loader">
-        <div class="button is-loading is-large is-info is-outlined" style="border:none;">Loading Data...</div>
+        <div class="button is-loading is-large is-info is-outlined" style="border:none;">Sedang Mengambil Data...</div>
     </div>
 
     <div class="container">
@@ -33,7 +33,7 @@
 
         <div class="box">
             <div class="field">
-                <label class="label">Pilih Item Name</label>
+                <label class="label">Pilih Nama Barang (Item Name)</label>
                 <div class="control">
                     <div class="select is-fullwidth is-medium">
                         <select id="itemSelect" onchange="renderCard()">
@@ -92,8 +92,8 @@
 
     <script>
         // --- KONFIGURASI ---
-        // PASTE URL DEPLOYMENT APPS SCRIPT DI SINI (Pastikan akhiran /exec)
-        const API_URL = "https://script.google.com/macros/s/AKfycbw_tQWniwyr4Al7YC5_YfoQbxixeIJhEXT-VC-H1dTW5SPGRhON8tHGTjrV6Ks_BOSs/exec"; 
+        // Link API yang kamu berikan sudah saya masukkan di sini:
+        const API_URL = "https://script.google.com/macros/s/AKfycby4xFw3kLd0H9wLqWyMfG71iTi9JsBae-k1FH26lhU4seBxtA1JqGsyd5P5ryVcS4AP/exec"; 
 
         let globalData = [];
         let groupedData = {};
@@ -115,7 +115,8 @@
                 loader.classList.remove('is-active');
             } catch (error) {
                 console.error("Gagal mengambil data:", error);
-                alert("Gagal mengambil data dari Google Sheet. Pastikan URL benar.");
+                // Pesan error lebih jelas untuk user
+                alert("Gagal mengambil data. Pastikan izin Deploy AppScript adalah 'Anyone' (Siapa Saja).");
                 loader.classList.remove('is-active');
                 select.innerHTML = '<option>Error Memuat Data</option>';
             }
@@ -173,15 +174,15 @@
                 const dateStr = dateRaw.toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' });
                 
                 // --- LOGIKA STOK (Masuk/Keluar) ---
-                // Jika Status Positive -> Masuk. 
-                // Jika Status Negative ATAU qty < 0 -> Keluar.
                 let inVal = 0;
                 let outVal = 0;
 
+                // Logika: Jika Status "Positive" DAN qty positif = MASUK
+                // Jika tidak (Status Negative atau qty minus) = KELUAR
                 if (row.status === 'Positive' && qty >= 0) {
                     inVal = qty;
                 } else {
-                    outVal = Math.abs(qty); // Pastikan positif untuk tampilan
+                    outVal = Math.abs(qty); 
                 }
 
                 // Update Saldo
