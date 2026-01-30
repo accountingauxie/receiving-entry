@@ -21,7 +21,7 @@
         /* Glass Effect */
         .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
 
-        /* --- PERBAIKAN TAMPILAN SEARCH (TOM SELECT) --- */
+        /* --- STYLING SEARCH (TOM SELECT) --- */
         .ts-control {
             border-radius: 0.5rem !important;
             padding: 0.6rem 0.75rem !important;
@@ -35,37 +35,30 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
         }
         
-        /* --- PERBAIKAN BUG TRANSPARAN DI SINI --- */
+        /* Dropdown Putih Solid (Fix Transparan) */
         .ts-dropdown, .ts-dropdown-content {
-            background-color: #ffffff !important; /* WAJIB PUTIH SOLID */
+            background-color: #ffffff !important;
             border: 1px solid #cbd5e1;
             border-radius: 0.5rem;
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); /* Bayangan lebih kuat */
-            z-index: 99999 !important; /* Layer paling atas */
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            z-index: 99999 !important;
             margin-top: 4px;
         }
         
         .ts-dropdown .option {
-            padding: 10px 14px; /* Spasi item lebih lega */
+            padding: 10px 14px;
             color: #334155;
             background-color: #ffffff;
             cursor: pointer;
             border-bottom: 1px solid #f1f5f9;
         }
         
-        /* Hilangkan border item terakhir */
         .ts-dropdown .option:last-child { border-bottom: none; }
 
         .ts-dropdown .option.active, .ts-dropdown .option:hover {
-            background-color: #eff6ff !important; /* Biru muda */
+            background-color: #eff6ff !important;
             color: #1e40af;
             font-weight: 500;
-        }
-
-        .no-results {
-            background-color: white;
-            padding: 10px;
-            color: #64748b;
         }
     </style>
 </head>
@@ -195,9 +188,9 @@
                                 <tr>
                                     <th class="px-6 py-3 font-semibold">Tanggal</th>
                                     <th class="px-6 py-3 font-semibold">Kontak / Keterangan</th>
-                                    <th class="px-6 py-3 text-right text-green-700 font-semibold">Masuk</th>
+                                    <th class="px-6 py-3 text-right font-semibold">Harga</th> <th class="px-6 py-3 text-right text-green-700 font-semibold">Masuk</th>
                                     <th class="px-6 py-3 text-right text-red-700 font-semibold">Keluar</th>
-                                    <th class="px-6 py-3 text-right font-bold text-blue-700 bg-blue-50">Saldo</th>
+                                    <th class="px-6 py-3 text-right font-semibold">Total (Rp)</th> <th class="px-6 py-3 text-right font-bold text-blue-700 bg-blue-50">Saldo</th>
                                 </tr>
                             </thead>
                             <tbody id="tableBody" class="divide-y divide-slate-100">
@@ -227,11 +220,8 @@
         let tomSelectInstance = null;
         let chartInstance = null;
 
-        // --- INIT ---
         document.addEventListener('DOMContentLoaded', async () => {
-            // 1. Init Dropdown duluan (kosongan) agar UI langsung muncul
-            initDropdown(true); 
-            // 2. Baru tarik data
+            initDropdown(true); // Init loading state
             await fetchData();
         });
 
@@ -249,7 +239,7 @@
                 globalData = result;
                 processData(globalData);
 
-                // Hilangkan Loading Overlay
+                // Hide Loading
                 const loader = document.getElementById('loadingOverlay');
                 loader.classList.add('opacity-0');
                 setTimeout(() => { loader.classList.add('hidden'); }, 300);
@@ -269,11 +259,10 @@
                 return acc;
             }, {});
 
-            // Update Dropdown dengan data asli
-            initDropdown(false); 
+            initDropdown(false); // Update dropdown with real data
         }
 
-        // 3. Setup Dropdown (Updated)
+        // 3. Setup Dropdown (Searchable Item)
         function initDropdown(isLoading = false) {
             if (tomSelectInstance) {
                 tomSelectInstance.destroy();
@@ -295,7 +284,7 @@
                 options: optionsData,
                 valueField: 'value',
                 labelField: 'text',
-                searchField: 'text',
+                searchField: 'text', // Mengaktifkan pencarian teks
                 create: false,
                 maxOptions: 50,
                 placeholder: placeholderText,
@@ -305,7 +294,7 @@
                         return '<div class="option">' + escape(data.text) + '</div>';
                     },
                     no_results: function(data, escape) {
-                        return '<div class="no-results">Barang tidak ditemukan</div>';
+                        return '<div class="no-results p-2 text-slate-400">Barang tidak ditemukan</div>';
                     }
                 },
                 onChange: function(value) {
@@ -348,8 +337,17 @@
             const chartLabels = [];
             const chartData = [];
 
+            // Helper format uang
+            const fmtMoney = (n) => {
+                return "Rp " + (parseFloat(n) || 0).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            };
+
             transactions.forEach(row => {
                 const qty = parseFloat(row.qty) || 0;
+                // Ambil price & total (pastikan nama key sesuai JSON dari Apps Script)
+                const price = parseFloat(row.price || row.Price || 0); 
+                const totalVal = parseFloat(row.total || row.Total || 0);
+
                 const dateObj = new Date(row.date);
                 const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' });
 
@@ -366,17 +364,21 @@
 
                 const tr = document.createElement('tr');
                 tr.className = "bg-white border-b hover:bg-slate-50 transition";
+                
+                // --- UPDATE KOLOM TABEL DI SINI ---
                 tr.innerHTML = `
                     <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${dateStr}</td>
                     <td class="px-6 py-4 truncate max-w-xs text-slate-500" title="${row.contact}">${row.contact}</td>
+                    <td class="px-6 py-4 text-right text-slate-600">${price > 0 ? fmtMoney(price) : '-'}</td>
                     <td class="px-6 py-4 text-right text-green-600 font-semibold">${inVal > 0 ? inVal.toLocaleString('id-ID') : '-'}</td>
                     <td class="px-6 py-4 text-right text-red-600 font-semibold">${outVal > 0 ? outVal.toLocaleString('id-ID') : '-'}</td>
+                    <td class="px-6 py-4 text-right text-slate-700 font-medium">${totalVal > 0 ? fmtMoney(totalVal) : '-'}</td>
                     <td class="px-6 py-4 text-right font-bold text-blue-700 bg-blue-50/50">${runningBalance.toLocaleString('id-ID')}</td>
                 `;
                 tableBody.appendChild(tr);
             });
 
-             // Kode Barang
+             // Set Kode Barang
             if(transactions.length > 0) {
                  document.getElementById('displayItemCode').innerText = transactions[0].itemCode || "-";
             } else {
@@ -426,6 +428,7 @@
         // 6. Download CSV
         function downloadCSV() {
             const itemName = document.getElementById('displayItemName').innerText;
+            // Fungsi ini otomatis mengambil kolom Price & Total yang baru ditambahkan
             const rows = document.querySelectorAll("table tr");
             let csv = [];
             for (let i = 0; i < rows.length; i++) {
