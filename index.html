@@ -3,58 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Stock Portal</title>
+    <title>Smart Stock Portal - List View</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* Tom Select Styling Customization */
-        .ts-control {
-            border-radius: 0.5rem !important;
-            padding: 0.6rem 0.75rem !important;
-            border-color: #cbd5e1 !important;
-            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            font-size: 0.875rem;
-            background-color: white !important;
-        }
-        .ts-control.focus {
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-        }
-        .ts-dropdown, .ts-dropdown-content {
-            background-color: #ffffff !important;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            z-index: 99999 !important;
-            margin-top: 4px;
-        }
-        .ts-dropdown .option {
-            padding: 10px 14px;
-            color: #334155;
-            cursor: pointer;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        .ts-dropdown .option.active, .ts-dropdown .option:hover {
-            background-color: #eff6ff !important;
-            color: #1e40af;
-            font-weight: 500;
-        }
-        .no-results {
-            padding: 10px;
-            color: #64748b;
-            text-align: center;
-        }
+        /* Transisi halus saat pindah view */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
@@ -63,12 +25,12 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <i class="fa-solid fa-boxes-stacked text-blue-600 text-2xl mr-3"></i>
-                    <span class="font-bold text-xl tracking-tight text-slate-700">Stock Portal <span class="text-blue-600">Pro</span></span>
+                    <i class="fa-solid fa-warehouse text-blue-600 text-2xl mr-3"></i>
+                    <span class="font-bold text-xl tracking-tight text-slate-700">Stock Portal <span class="text-blue-600">List</span></span>
                 </div>
-                <div class="flex items-center">
-                    <span class="text-xs font-medium bg-green-100 text-green-700 py-1 px-3 rounded-full flex items-center gap-2" id="statusBadge">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> System Online
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-medium bg-green-100 text-green-700 py-1 px-3 rounded-full flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Data Live
                     </span>
                 </div>
             </div>
@@ -78,143 +40,140 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         <div id="loadingOverlay" class="fixed inset-0 bg-white/90 z-[100] flex flex-col items-center justify-center transition-opacity duration-300">
-            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-4"></div>
-            <p class="text-slate-500 font-medium animate-pulse">Sinkronisasi data Google Sheet...</p>
+            <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
+            <p class="text-slate-500 font-medium animate-pulse">Memuat data persediaan...</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8 relative z-30">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                
-                <div class="md:col-span-2 relative">
-                    <label class="block text-sm font-semibold text-slate-600 mb-2">Cari Nama Barang</label>
-                    <select id="itemSelect" placeholder="Ketik nama barang..." autocomplete="off">
-                        <option value="">Menunggu data...</option>
-                    </select>
+        <div id="listView" class="fade-in">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Daftar Persediaan</h2>
+                        <p class="text-sm text-slate-500 mt-1">Total Item: <span id="totalItemsCount" class="font-bold text-slate-700">0</span></p>
+                    </div>
+                    <div class="relative w-full md:w-72">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-search text-slate-400"></i>
+                        </div>
+                        <input type="text" id="searchInput" placeholder="Cari Kode atau Nama Barang..." 
+                            class="pl-10 w-full rounded-lg border-slate-300 border bg-slate-50 p-2.5 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm">
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-2">Dari Tanggal (Opsional)</label>
-                    <input type="date" id="startDate" class="w-full rounded-lg border-slate-300 border bg-white p-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-sm text-slate-600">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4 font-bold">Kode Barang</th>
+                                <th class="px-6 py-4 font-bold">Nama Barang</th>
+                                <th class="px-6 py-4 text-right font-bold">Stok Akhir</th>
+                                <th class="px-6 py-4 text-center font-bold">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryTableBody" class="divide-y divide-slate-100">
+                            </tbody>
+                    </table>
                 </div>
-                
-                <div>
-                     <button onclick="resetFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-2.5 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2 border border-slate-200">
-                        <i class="fa-solid fa-rotate-left"></i> Reset
-                    </button>
+                <div id="noResults" class="hidden p-8 text-center text-slate-500">
+                    <i class="fa-regular fa-folder-open text-4xl mb-3 text-slate-300"></i>
+                    <p>Barang tidak ditemukan.</p>
                 </div>
             </div>
         </div>
 
-        <div id="dashboardArea" class="hidden space-y-6">
+        <div id="detailView" class="hidden fade-in">
             
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <button onclick="showListView()" class="mb-6 group flex items-center gap-2 text-slate-500 hover:text-blue-600 transition font-medium">
+                <i class="fa-solid fa-arrow-left transform group-hover:-translate-x-1 transition"></i> Kembali ke Daftar
+            </button>
+
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
                 <div>
-                    <h2 id="displayItemName" class="text-2xl font-bold text-slate-800">Nama Barang</h2>
-                    <p class="text-slate-500 text-sm mt-1">Kode Barang: <span id="displayItemCode" class="font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">-</span></p>
+                    <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Nama Barang</h2>
+                    <p class="text-slate-500 text-sm mt-1">Kode: <span id="detailItemCode" class="font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">-</span></p>
                 </div>
                 <button onclick="downloadCSV()" class="mt-4 md:mt-0 bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition flex items-center gap-2">
                     <i class="fa-solid fa-file-excel"></i> Download Excel
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white rounded-xl p-5 border-l-4 border-green-500 shadow-sm hover:shadow-md transition">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-xl p-5 border-l-4 border-green-500 shadow-sm">
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Masuk</p>
                             <p class="text-2xl font-bold text-slate-800 mt-1" id="kpiIn">0</p>
                         </div>
-                        <div class="bg-green-50 p-3 rounded-full text-green-600">
-                            <i class="fa-solid fa-arrow-down"></i>
-                        </div>
+                        <div class="bg-green-50 p-3 rounded-full text-green-600"><i class="fa-solid fa-arrow-down"></i></div>
                     </div>
                 </div>
-                
-                <div class="bg-white rounded-xl p-5 border-l-4 border-red-500 shadow-sm hover:shadow-md transition">
+                <div class="bg-white rounded-xl p-5 border-l-4 border-red-500 shadow-sm">
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Keluar</p>
                             <p class="text-2xl font-bold text-slate-800 mt-1" id="kpiOut">0</p>
                         </div>
-                        <div class="bg-red-50 p-3 rounded-full text-red-600">
-                            <i class="fa-solid fa-arrow-up"></i>
-                        </div>
+                        <div class="bg-red-50 p-3 rounded-full text-red-600"><i class="fa-solid fa-arrow-up"></i></div>
                     </div>
                 </div>
-
                 <div class="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-5 shadow-lg text-white relative overflow-hidden">
                     <div class="relative z-10 flex justify-between items-center">
                         <div>
                             <p class="text-xs text-blue-100 font-bold uppercase tracking-wider">Stok Akhir</p>
                             <p class="text-3xl font-bold mt-1" id="kpiBalance">0</p>
                         </div>
-                        <div class="bg-white/20 p-3 rounded-full text-white backdrop-blur-sm">
-                            <i class="fa-solid fa-box-open"></i>
-                        </div>
+                        <div class="bg-white/20 p-3 rounded-full text-white backdrop-blur-sm"><i class="fa-solid fa-box-open"></i></div>
                     </div>
                     <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-white/10 rounded-full"></div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                <div class="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                    <h3 class="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-chart-line text-blue-500"></i> Tren Pergerakan Stok
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                    <h3 class="text-lg font-bold text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-slate-400"></i> Rincian Transaksi
                     </h3>
-                    <div class="h-72 w-full relative z-0">
-                        <canvas id="stockChart"></canvas>
-                    </div>
                 </div>
-
-                <div class="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                        <h3 class="text-lg font-bold text-slate-700 flex items-center gap-2">
-                            <i class="fa-solid fa-list text-slate-400"></i> Rincian Transaksi
-                        </h3>
-                    </div>
-                    
-                    <div class="overflow-x-auto max-h-[500px]">
-                        <table class="w-full text-sm text-left text-slate-600">
-                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-10 shadow-sm">
-                                <tr>
-                                    <th class="px-6 py-3 font-semibold">Tanggal</th>
-                                    <th class="px-6 py-3 font-semibold">Kontak</th>
-                                    <th class="px-6 py-3 text-right">Harga Satuan</th> <th class="px-6 py-3 text-right text-green-700 font-semibold">Masuk</th>
-                                    <th class="px-6 py-3 text-right text-red-700 font-semibold">Keluar</th>
-                                    <th class="px-6 py-3 text-right">Total (IDR)</th> <th class="px-6 py-3 text-right font-bold text-blue-700 bg-blue-50">Saldo</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableBody" class="divide-y divide-slate-100">
-                                </tbody>
-                        </table>
-                    </div>
+                <div class="overflow-x-auto max-h-[600px]">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold">Tanggal</th>
+                                <th class="px-6 py-3 font-semibold">Kontak/Keterangan</th>
+                                <th class="px-6 py-3 text-right">Harga Satuan</th>
+                                <th class="px-6 py-3 text-right text-green-700 font-semibold">Masuk</th>
+                                <th class="px-6 py-3 text-right text-red-700 font-semibold">Keluar</th>
+                                <th class="px-6 py-3 text-right">Total (IDR)</th>
+                                <th class="px-6 py-3 text-right font-bold text-blue-700 bg-blue-50">Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
                 </div>
             </div>
-        </div>
-        
-        <div id="emptyState" class="text-center py-24 transition-all duration-500">
-            <div class="inline-block p-6 rounded-full bg-slate-50 border border-slate-100 mb-4 text-slate-300">
-                <i class="fa-solid fa-magnifying-glass text-5xl"></i>
-            </div>
-            <h3 class="text-xl font-semibold text-slate-700 mb-1">Cari Barang untuk Melihat Stok</h3>
-            <p class="text-slate-400 text-sm max-w-md mx-auto">Gunakan kolom pencarian di atas. Ketik nama barang, dan data harga serta stok akan muncul.</p>
         </div>
 
     </main>
 
     <script>
-        // --- GANTI URL INI DENGAN DEPLOYMENT ID TERBARU ANDA ---
+        // --- GANTI URL INI DENGAN DEPLOYMENT ID WEB APP ANDA ---
         const API_URL = "https://script.google.com/macros/s/AKfycbwJpfFn__gyTzgUMjH1dJq0_KdqrHv0HrrrMoWoH2sdjGMqrV0c7pw1QDlZI8pmNpiR/exec";
         
-        let globalData = [];
-        let groupedData = {};
-        let tomSelectInstance = null;
-        let chartInstance = null;
+        let groupedData = {}; // Data mentah dikelompokkan per item
+        let summaryList = []; // Data ringkasan untuk tabel utama
 
         document.addEventListener('DOMContentLoaded', async () => {
-            initDropdown(true); 
             await fetchData();
+            
+            // Setup Search Realtime
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                const keyword = e.target.value.toLowerCase();
+                const filtered = summaryList.filter(item => 
+                    item.itemName.toLowerCase().includes(keyword) || 
+                    item.itemCode.toLowerCase().includes(keyword)
+                );
+                renderSummaryTable(filtered);
+            });
         });
 
         async function fetchData() {
@@ -227,8 +186,7 @@
                     return;
                 }
 
-                globalData = result;
-                processData(globalData);
+                processData(result);
 
                 // Hilangkan Loading Overlay
                 const loader = document.getElementById('loadingOverlay');
@@ -237,11 +195,12 @@
 
             } catch (error) {
                 console.error(error);
-                alert("Gagal koneksi. Pastikan script sudah di-deploy sebagai Web App dengan akses 'Anyone'.");
+                alert("Gagal koneksi. Cek script deployment.");
             }
         }
 
         function processData(data) {
+            // 1. Grouping Data per Nama Barang
             groupedData = data.reduce((acc, curr) => {
                 const key = curr.itemName;
                 if (!acc[key]) acc[key] = [];
@@ -249,116 +208,121 @@
                 return acc;
             }, {});
 
-            initDropdown(false); 
-        }
-
-        function initDropdown(isLoading = false) {
-            if (tomSelectInstance) {
-                tomSelectInstance.destroy();
-            }
-
-            let optionsData = [];
-            let placeholderText = "Ketik nama barang...";
-
-            if (isLoading) {
-                placeholderText = "Sedang memuat data...";
-            } else {
-                // Mengurutkan nama barang A-Z
-                optionsData = Object.keys(groupedData).sort().map(key => ({
-                    value: key,
-                    text: key
-                }));
-            }
-
-            // Inisialisasi TomSelect (Fitur Search)
-            tomSelectInstance = new TomSelect("#itemSelect", {
-                options: optionsData,
-                valueField: 'value',
-                labelField: 'text',
-                searchField: 'text',
-                create: false,
-                maxOptions: 50,
-                placeholder: placeholderText,
-                controlInput: isLoading ? null : undefined, 
-                render: {
-                    option: function(data, escape) {
-                        return '<div class="option">' + escape(data.text) + '</div>';
-                    },
-                    no_results: function(data, escape) {
-                        return '<div class="no-results">Barang tidak ditemukan</div>';
+            // 2. Membuat Data Summary untuk List View
+            summaryList = Object.keys(groupedData).map(key => {
+                const transactions = groupedData[key];
+                
+                // Ambil Kode Barang dari data pertama
+                const code = transactions.length > 0 ? transactions[0].itemCode : "-";
+                
+                // Hitung Stok Akhir saja untuk List View agar cepat
+                let balance = 0;
+                transactions.forEach(row => {
+                    const qty = parseFloat(row.qty) || 0;
+                    if (row.status === 'Positive' && qty >= 0) {
+                        balance += qty;
+                    } else {
+                        balance -= Math.abs(qty);
                     }
-                },
-                onChange: function(value) {
-                    if(value) renderDashboard(value);
-                }
+                });
+
+                return {
+                    itemName: key,
+                    itemCode: code,
+                    finalStock: balance
+                };
             });
-            
-            if (isLoading) tomSelectInstance.disable(); 
-            else tomSelectInstance.enable(); 
+
+            // Urutkan A-Z
+            summaryList.sort((a, b) => a.itemName.localeCompare(b.itemName));
+
+            // Update Total Items Count
+            document.getElementById('totalItemsCount').innerText = summaryList.length;
+
+            // Render Tabel Utama
+            renderSummaryTable(summaryList);
         }
 
-        function renderDashboard(itemName) {
-            if (!itemName) {
-                document.getElementById('dashboardArea').classList.add('hidden');
-                document.getElementById('emptyState').classList.remove('hidden');
-                return;
+        function renderSummaryTable(data) {
+            const tbody = document.getElementById('summaryTableBody');
+            const noRes = document.getElementById('noResults');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                noRes.classList.remove('hidden');
+            } else {
+                noRes.classList.add('hidden');
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = "bg-white hover:bg-slate-50 transition border-b border-slate-100 group";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap font-mono text-xs text-slate-500">${item.itemCode || '-'}</td>
+                        <td class="px-6 py-4 font-medium text-slate-800">${item.itemName}</td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-blue-200">
+                                ${item.finalStock.toLocaleString('id-ID')}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="showDetail('${item.itemName.replace(/'/g, "\\'")}')" 
+                                class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 transition shadow-sm">
+                                <i class="fa-solid fa-eye mr-1"></i> View
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             }
+        }
 
-            document.getElementById('dashboardArea').classList.remove('hidden');
-            document.getElementById('emptyState').classList.add('hidden');
-            document.getElementById('displayItemName').innerText = itemName;
+        // --- FUNGSI NAVIGASI & DETAIL ---
 
-            let transactions = groupedData[itemName];
-            const startDateVal = document.getElementById('startDate').value;
+        function showDetail(itemName) {
+            const transactions = groupedData[itemName];
+            if (!transactions) return;
+
+            // 1. Hide List, Show Detail
+            document.getElementById('listView').classList.add('hidden');
+            document.getElementById('detailView').classList.remove('hidden');
             
-            if (startDateVal) {
-                const start = new Date(startDateVal);
-                transactions = transactions.filter(t => new Date(t.date) >= start);
-            }
+            // 2. Set Header Info
+            document.getElementById('detailItemName').innerText = itemName;
+            document.getElementById('detailItemCode').innerText = transactions[0]?.itemCode || '-';
 
-            // Sort by Date
-            transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
-
+            // 3. Hitung Kartu Stok (Rincian)
             let runningBalance = 0;
             let totalIn = 0;
             let totalOut = 0;
-            const tableBody = document.getElementById('tableBody');
-            tableBody.innerHTML = '';
-            
-            const chartLabels = [];
-            const chartData = [];
 
-            // Set Kode Barang dari transaksi pertama
-            if(transactions.length > 0) {
-                 document.getElementById('displayItemCode').innerText = transactions[0].itemCode || "-";
-            } else {
-                 document.getElementById('displayItemCode').innerText = "-";
-            }
+            const tbody = document.getElementById('detailTableBody');
+            tbody.innerHTML = '';
+
+            // Sort Tanggal Ascending (Lama ke Baru)
+            transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
             transactions.forEach(row => {
                 const qty = parseFloat(row.qty) || 0;
                 const price = parseFloat(row.price) || 0;
                 const total = parseFloat(row.total) || 0;
-
                 const dateObj = new Date(row.date);
                 const dateStr = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' });
 
                 let inVal = 0, outVal = 0;
 
-                // Logika Saldo
+                // Logika Debit/Kredit
                 if (row.status === 'Positive' && qty >= 0) {
-                    inVal = qty; totalIn += inVal; runningBalance += inVal;
+                    inVal = qty; 
+                    totalIn += inVal; 
+                    runningBalance += inVal;
                 } else {
-                    outVal = Math.abs(qty); totalOut += outVal; runningBalance -= outVal;
+                    outVal = Math.abs(qty); 
+                    totalOut += outVal; 
+                    runningBalance -= outVal;
                 }
 
-                chartLabels.push(dateStr);
-                chartData.push(runningBalance);
-
+                // Render Baris Detail
                 const tr = document.createElement('tr');
                 tr.className = "bg-white border-b hover:bg-slate-50 transition";
-                
-                // Render Baris Tabel
                 tr.innerHTML = `
                     <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${dateStr}</td>
                     <td class="px-6 py-4 truncate max-w-xs text-slate-500" title="${row.contact}">${row.contact}</td>
@@ -368,77 +332,44 @@
                     <td class="px-6 py-4 text-right text-slate-600">Rp ${total.toLocaleString('id-ID')}</td>
                     <td class="px-6 py-4 text-right font-bold text-blue-700 bg-blue-50/50">${runningBalance.toLocaleString('id-ID')}</td>
                 `;
-                tableBody.appendChild(tr);
+                tbody.appendChild(tr);
             });
 
-            animateValue("kpiIn", totalIn);
-            animateValue("kpiOut", totalOut);
-            animateValue("kpiBalance", runningBalance);
-            updateChart(chartLabels, chartData, itemName);
+            // 4. Update KPI Cards
+            document.getElementById('kpiIn').innerText = totalIn.toLocaleString('id-ID');
+            document.getElementById('kpiOut').innerText = totalOut.toLocaleString('id-ID');
+            document.getElementById('kpiBalance').innerText = runningBalance.toLocaleString('id-ID');
         }
 
-        function updateChart(labels, data, labelName) {
-            const ctx = document.getElementById('stockChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
-
-            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
-            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
-
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Saldo Stok',
-                        data: data,
-                        borderColor: '#2563eb',
-                        backgroundColor: gradient,
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true,
-                        pointRadius: 3,
-                        pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
-                }
-            });
+        function showListView() {
+            document.getElementById('detailView').classList.add('hidden');
+            document.getElementById('listView').classList.remove('hidden');
+            // Scroll ke atas
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function downloadCSV() {
-            const itemName = document.getElementById('displayItemName').innerText;
-            const rows = document.querySelectorAll("table tr");
+            const itemName = document.getElementById('detailItemName').innerText;
+            const rows = document.querySelectorAll("#detailTableBody tr");
             let csv = [];
+            
+            // Header CSV
+            csv.push("Tanggal,Kontak,Harga Satuan,Masuk,Keluar,Total (IDR),Saldo");
+
             for (let i = 0; i < rows.length; i++) {
-                let row = [], cols = rows[i].querySelectorAll("td, th");
-                for (let j = 0; j < cols.length; j++) row.push('"' + cols[j].innerText.replace(/"/g, '""').trim() + '"');
+                let row = [], cols = rows[i].querySelectorAll("td");
+                for (let j = 0; j < cols.length; j++) {
+                    // Bersihkan text dari Rp dan titik ribuan untuk format angka murni (opsional, disini kita ambil text raw)
+                    let text = cols[j].innerText.replace(/\n/g, '').trim();
+                    row.push('"' + text.replace(/"/g, '""') + '"');
+                }
                 csv.push(row.join(","));
             }
             const link = document.createElement("a");
             link.href = window.URL.createObjectURL(new Blob([csv.join("\n")], {type: "text/csv"}));
-            link.download = `Stok_${itemName}.csv`;
+            link.download = `KartuStok_${itemName}.csv`;
             link.click();
         }
-
-        function animateValue(id, val) { document.getElementById(id).innerText = val.toLocaleString('id-ID'); }
-        
-        function resetFilters() {
-            document.getElementById('startDate').value = '';
-            if(tomSelectInstance) {
-                tomSelectInstance.clear();
-            }
-            document.getElementById('dashboardArea').classList.add('hidden');
-            document.getElementById('emptyState').classList.remove('hidden');
-        }
-
-        document.getElementById('startDate').addEventListener('change', () => {
-             if(tomSelectInstance && tomSelectInstance.getValue()) renderDashboard(tomSelectInstance.getValue());
-        });
     </script>
 </body>
 </html>
