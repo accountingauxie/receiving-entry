@@ -14,7 +14,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .hidden { display: none !important; }
         
-        /* Style untuk Header yang bisa disort */
         th.sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
         th.sortable:hover { background-color: #e2e8f0; }
         th.sortable i { margin-left: 5px; color: #94a3b8; font-size: 0.8em; }
@@ -36,7 +35,7 @@
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v1.2 (Full)</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.0 (FIFO)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -50,13 +49,13 @@
         <div class="flex-1 overflow-auto p-4 md:p-8 relative">
             <div id="loadingOverlay" class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
                 <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
-                <p class="text-slate-500 font-medium animate-pulse">Mengambil data dari Server...</p>
+                <p class="text-slate-500 font-medium animate-pulse">Mengambil data Realtime...</p>
             </div>
 
             <div id="moduleStock" class="fade-in">
                 <div id="stockListView">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                        <input type="text" id="searchStock" placeholder="Cari barang..." class="w-full p-3 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input type="text" id="searchStock" placeholder="Cari Kode / Nama Barang..." class="w-full p-3 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm text-left text-slate-600">
@@ -109,7 +108,7 @@
                 <div id="cogsListView">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 flex justify-between items-center">
                         <input type="text" id="searchCogs" placeholder="Cari Invoice / Customer..." class="w-full md:w-1/2 p-3 border rounded-lg bg-slate-50 outline-none">
-                        <div class="text-sm text-slate-500">Pending: <span id="countCogs" class="font-bold text-blue-600">0</span></div>
+                        <div class="text-sm text-slate-500">Pending Approval: <span id="countCogs" class="font-bold text-blue-600">0</span></div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm text-left text-slate-600">
@@ -134,10 +133,10 @@
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 flex justify-between items-center">
                         <div>
                             <h2 id="detailInvoiceNum" class="text-2xl font-bold text-slate-800">INV-001</h2>
-                            <p id="detailCustomer" class="text-slate-500 text-sm">Customer</p>
+                            <p id="detailCustomer" class="text-slate-500 text-sm">Customer Name</p>
                         </div>
                         <button onclick="triggerApplyCOGS(this)" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow font-medium flex items-center gap-2 transition">
-                            <i class="fa-solid fa-calculator"></i> Apply COGS
+                            <i class="fa-solid fa-calculator"></i> Apply FIFO & Post
                         </button>
                     </div>
                     
@@ -160,8 +159,8 @@
     </main>
 
 <script>
-        // --- CONFIGURATION ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbxF4Ewuw6ZvI31kYWnFuRy6CSDSXz2JnxSQiqCck7SPVRpncxXQlosisUNa1q8f5LbW/exec"; 
+        // --- GANTI URL INI DENGAN URL DEPLOYMENT BARU ANDA ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbwVK0USHRjD4x2PPfaFlp-1Soq5EZR7S2izXj0WFDHDF8nrdanH39JL2-mbfTv8jToV/exec"; 
         
         let rawData = { stock: [], cogs: [] };
         let groupedStock = {};
@@ -192,12 +191,11 @@
                 });
 
             } catch (error) {
-                alert("Gagal koneksi ke API: " + error);
+                alert("Gagal koneksi ke API. Pastikan URL benar.");
                 document.getElementById('loadingOverlay').innerHTML = `<p class="text-red-500 font-bold">Error Connection. Refresh page.</p>`;
             }
         }
 
-        // --- NAVIGATION LOGIC ---
         function switchModule(mod) {
             const stockBtn = document.getElementById('btnNavStock');
             const cogsBtn = document.getElementById('btnNavCogs');
@@ -209,7 +207,7 @@
                 stockView.classList.remove('hidden'); cogsView.classList.add('hidden');
                 stockBtn.classList.replace('text-slate-600','text-blue-700'); stockBtn.classList.replace('border-transparent','bg-blue-50');
                 cogsBtn.classList.replace('text-blue-700','text-slate-600'); cogsBtn.classList.replace('bg-blue-50','border-transparent');
-                title.innerText = "Kartu Stock";
+                title.innerText = "Kartu Stock (Realtime)";
             } else {
                 cogsView.classList.remove('hidden'); stockView.classList.add('hidden');
                 cogsBtn.classList.replace('text-slate-600','text-blue-700'); cogsBtn.classList.replace('border-transparent','bg-blue-50');
@@ -218,7 +216,7 @@
             }
         }
 
-        // --- SORTING LOGIC ---
+        // --- SORTING ---
         function handleSort(module, key, type) {
             if(sortState[module].key === key) {
                 sortState[module].dir = sortState[module].dir === 'asc' ? 'desc' : 'asc';
@@ -275,7 +273,7 @@
             }
         }
 
-        // --- STOCK MODULE LOGIC ---
+        // --- STOCK LOGIC ---
         function processStockData() {
             groupedStock = rawData.stock.reduce((acc, curr) => {
                 if(!acc[curr.itemName]) acc[curr.itemName] = [];
@@ -285,7 +283,13 @@
             summaryStock = Object.keys(groupedStock).map(key => {
                 const items = groupedStock[key];
                 let bal = 0;
-                items.forEach(i => bal += (i.status === 'Positive' && i.qty >= 0) ? parseFloat(i.qty) : -Math.abs(parseFloat(i.qty)));
+                // LOGIC PENTING: Hitung saldo berdasarkan status
+                items.forEach(i => {
+                    let qty = parseFloat(i.qty || 0);
+                    // Jika Positive = Tambah, Jika Negative = Kurang
+                    if (i.status === 'Positive') bal += qty;
+                    else bal -= Math.abs(qty); // Pastikan dikurang meskipun di excel tertulis minus
+                });
                 return { name: key, code: items[0].itemCode, balance: bal };
             });
 
@@ -311,7 +315,6 @@
             tbody.innerHTML = htmlRows;
         }
 
-        // --- REVISI: VIEW STOCK DETAIL (URUTAN DIPERBAIKI) ---
         function viewStockDetail(name) {
             document.getElementById('stockListView').classList.add('hidden');
             document.getElementById('stockDetailView').classList.remove('hidden');
@@ -324,7 +327,6 @@
             let runBal = 0, totIn = 0, totOut = 0;
             const tbody = document.getElementById('stockDetailBody');
 
-            // 1. KPI Calculation
             data.forEach(r => {
                 let qty = parseFloat(r.qty || 0);
                 if(r.status === 'Positive') { 
@@ -341,29 +343,19 @@
             document.getElementById('kpiOut').innerText = totOut.toLocaleString('id-ID');
             document.getElementById('kpiBalance').innerText = runBal.toLocaleString('id-ID');
 
-            // 2. Table Render (Urutan: Tanggal | Item Type | KPC | Status | Qty | Price | Total)
             const htmlRows = data.map(r => {
-                let dateStr = "-";
-                try {
-                    if(r.date) dateStr = new Date(r.date).toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'});
-                } catch(e) {}
-
+                let dateStr = r.date ? new Date(r.date).toLocaleDateString('id-ID') : "-";
                 const formatRp = (num) => "Rp " + parseFloat(num || 0).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 0});
                 const formatQty = (num) => parseFloat(num || 0).toLocaleString('id-ID');
-
-                const statusClass = r.status === 'Positive' 
-                    ? 'bg-green-100 text-green-700 border-green-200' 
-                    : 'bg-red-50 text-red-700 border-red-200';
+                const statusClass = r.status === 'Positive' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200';
 
                 return `
                     <tr class="bg-white border-b hover:bg-slate-50 transition">
                         <td class="px-6 py-4 font-mono text-slate-500">${dateStr}</td>      
-                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>         
+                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>          
                         <td class="px-6 py-4 font-bold text-slate-700">${r.kpc || '-'}</td> 
                         <td class="px-6 py-4">                                              
-                            <span class="px-2 py-1 rounded text-xs font-bold border ${statusClass}">
-                                ${r.status}
-                            </span>
+                            <span class="px-2 py-1 rounded text-xs font-bold border ${statusClass}">${r.status}</span>
                         </td>
                         <td class="px-6 py-4 text-right font-medium">${formatQty(r.qty)}</td>  
                         <td class="px-6 py-4 text-right text-slate-500 text-xs">${formatRp(r.price)}</td> 
@@ -376,7 +368,6 @@
 
         function backToStockList() { document.getElementById('stockDetailView').classList.add('hidden'); document.getElementById('stockListView').classList.remove('hidden'); }
         
-        // --- REVISI: DOWNLOAD CSV ---
         function downloadCSVStock() {
             const rows = document.querySelectorAll("#stockDetailBody tr");
             let csv = ["Tanggal,Item Type,KPC,Status,Qty,Price,Total"];
@@ -385,11 +376,7 @@
                 let row = [], cols = r.querySelectorAll("td");
                 cols.forEach(c => {
                     let text = c.innerText.replace(/(\r\n|\n|\r)/gm, "").trim();
-                    if(text.includes("Rp")) {
-                        text = text.replace("Rp ", "").replace(/\./g, ""); 
-                    } else if(!isNaN(text.replace(/\./g, "")) && text.length > 0) {
-                        // text = text.replace(/\./g, ""); 
-                    }
+                    if(text.includes("Rp")) text = text.replace("Rp ", "").replace(/\./g, ""); 
                     row.push(`"${text}"`);
                 });
                 csv.push(row.join(","));
@@ -397,17 +384,14 @@
             
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([csv.join("\n")], {type: "text/csv"}));
-            
-            let itemName = document.getElementById('detailItemName').innerText;
-            let safeName = itemName.replace(/[^a-zA-Z0-9]/g, "_");
-            link.download = `Stock_${safeName}.csv`; 
-            
+            let itemName = document.getElementById('detailItemName').innerText.replace(/[^a-zA-Z0-9]/g, "_");
+            link.download = `Stock_${itemName}.csv`; 
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
 
-        // --- COGS MODULE LOGIC ---
+        // --- COGS LOGIC ---
         function processCogsData() {
             const grouped = rawData.cogs.reduce((acc, curr) => {
                 if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
@@ -460,7 +444,6 @@
                             <td class="px-6 py-4 text-center"><button onclick="viewCogsDetail('${dataStr}')" class="text-xs border border-blue-200 text-blue-600 px-3 py-1 rounded hover:bg-blue-50 font-medium">Rincian</button></td>
                         </tr>`;
                 }).join('');
-
                 tbody.innerHTML = htmlRows;
             }
         }
@@ -474,18 +457,19 @@
             
             const tbody = document.getElementById('cogsDetailBody');
             
-            const htmlRows = currentCogsDetail.items.map(i => 
-                `<tr class="border-b hover:bg-slate-50">
+            const htmlRows = currentCogsDetail.items.map(i => {
+                const badgeClass = i.salesType === 'Spandek' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                return `<tr class="border-b hover:bg-slate-50">
                     <td class="px-6 py-4 font-medium text-slate-800">
-                        <span class="bg-yellow-50 text-yellow-700 px-2 py-1 rounded text-xs border border-yellow-200 font-bold">
-                            ${i.salesType || '-'}
+                        <span class="${badgeClass} px-2 py-1 rounded text-xs border font-bold">
+                            ${i.salesType || 'Non Spandek'}
                         </span>
                     </td>
                     <td class="px-6 py-4">${i.itemName}</td>
                     <td class="px-6 py-4 text-right font-mono">${i.qty}</td>
-                    <td class="px-6 py-4 italic text-xs text-slate-500">${i.status}</td>
+                    <td class="px-6 py-4 italic text-xs text-slate-500">${i.status || 'Pending'}</td>
                 </tr>`
-            ).join('');
+            }).join('');
 
             tbody.innerHTML = htmlRows;
         }
@@ -495,7 +479,7 @@
         async function triggerApplyCOGS(btn) {
             if(!currentCogsDetail) return;
             const originalText = btn.innerHTML;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`; 
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Calculating FIFO...`; 
             btn.disabled = true;
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             
@@ -521,6 +505,5 @@
             }
         }
     </script>
-
 </body>
 </html>
