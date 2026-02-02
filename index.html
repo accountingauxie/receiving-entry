@@ -13,11 +13,6 @@
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .hidden { display: none !important; }
-        /* Style untuk Header yang bisa disort */
-        th.sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
-        th.sortable:hover { background-color: #e2e8f0; }
-        th.sortable i { margin-left: 5px; color: #94a3b8; font-size: 0.8em; }
-        th.sortable.active-sort i { color: #2563eb; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
@@ -35,7 +30,7 @@
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v1.1</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v1.0</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -61,9 +56,9 @@
                         <table class="w-full text-sm text-left text-slate-600">
                             <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
                                 <tr>
-                                    <th class="px-6 py-4 sortable" onclick="handleSort('stock', 'code', 'string')">Kode <i id="sort-stock-code" class="fa-solid fa-sort"></i></th>
-                                    <th class="px-6 py-4 sortable" onclick="handleSort('stock', 'name', 'string')">Nama Barang <i id="sort-stock-name" class="fa-solid fa-sort"></i></th>
-                                    <th class="px-6 py-4 sortable text-right" onclick="handleSort('stock', 'balance', 'number')">Stok Akhir <i id="sort-stock-balance" class="fa-solid fa-sort"></i></th>
+                                    <th class="px-6 py-4">Kode</th>
+                                    <th class="px-6 py-4">Nama Barang</th>
+                                    <th class="px-6 py-4 text-right">Stok Akhir</th>
                                     <th class="px-6 py-4 text-center">Aksi</th>
                                 </tr>
                             </thead>
@@ -96,20 +91,13 @@
             <div id="moduleCogs" class="hidden fade-in">
                 <div id="cogsListView">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 flex justify-between items-center">
-                        <input type="text" id="searchCogs" placeholder="Cari Invoice / Customer..." class="w-full md:w-1/2 p-3 border rounded-lg bg-slate-50 outline-none">
+                        <input type="text" id="searchCogs" placeholder="Cari Invoice..." class="w-full md:w-1/2 p-3 border rounded-lg bg-slate-50 outline-none">
                         <div class="text-sm text-slate-500">Pending: <span id="countCogs" class="font-bold text-blue-600">0</span></div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm text-left text-slate-600">
                             <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
-                                <tr>
-                                    <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'orderNumber', 'string')">No Order <i id="sort-cogs-orderNumber" class="fa-solid fa-sort"></i></th>
-                                    <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'customer', 'string')">Customer <i id="sort-cogs-customer" class="fa-solid fa-sort"></i></th>
-                                    <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'orderType', 'string')">Type <i id="sort-cogs-orderType" class="fa-solid fa-sort"></i></th>
-                                    <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'issueDate', 'date')">Date <i id="sort-cogs-issueDate" class="fa-solid fa-sort"></i></th>
-                                    <th class="px-6 py-4 text-center">Items</th>
-                                    <th class="px-6 py-4 text-center">Aksi</th>
-                                </tr>
+                                <tr><th class="px-6 py-4">No Order</th><th class="px-6 py-4">Customer</th><th class="px-6 py-4">Type</th><th class="px-6 py-4">Date</th><th class="px-6 py-4 text-center">Items</th><th class="px-6 py-4 text-center">Aksi</th></tr>
                             </thead>
                             <tbody id="cogsTableBody"></tbody>
                         </table>
@@ -139,45 +127,33 @@
             </div>
         </div>
     </main>
-<script>
+
+    <script>
         // --- PASTE URL WEB APP HASIL DEPLOY DI SINI ---
-        const API_URL = "https://script.google.com/macros/s/AKfycby9PmKEemsfQFWbveXWhZsUFFGF-cJ3hLTqUov6XoPon0rZpaCMVRzReIHVr_fs6zw_/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbwwf7LyemZYYaiZV4RR-ROnsDw1lhLpYrY2yEwrfyP41eG7ctMfKygHTp-WzMrr0il9/exec"; 
+    
         
         let rawData = { stock: [], cogs: [] };
         let groupedStock = {};
         let summaryStock = [];
-        let cogsList = [];
         let currentCogsDetail = null;
-
-        let sortState = {
-            stock: { key: 'name', dir: 'asc' }, 
-            cogs: { key: 'issueDate', dir: 'asc' } 
-        };
 
         document.addEventListener('DOMContentLoaded', fetchData);
 
         async function fetchData() {
             try {
-                // Optimasi UX: Loading jangan bikin UI freeze
                 const response = await fetch(API_URL);
                 const result = await response.json();
-                
-                // Gunakan requestAnimationFrame agar browser tidak hang saat parsing data
-                requestAnimationFrame(() => {
-                    rawData = result;
-                    processStockData();
-                    processCogsData();
-                    document.getElementById('loadingOverlay').classList.add('hidden');
-                    
-                    updateSortIcons('stock', 'name', 'asc');
-                    updateSortIcons('cogs', 'issueDate', 'asc');
-                });
-
+                rawData = result;
+                processStockData();
+                processCogsData();
+                document.getElementById('loadingOverlay').classList.add('hidden');
             } catch (error) {
                 alert("Gagal koneksi ke API: " + error);
             }
         }
 
+        // --- NAVIGATION ---
         function switchModule(mod) {
             const stockBtn = document.getElementById('btnNavStock');
             const cogsBtn = document.getElementById('btnNavCogs');
@@ -198,63 +174,7 @@
             }
         }
 
-        function handleSort(module, key, type) {
-            if(sortState[module].key === key) {
-                sortState[module].dir = sortState[module].dir === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortState[module].key = key;
-                sortState[module].dir = 'asc';
-            }
-
-            const direction = sortState[module].dir === 'asc' ? 1 : -1;
-            let dataToSort = module === 'stock' ? summaryStock : cogsList;
-
-            dataToSort.sort((a, b) => {
-                let valA = a[key];
-                let valB = b[key];
-
-                if (type === 'number') {
-                    return (parseFloat(valA) - parseFloat(valB)) * direction;
-                } else if (type === 'date') {
-                    return (new Date(valA) - new Date(valB)) * direction;
-                } else {
-                    valA = valA ? valA.toString().toLowerCase() : '';
-                    valB = valB ? valB.toString().toLowerCase() : '';
-                    if (valA < valB) return -1 * direction;
-                    if (valA > valB) return 1 * direction;
-                    return 0;
-                }
-            });
-
-            updateSortIcons(module, key, sortState[module].dir);
-
-            if(module === 'stock') {
-                const term = document.getElementById('searchStock').value.toLowerCase();
-                renderStockList(dataToSort.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
-            } else {
-                const term = document.getElementById('searchCogs').value.toLowerCase();
-                renderCogsList(dataToSort.filter(i => 
-                    i.orderNumber.toLowerCase().includes(term) || 
-                    i.customer.toLowerCase().includes(term)
-                ));
-            }
-        }
-
-        function updateSortIcons(module, activeKey, dir) {
-            const headers = document.querySelectorAll(`#module${module.charAt(0).toUpperCase() + module.slice(1)} th.sortable i`);
-            headers.forEach(icon => {
-                icon.className = 'fa-solid fa-sort';
-                icon.parentElement.classList.remove('active-sort');
-            });
-
-            const activeIcon = document.getElementById(`sort-${module}-${activeKey}`);
-            if(activeIcon) {
-                activeIcon.className = dir === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
-                activeIcon.parentElement.classList.add('active-sort');
-            }
-        }
-
-        // --- OPTIMIZED STOCK LOGIC ---
+        // --- LOGIC STOCK ---
         function processStockData() {
             groupedStock = rawData.stock.reduce((acc, curr) => {
                 if(!acc[curr.itemName]) acc[curr.itemName] = [];
@@ -266,32 +186,27 @@
                 let bal = 0;
                 items.forEach(i => bal += (i.status === 'Positive' && i.qty >= 0) ? parseFloat(i.qty) : -Math.abs(parseFloat(i.qty)));
                 return { name: key, code: items[0].itemCode, balance: bal };
-            });
+            }).sort((a,b) => a.name.localeCompare(b.name));
 
-            summaryStock.sort((a,b) => a.name.localeCompare(b.name));
             renderStockList(summaryStock);
 
             document.getElementById('searchStock').addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase();
-                renderStockList(summaryStock.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
+                renderStockList(summaryStock.filter(i => i.name.toLowerCase().includes(term)));
             });
         }
 
-        // SUPER CEPAT: Menggunakan Map & Join (String Builder) alih-alih innerHTML += loop
         function renderStockList(data) {
-            const tbody = document.getElementById('stockTableBody');
-            
-            // Teknik Optimasi: Build String sekali jalan
-            const htmlRows = data.map(i => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="px-6 py-4 text-xs font-mono text-slate-500">${i.code || '-'}</td>
-                    <td class="px-6 py-4 font-medium">${i.name}</td>
-                    <td class="px-6 py-4 text-right font-bold text-blue-600">${i.balance.toLocaleString('id-ID')}</td>
-                    <td class="px-6 py-4 text-center"><button onclick="viewStockDetail('${i.name.replace(/'/g, "\\'")}')" class="text-blue-600 hover:underline">View</button></td>
-                </tr>
-            `).join(''); // Gabungkan jadi satu string raksasa
-            
-            tbody.innerHTML = htmlRows; // Render ke layar HANYA 1 KALI
+            const tbody = document.getElementById('stockTableBody'); tbody.innerHTML = "";
+            data.forEach(i => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="px-6 py-4 text-xs font-mono text-slate-500">${i.code || '-'}</td>
+                        <td class="px-6 py-4 font-medium">${i.name}</td>
+                        <td class="px-6 py-4 text-right font-bold text-blue-600">${i.balance.toLocaleString('id-ID')}</td>
+                        <td class="px-6 py-4 text-center"><button onclick="viewStockDetail('${i.name.replace(/'/g, "\\'")}')" class="text-blue-600 hover:underline">View</button></td>
+                    </tr>`;
+            });
         }
 
         function viewStockDetail(name) {
@@ -301,15 +216,14 @@
             
             const data = groupedStock[name].sort((a,b) => new Date(a.date) - new Date(b.date));
             let runBal = 0, totIn = 0, totOut = 0;
-            const tbody = document.getElementById('stockDetailBody');
+            const tbody = document.getElementById('stockDetailBody'); tbody.innerHTML = "";
 
-            // Teknik Optimasi: Build String
-            const htmlRows = data.map(r => {
+            data.forEach(r => {
                 let qty = parseFloat(r.qty), inV = 0, outV = 0;
                 if(r.status === 'Positive' && qty >= 0) { inV = qty; runBal += qty; totIn += qty; }
                 else { outV = Math.abs(qty); runBal -= outV; totOut += outV; }
                 
-                return `
+                tbody.innerHTML += `
                     <tr class="bg-white border-b hover:bg-slate-50">
                         <td class="px-6 py-4">${new Date(r.date).toLocaleDateString('id-ID')}</td>
                         <td class="px-6 py-4 text-slate-500 truncate max-w-[150px]">${r.contact}</td>
@@ -317,9 +231,7 @@
                         <td class="px-6 py-4 text-right text-red-600">${outV || '-'}</td>
                         <td class="px-6 py-4 text-right font-bold text-blue-700 bg-blue-50/50">${runBal.toLocaleString('id-ID')}</td>
                     </tr>`;
-            }).join('');
-
-            tbody.innerHTML = htmlRows;
+            });
             document.getElementById('kpiIn').innerText = totIn.toLocaleString('id-ID');
             document.getElementById('kpiOut').innerText = totOut.toLocaleString('id-ID');
             document.getElementById('kpiBalance').innerText = runBal.toLocaleString('id-ID');
@@ -340,51 +252,23 @@
             link.download = "StockData.csv"; link.click();
         }
 
-        // --- OPTIMIZED COGS LOGIC ---
+        // --- LOGIC COGS ---
         function processCogsData() {
             const grouped = rawData.cogs.reduce((acc, curr) => {
                 if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
                 acc[curr.orderNumber].items.push(curr); return acc;
             }, {});
             
-            cogsList = Object.values(grouped);
-            document.getElementById('countCogs').innerText = cogsList.length;
-
-            cogsList.sort((a, b) => {
-                const dateA = new Date(a.issueDate);
-                const dateB = new Date(b.issueDate);
-                if (dateA < dateB) return -1;
-                if (dateA > dateB) return 1;
-                return a.orderNumber.localeCompare(b.orderNumber);
-            });
-
-            renderCogsList(cogsList);
-
-            document.getElementById('searchCogs').addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                const filtered = cogsList.filter(i => 
-                    i.orderNumber.toLowerCase().includes(term) || 
-                    i.customer.toLowerCase().includes(term)
-                );
-                renderCogsList(filtered);
-            });
-        }
-
-        function renderCogsList(data) {
-            const tbody = document.getElementById('cogsTableBody');
+            const list = Object.values(grouped);
+            document.getElementById('countCogs').innerText = list.length;
+            const tbody = document.getElementById('cogsTableBody'); tbody.innerHTML = "";
             
-            if(data.length === 0) {
-                document.getElementById('cogsEmptyState').classList.remove('hidden');
-                document.querySelector('#moduleCogs table').classList.add('hidden');
-                tbody.innerHTML = "";
-            } else {
+            if(list.length === 0) document.getElementById('cogsEmptyState').classList.remove('hidden');
+            else {
                 document.getElementById('cogsEmptyState').classList.add('hidden');
-                document.querySelector('#moduleCogs table').classList.remove('hidden');
-                
-                // Teknik Optimasi: Build String
-                const htmlRows = data.map(inv => {
+                list.forEach(inv => {
                     const dataStr = encodeURIComponent(JSON.stringify(inv));
-                    return `
+                    tbody.innerHTML += `
                         <tr class="border-b hover:bg-slate-50">
                             <td class="px-6 py-4 font-medium text-blue-600">${inv.orderNumber}</td>
                             <td class="px-6 py-4">${inv.customer}</td>
@@ -393,32 +277,26 @@
                             <td class="px-6 py-4 text-center font-bold">${inv.items.length}</td>
                             <td class="px-6 py-4 text-center"><button onclick="viewCogsDetail('${dataStr}')" class="text-xs border px-3 py-1 rounded hover:bg-slate-100">Rincian</button></td>
                         </tr>`;
-                }).join('');
-
-                tbody.innerHTML = htmlRows;
+                });
             }
+            document.getElementById('searchCogs').addEventListener('input', (e) => {
+               // Simple filter logic here if needed
+            });
         }
 
- function viewCogsDetail(str) {
+        function viewCogsDetail(str) {
             currentCogsDetail = JSON.parse(decodeURIComponent(str));
             document.getElementById('cogsListView').classList.add('hidden');
             document.getElementById('cogsDetailView').classList.remove('hidden');
             document.getElementById('detailInvoiceNum').innerText = currentCogsDetail.orderNumber;
             document.getElementById('detailCustomer').innerText = currentCogsDetail.customer;
             
-            const tbody = document.getElementById('cogsDetailBody');
-            
-            // PERBAIKAN DI SINI: Gunakan i.status (bukan i.displayStatus)
-            const htmlRows = currentCogsDetail.items.map(i => 
-                `<tr class="border-b">
-                    <td class="px-6 py-4">${i.itemName}</td>
-                    <td class="px-6 py-4 text-right">${i.qty}</td>
-                    <td class="px-6 py-4 italic text-xs">${i.status || '-'}</td>
-                </tr>`
-            ).join('');
-
-            tbody.innerHTML = htmlRows;
+            const tbody = document.getElementById('cogsDetailBody'); tbody.innerHTML = "";
+            currentCogsDetail.items.forEach(i => {
+                tbody.innerHTML += `<tr class="border-b"><td class="px-6 py-4">${i.itemName}</td><td class="px-6 py-4 text-right">${i.qty}</td><td class="px-6 py-4 italic text-xs">${i.status}</td></tr>`;
+            });
         }
+
         function backToCogsList() { document.getElementById('cogsDetailView').classList.add('hidden'); document.getElementById('cogsListView').classList.remove('hidden'); }
 
         async function triggerApplyCOGS(btn) {
@@ -427,13 +305,14 @@
             btn.innerHTML = "Processing..."; btn.disabled = true;
             
             try {
+                // Fetch URL dengan parameter ACTION
                 const url = `${API_URL}?action=apply&inv=${currentCogsDetail.orderNumber}`;
                 const res = await fetch(url);
                 const json = await res.json();
                 
                 alert(json.message);
                 backToCogsList();
-                fetchData(); 
+                fetchData(); // Refresh data
             } catch(e) {
                 alert("Error: " + e);
             } finally {
@@ -441,6 +320,5 @@
             }
         }
     </script>
-
 </body>
 </html>
