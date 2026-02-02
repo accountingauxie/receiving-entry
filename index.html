@@ -139,22 +139,16 @@
             </div>
         </div>
     </main>
-
-    <script>
+<script>
         // --- PASTE URL WEB APP HASIL DEPLOY DI SINI ---
         const API_URL = "https://script.google.com/macros/s/AKfycbwdRI916vd2MWSLO76L86V_z0l7_X2motA0IfV-rYG1MPk_fCTPJbiinVeGPoej-S2N/exec"; 
         
         let rawData = { stock: [], cogs: [] };
-        
-        // Data Processed Containers
         let groupedStock = {};
-        let summaryStock = []; // Array utama untuk Stock
-        let cogsList = []; // Array utama untuk COGS
+        let summaryStock = [];
+        let cogsList = [];
         let currentCogsDetail = null;
 
-        // State Sorting
-        // Stock Default: Name, ASC (A-Z)
-        // COGS Default: issueDate, ASC (Lama ke Baru)
         let sortState = {
             stock: { key: 'name', dir: 'asc' }, 
             cogs: { key: 'issueDate', dir: 'asc' } 
@@ -164,23 +158,26 @@
 
         async function fetchData() {
             try {
+                // Optimasi UX: Loading jangan bikin UI freeze
                 const response = await fetch(API_URL);
                 const result = await response.json();
-                rawData = result;
-                processStockData();
-                processCogsData();
-                document.getElementById('loadingOverlay').classList.add('hidden');
                 
-                // Set default icon state secara visual saat load
-                updateSortIcons('stock', 'name', 'asc');
-                updateSortIcons('cogs', 'issueDate', 'asc');
+                // Gunakan requestAnimationFrame agar browser tidak hang saat parsing data
+                requestAnimationFrame(() => {
+                    rawData = result;
+                    processStockData();
+                    processCogsData();
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    
+                    updateSortIcons('stock', 'name', 'asc');
+                    updateSortIcons('cogs', 'issueDate', 'asc');
+                });
 
             } catch (error) {
                 alert("Gagal koneksi ke API: " + error);
             }
         }
 
-        // --- NAVIGATION ---
         function switchModule(mod) {
             const stockBtn = document.getElementById('btnNavStock');
             const cogsBtn = document.getElementById('btnNavCogs');
@@ -201,9 +198,7 @@
             }
         }
 
-        // --- GENERAL SORT FUNCTION ---
         function handleSort(module, key, type) {
-            // Tentukan arah sort: kalau klik kolom yang sama, balik arah. Kalau beda, default 'asc'
             if(sortState[module].key === key) {
                 sortState[module].dir = sortState[module].dir === 'asc' ? 'desc' : 'asc';
             } else {
@@ -223,7 +218,6 @@
                 } else if (type === 'date') {
                     return (new Date(valA) - new Date(valB)) * direction;
                 } else {
-                    // String (case insensitive)
                     valA = valA ? valA.toString().toLowerCase() : '';
                     valB = valB ? valB.toString().toLowerCase() : '';
                     if (valA < valB) return -1 * direction;
@@ -232,16 +226,12 @@
                 }
             });
 
-            // Update UI Icons
             updateSortIcons(module, key, sortState[module].dir);
 
-            // Re-render table
             if(module === 'stock') {
-                // Saat sort, kita harus mempertimbangkan filter search yang mungkin aktif
                 const term = document.getElementById('searchStock').value.toLowerCase();
                 renderStockList(dataToSort.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
             } else {
-                // Re-render COGS
                 const term = document.getElementById('searchCogs').value.toLowerCase();
                 renderCogsList(dataToSort.filter(i => 
                     i.orderNumber.toLowerCase().includes(term) || 
@@ -251,14 +241,12 @@
         }
 
         function updateSortIcons(module, activeKey, dir) {
-            // Reset semua icon di modul tersebut ke default (fa-sort abu-abu)
             const headers = document.querySelectorAll(`#module${module.charAt(0).toUpperCase() + module.slice(1)} th.sortable i`);
             headers.forEach(icon => {
                 icon.className = 'fa-solid fa-sort';
                 icon.parentElement.classList.remove('active-sort');
             });
 
-            // Set icon aktif
             const activeIcon = document.getElementById(`sort-${module}-${activeKey}`);
             if(activeIcon) {
                 activeIcon.className = dir === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
@@ -266,8 +254,7 @@
             }
         }
 
-
-        // --- LOGIC STOCK ---
+        // --- OPTIMIZED STOCK LOGIC ---
         function processStockData() {
             groupedStock = rawData.stock.reduce((acc, curr) => {
                 if(!acc[curr.itemName]) acc[curr.itemName] = [];
@@ -281,29 +268,30 @@
                 return { name: key, code: items[0].itemCode, balance: bal };
             });
 
-            // Default Sort: Name Ascending
             summaryStock.sort((a,b) => a.name.localeCompare(b.name));
-
             renderStockList(summaryStock);
 
             document.getElementById('searchStock').addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase();
-                // Filter dari summaryStock (yang sudah tersortir)
                 renderStockList(summaryStock.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
             });
         }
 
+        // SUPER CEPAT: Menggunakan Map & Join (String Builder) alih-alih innerHTML += loop
         function renderStockList(data) {
-            const tbody = document.getElementById('stockTableBody'); tbody.innerHTML = "";
-            data.forEach(i => {
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-slate-50">
-                        <td class="px-6 py-4 text-xs font-mono text-slate-500">${i.code || '-'}</td>
-                        <td class="px-6 py-4 font-medium">${i.name}</td>
-                        <td class="px-6 py-4 text-right font-bold text-blue-600">${i.balance.toLocaleString('id-ID')}</td>
-                        <td class="px-6 py-4 text-center"><button onclick="viewStockDetail('${i.name.replace(/'/g, "\\'")}')" class="text-blue-600 hover:underline">View</button></td>
-                    </tr>`;
-            });
+            const tbody = document.getElementById('stockTableBody');
+            
+            // Teknik Optimasi: Build String sekali jalan
+            const htmlRows = data.map(i => `
+                <tr class="border-b hover:bg-slate-50">
+                    <td class="px-6 py-4 text-xs font-mono text-slate-500">${i.code || '-'}</td>
+                    <td class="px-6 py-4 font-medium">${i.name}</td>
+                    <td class="px-6 py-4 text-right font-bold text-blue-600">${i.balance.toLocaleString('id-ID')}</td>
+                    <td class="px-6 py-4 text-center"><button onclick="viewStockDetail('${i.name.replace(/'/g, "\\'")}')" class="text-blue-600 hover:underline">View</button></td>
+                </tr>
+            `).join(''); // Gabungkan jadi satu string raksasa
+            
+            tbody.innerHTML = htmlRows; // Render ke layar HANYA 1 KALI
         }
 
         function viewStockDetail(name) {
@@ -313,14 +301,15 @@
             
             const data = groupedStock[name].sort((a,b) => new Date(a.date) - new Date(b.date));
             let runBal = 0, totIn = 0, totOut = 0;
-            const tbody = document.getElementById('stockDetailBody'); tbody.innerHTML = "";
+            const tbody = document.getElementById('stockDetailBody');
 
-            data.forEach(r => {
+            // Teknik Optimasi: Build String
+            const htmlRows = data.map(r => {
                 let qty = parseFloat(r.qty), inV = 0, outV = 0;
                 if(r.status === 'Positive' && qty >= 0) { inV = qty; runBal += qty; totIn += qty; }
                 else { outV = Math.abs(qty); runBal -= outV; totOut += outV; }
                 
-                tbody.innerHTML += `
+                return `
                     <tr class="bg-white border-b hover:bg-slate-50">
                         <td class="px-6 py-4">${new Date(r.date).toLocaleDateString('id-ID')}</td>
                         <td class="px-6 py-4 text-slate-500 truncate max-w-[150px]">${r.contact}</td>
@@ -328,7 +317,9 @@
                         <td class="px-6 py-4 text-right text-red-600">${outV || '-'}</td>
                         <td class="px-6 py-4 text-right font-bold text-blue-700 bg-blue-50/50">${runBal.toLocaleString('id-ID')}</td>
                     </tr>`;
-            });
+            }).join('');
+
+            tbody.innerHTML = htmlRows;
             document.getElementById('kpiIn').innerText = totIn.toLocaleString('id-ID');
             document.getElementById('kpiOut').innerText = totOut.toLocaleString('id-ID');
             document.getElementById('kpiBalance').innerText = runBal.toLocaleString('id-ID');
@@ -349,26 +340,21 @@
             link.download = "StockData.csv"; link.click();
         }
 
-        // --- LOGIC COGS ---
+        // --- OPTIMIZED COGS LOGIC ---
         function processCogsData() {
-            // 1. Group Data
             const grouped = rawData.cogs.reduce((acc, curr) => {
                 if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
                 acc[curr.orderNumber].items.push(curr); return acc;
             }, {});
             
-            // 2. Convert to Array
             cogsList = Object.values(grouped);
             document.getElementById('countCogs').innerText = cogsList.length;
 
-            // 3. Apply Default Sort (Date ASC, then OrderNo ASC)
-            // Lama ke Baru = Ascending (Tgl kecil ke besar)
             cogsList.sort((a, b) => {
                 const dateA = new Date(a.issueDate);
                 const dateB = new Date(b.issueDate);
                 if (dateA < dateB) return -1;
                 if (dateA > dateB) return 1;
-                // Jika tanggal sama, urutkan berdasarkan Order Number
                 return a.orderNumber.localeCompare(b.orderNumber);
             });
 
@@ -385,18 +371,20 @@
         }
 
         function renderCogsList(data) {
-            const tbody = document.getElementById('cogsTableBody'); tbody.innerHTML = "";
+            const tbody = document.getElementById('cogsTableBody');
             
             if(data.length === 0) {
                 document.getElementById('cogsEmptyState').classList.remove('hidden');
                 document.querySelector('#moduleCogs table').classList.add('hidden');
+                tbody.innerHTML = "";
             } else {
                 document.getElementById('cogsEmptyState').classList.add('hidden');
                 document.querySelector('#moduleCogs table').classList.remove('hidden');
                 
-                data.forEach(inv => {
+                // Teknik Optimasi: Build String
+                const htmlRows = data.map(inv => {
                     const dataStr = encodeURIComponent(JSON.stringify(inv));
-                    tbody.innerHTML += `
+                    return `
                         <tr class="border-b hover:bg-slate-50">
                             <td class="px-6 py-4 font-medium text-blue-600">${inv.orderNumber}</td>
                             <td class="px-6 py-4">${inv.customer}</td>
@@ -405,7 +393,9 @@
                             <td class="px-6 py-4 text-center font-bold">${inv.items.length}</td>
                             <td class="px-6 py-4 text-center"><button onclick="viewCogsDetail('${dataStr}')" class="text-xs border px-3 py-1 rounded hover:bg-slate-100">Rincian</button></td>
                         </tr>`;
-                });
+                }).join('');
+
+                tbody.innerHTML = htmlRows;
             }
         }
 
@@ -416,10 +406,14 @@
             document.getElementById('detailInvoiceNum').innerText = currentCogsDetail.orderNumber;
             document.getElementById('detailCustomer').innerText = currentCogsDetail.customer;
             
-            const tbody = document.getElementById('cogsDetailBody'); tbody.innerHTML = "";
-            currentCogsDetail.items.forEach(i => {
-                tbody.innerHTML += `<tr class="border-b"><td class="px-6 py-4">${i.itemName}</td><td class="px-6 py-4 text-right">${i.qty}</td><td class="px-6 py-4 italic text-xs">${i.status}</td></tr>`;
-            });
+            const tbody = document.getElementById('cogsDetailBody');
+            
+            // Teknik Optimasi: Build String
+            const htmlRows = currentCogsDetail.items.map(i => 
+                `<tr class="border-b"><td class="px-6 py-4">${i.itemName}</td><td class="px-6 py-4 text-right">${i.qty}</td><td class="px-6 py-4 italic text-xs">${i.status}</td></tr>`
+            ).join('');
+
+            tbody.innerHTML = htmlRows;
         }
 
         function backToCogsList() { document.getElementById('cogsDetailView').classList.add('hidden'); document.getElementById('cogsListView').classList.remove('hidden'); }
@@ -430,14 +424,13 @@
             btn.innerHTML = "Processing..."; btn.disabled = true;
             
             try {
-                // Fetch URL dengan parameter ACTION
                 const url = `${API_URL}?action=apply&inv=${currentCogsDetail.orderNumber}`;
                 const res = await fetch(url);
                 const json = await res.json();
                 
                 alert(json.message);
                 backToCogsList();
-                fetchData(); // Refresh data
+                fetchData(); 
             } catch(e) {
                 alert("Error: " + e);
             } finally {
@@ -445,5 +438,6 @@
             }
         }
     </script>
+
 </body>
 </html>
