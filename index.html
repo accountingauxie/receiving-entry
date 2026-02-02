@@ -73,36 +73,36 @@
                     </div>
                 </div>
 
-<div id="stockDetailView" class="hidden">
-    <button onclick="backToStockList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
-    <div class="flex justify-between items-center mb-6">
-        <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Item Name</h2>
-        <button onclick="downloadCSVStock()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
-    </div>
-    
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm"><p class="text-xs font-bold text-slate-500">TOTAL MASUK</p><p id="kpiIn" class="text-2xl font-bold">0</p></div>
-        <div class="bg-white p-5 rounded-xl border-l-4 border-red-500 shadow-sm"><p class="text-xs font-bold text-slate-500">TOTAL KELUAR</p><p id="kpiOut" class="text-2xl font-bold">0</p></div>
-        <div class="bg-blue-600 p-5 rounded-xl shadow-lg text-white"><p class="text-xs font-bold text-blue-100">SALDO AKHIR</p><p id="kpiBalance" class="text-3xl font-bold">0</p></div>
-    </div>
+                <div id="stockDetailView" class="hidden">
+                    <button onclick="backToStockList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Item Name</h2>
+                        <button onclick="downloadCSVStock()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm"><p class="text-xs font-bold text-slate-500">TOTAL MASUK</p><p id="kpiIn" class="text-2xl font-bold">0</p></div>
+                        <div class="bg-white p-5 rounded-xl border-l-4 border-red-500 shadow-sm"><p class="text-xs font-bold text-slate-500">TOTAL KELUAR</p><p id="kpiOut" class="text-2xl font-bold">0</p></div>
+                        <div class="bg-blue-600 p-5 rounded-xl shadow-lg text-white"><p class="text-xs font-bold text-blue-100">SALDO AKHIR</p><p id="kpiBalance" class="text-3xl font-bold">0</p></div>
+                    </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table class="w-full text-sm text-left text-slate-600">
-            <thead class="bg-slate-100 uppercase text-xs font-bold text-slate-700">
-                <tr>
-                    <th class="px-6 py-3">Tanggal</th>
-                    <th class="px-6 py-3">Item Type</th>
-                    <th class="px-6 py-3">KPC</th>
-                    <th class="px-6 py-3">Status</th>
-                    <th class="px-6 py-3 text-right">Qty</th>
-                    <th class="px-6 py-3 text-right">Price</th>
-                    <th class="px-6 py-3 text-right font-bold text-blue-700">Total</th>
-                </tr>
-            </thead>
-            <tbody id="stockDetailBody" class="divide-y divide-slate-100"></tbody>
-        </table>
-    </div>
-</div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="bg-slate-100 uppercase text-xs font-bold text-slate-700">
+                                <tr>
+                                    <th class="px-6 py-3">Tanggal</th>
+                                    <th class="px-6 py-3">Item Type</th>
+                                    <th class="px-6 py-3">KPC</th>
+                                    <th class="px-6 py-3">Status</th>
+                                    <th class="px-6 py-3 text-right">Qty</th>
+                                    <th class="px-6 py-3 text-right">Price</th>
+                                    <th class="px-6 py-3 text-right font-bold text-blue-700">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockDetailBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <div id="moduleCogs" class="hidden fade-in">
@@ -160,7 +160,7 @@
     </main>
 
 <script>
-        // --- !!! WAJIB: GANTI URL DI BAWAH INI DENGAN URL DEPLOY TERBARU ANDA !!! ---
+        // --- CONFIGURATION ---
         const API_URL = "https://script.google.com/macros/s/AKfycbw-TqtTSPIzOs0TaNpSxKCead6FoYFnuINM3VAJbkem_PBqQGzS6laup8Zm5XhYMVr8/exec"; 
         
         let rawData = { stock: [], cogs: [] };
@@ -311,77 +311,101 @@
             tbody.innerHTML = htmlRows;
         }
 
+        // --- REVISI: VIEW STOCK DETAIL (URUTAN DIPERBAIKI) ---
         function viewStockDetail(name) {
             document.getElementById('stockListView').classList.add('hidden');
             document.getElementById('stockDetailView').classList.remove('hidden');
-            document.getElementById('detailItemName').innerText = name;
             
-            const data = groupedStock[name].sort((a,b) => new Date(a.date) - new Date(b.date));
+            const decodedName = name.replace(/\\'/g, "'");
+            document.getElementById('detailItemName').innerText = decodedName;
+            
+            const data = groupedStock[decodedName].sort((a,b) => new Date(a.date) - new Date(b.date));
+            
             let runBal = 0, totIn = 0, totOut = 0;
             const tbody = document.getElementById('stockDetailBody');
 
+            // 1. KPI Calculation
+            data.forEach(r => {
+                let qty = parseFloat(r.qty || 0);
+                if(r.status === 'Positive') { 
+                    runBal += qty; 
+                    totIn += qty; 
+                } else { 
+                    let outVal = Math.abs(qty);
+                    runBal -= outVal; 
+                    totOut += outVal; 
+                }
+            });
+
+            document.getElementById('kpiIn').innerText = totIn.toLocaleString('id-ID');
+            document.getElementById('kpiOut').innerText = totOut.toLocaleString('id-ID');
+            document.getElementById('kpiBalance').innerText = runBal.toLocaleString('id-ID');
+
+            // 2. Table Render (Urutan: Tanggal | Item Type | KPC | Status | Qty | Price | Total)
             const htmlRows = data.map(r => {
-                let qty = parseFloat(r.qty), inV = 0, outV = 0;
-                if(r.status === 'Positive' && qty >= 0) { inV = qty; runBal += qty; totIn += qty; }
-                else { outV = Math.abs(qty); runBal -= outV; totOut += outV; }
-                
+                let dateStr = "-";
+                try {
+                    if(r.date) dateStr = new Date(r.date).toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'});
+                } catch(e) {}
+
+                const formatRp = (num) => "Rp " + parseFloat(num || 0).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                const formatQty = (num) => parseFloat(num || 0).toLocaleString('id-ID');
+
+                const statusClass = r.status === 'Positive' 
+                    ? 'bg-green-100 text-green-700 border-green-200' 
+                    : 'bg-red-50 text-red-700 border-red-200';
+
                 return `
-                    <tr class="bg-white border-b hover:bg-slate-50">
-                        <td class="px-6 py-4">${new Date(r.date).toLocaleDateString('id-ID')}</td>
-                        <td class="px-6 py-4 text-slate-500 truncate max-w-[150px]">${r.contact}</td>
-                        <td class="px-6 py-4 text-right text-green-600">${inV || '-'}</td>
-                        <td class="px-6 py-4 text-right text-red-600">${outV || '-'}</td>
-                        <td class="px-6 py-4 text-right font-bold text-blue-700 bg-blue-50/50">${runBal.toLocaleString('id-ID')}</td>
+                    <tr class="bg-white border-b hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-mono text-slate-500">${dateStr}</td>      
+                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>         
+                        <td class="px-6 py-4 font-bold text-slate-700">${r.kpc || '-'}</td> 
+                        <td class="px-6 py-4">                                              
+                            <span class="px-2 py-1 rounded text-xs font-bold border ${statusClass}">
+                                ${r.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right font-medium">${formatQty(r.qty)}</td>  
+                        <td class="px-6 py-4 text-right text-slate-500 text-xs">${formatRp(r.price)}</td> 
+                        <td class="px-6 py-4 text-right font-bold text-blue-700">${formatRp(r.total)}</td> 
                     </tr>`;
             }).join('');
 
             tbody.innerHTML = htmlRows;
-            document.getElementById('kpiIn').innerText = totIn.toLocaleString('id-ID');
-            document.getElementById('kpiOut').innerText = totOut.toLocaleString('id-ID');
-            document.getElementById('kpiBalance').innerText = runBal.toLocaleString('id-ID');
         }
 
         function backToStockList() { document.getElementById('stockDetailView').classList.add('hidden'); document.getElementById('stockListView').classList.remove('hidden'); }
         
-// --- REVISI FUNCTION: DOWNLOAD CSV ---
-function downloadCSVStock() {
-    const rows = document.querySelectorAll("#stockDetailBody tr");
-    // Header CSV Baru sesuai Kolom Tampilan
-    let csv = ["Tanggal,Item Type,KPC,Status,Qty,Price,Total"];
-    
-    rows.forEach(r => {
-        let row = [], cols = r.querySelectorAll("td");
-        cols.forEach(c => {
-            // Ambil text, hapus enter/spasi, hapus "Rp" dan titik ribuan agar jadi angka murni di Excel
-            let text = c.innerText.replace(/(\r\n|\n|\r)/gm, "").trim();
-            // Membersihkan format mata uang (Rp dan titik)
-            if(text.includes("Rp")) {
-                text = text.replace("Rp ", "").replace(/\./g, ""); 
-            }
-            // Membersihkan ribuan pada Qty (jika ada titik)
-            else if(!isNaN(text.replace(/\./g, "")) && text.length > 3) {
-                 // Opsional: Jika ingin Qty jadi angka murni di Excel, hilangkan titik
-                 // text = text.replace(/\./g, ""); 
-            }
+        // --- REVISI: DOWNLOAD CSV ---
+        function downloadCSVStock() {
+            const rows = document.querySelectorAll("#stockDetailBody tr");
+            let csv = ["Tanggal,Item Type,KPC,Status,Qty,Price,Total"];
             
-            row.push(`"${text}"`);
-        });
-        csv.push(row.join(","));
-    });
-    
-    // Buat file dan download
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([csv.join("\n")], {type: "text/csv"}));
-    
-    // Nama file dinamis
-    let itemName = document.getElementById('detailItemName').innerText;
-    let safeName = itemName.replace(/[^a-zA-Z0-9]/g, "_");
-    link.download = `Stock_${safeName}.csv`; 
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
+            rows.forEach(r => {
+                let row = [], cols = r.querySelectorAll("td");
+                cols.forEach(c => {
+                    let text = c.innerText.replace(/(\r\n|\n|\r)/gm, "").trim();
+                    if(text.includes("Rp")) {
+                        text = text.replace("Rp ", "").replace(/\./g, ""); 
+                    } else if(!isNaN(text.replace(/\./g, "")) && text.length > 0) {
+                        // text = text.replace(/\./g, ""); 
+                    }
+                    row.push(`"${text}"`);
+                });
+                csv.push(row.join(","));
+            });
+            
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csv.join("\n")], {type: "text/csv"}));
+            
+            let itemName = document.getElementById('detailItemName').innerText;
+            let safeName = itemName.replace(/[^a-zA-Z0-9]/g, "_");
+            link.download = `Stock_${safeName}.csv`; 
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
 
         // --- COGS MODULE LOGIC ---
         function processCogsData() {
@@ -441,7 +465,6 @@ function downloadCSVStock() {
             }
         }
 
-        // --- UPDATE PENTING: MENAMPILKAN SALES TYPE ---
         function viewCogsDetail(str) {
             currentCogsDetail = JSON.parse(decodeURIComponent(str));
             document.getElementById('cogsListView').classList.add('hidden');
@@ -484,7 +507,6 @@ function downloadCSVStock() {
                 if(json.success) {
                     alert(json.message);
                     backToCogsList();
-                    // Show Loading again while refreshing data
                     document.getElementById('loadingOverlay').classList.remove('hidden');
                     fetchData(); 
                 } else {
