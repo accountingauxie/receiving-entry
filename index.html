@@ -13,6 +13,7 @@
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .hidden { display: none !important; }
+        
         /* Style untuk Header yang bisa disort */
         th.sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
         th.sortable:hover { background-color: #e2e8f0; }
@@ -35,7 +36,7 @@
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v1.1</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v1.2 (Full)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -71,6 +72,7 @@
                         </table>
                     </div>
                 </div>
+
                 <div id="stockDetailView" class="hidden">
                     <button onclick="backToStockList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
                     <div class="flex justify-between items-center mb-6">
@@ -85,7 +87,13 @@
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm text-left text-slate-600">
                             <thead class="bg-slate-100 uppercase text-xs font-bold text-slate-700">
-                                <tr><th class="px-6 py-3">Tanggal</th><th class="px-6 py-3">Ref</th><th class="px-6 py-3 text-right text-green-700">Masuk</th><th class="px-6 py-3 text-right text-red-700">Keluar</th><th class="px-6 py-3 text-right font-bold text-blue-700">Saldo</th></tr>
+                                <tr>
+                                    <th class="px-6 py-3">Tanggal</th>
+                                    <th class="px-6 py-3">Ref</th>
+                                    <th class="px-6 py-3 text-right text-green-700">Masuk</th>
+                                    <th class="px-6 py-3 text-right text-red-700">Keluar</th>
+                                    <th class="px-6 py-3 text-right font-bold text-blue-700">Saldo</th>
+                                </tr>
                             </thead>
                             <tbody id="stockDetailBody" class="divide-y divide-slate-100"></tbody>
                         </table>
@@ -116,6 +124,7 @@
                         <div id="cogsEmptyState" class="hidden p-10 text-center text-slate-400">Semua Invoice Aman!</div>
                     </div>
                 </div>
+
                 <div id="cogsDetailView" class="hidden">
                     <button onclick="backToCogsList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 flex justify-between items-center">
@@ -123,14 +132,20 @@
                             <h2 id="detailInvoiceNum" class="text-2xl font-bold text-slate-800">INV-001</h2>
                             <p id="detailCustomer" class="text-slate-500 text-sm">Customer</p>
                         </div>
-                        <button onclick="triggerApplyCOGS(this)" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow font-medium flex items-center gap-2">
+                        <button onclick="triggerApplyCOGS(this)" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow font-medium flex items-center gap-2 transition">
                             <i class="fa-solid fa-calculator"></i> Apply COGS
                         </button>
                     </div>
+                    
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm text-left text-slate-600">
                             <thead class="bg-slate-50 uppercase text-xs font-bold text-slate-700">
-                                <tr><th class="px-6 py-3">Nama Item</th><th class="px-6 py-3 text-right">Qty</th><th class="px-6 py-3">Status</th></tr>
+                                <tr>
+                                    <th class="px-6 py-3">Type Penjualan</th>
+                                    <th class="px-6 py-3">Nama Item</th>
+                                    <th class="px-6 py-3 text-right">Qty</th>
+                                    <th class="px-6 py-3">Status</th>
+                                </tr>
                             </thead>
                             <tbody id="cogsDetailBody"></tbody>
                         </table>
@@ -139,9 +154,10 @@
             </div>
         </div>
     </main>
+
 <script>
-        // --- PASTE URL WEB APP HASIL DEPLOY DI SINI ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbyMpwUesAyyrbllc3SX5K3yFt-1EowhUF740NQsQE9so871N-QLgIzm1MRc7TLTlDvT/exec"; 
+        // --- !!! WAJIB: GANTI URL DI BAWAH INI DENGAN URL DEPLOY TERBARU ANDA !!! ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbwm5UPdBZPD6toa-BBnMRm3GrpasHaOybN_6UJrSARwApTq2fqu1fSJk0MoRaq89rbq/exec"; 
         
         let rawData = { stock: [], cogs: [] };
         let groupedStock = {};
@@ -158,11 +174,9 @@
 
         async function fetchData() {
             try {
-                // Optimasi UX: Loading jangan bikin UI freeze
                 const response = await fetch(API_URL);
                 const result = await response.json();
                 
-                // Gunakan requestAnimationFrame agar browser tidak hang saat parsing data
                 requestAnimationFrame(() => {
                     rawData = result;
                     processStockData();
@@ -175,9 +189,11 @@
 
             } catch (error) {
                 alert("Gagal koneksi ke API: " + error);
+                document.getElementById('loadingOverlay').innerHTML = `<p class="text-red-500 font-bold">Error Connection. Refresh page.</p>`;
             }
         }
 
+        // --- NAVIGATION LOGIC ---
         function switchModule(mod) {
             const stockBtn = document.getElementById('btnNavStock');
             const cogsBtn = document.getElementById('btnNavCogs');
@@ -198,6 +214,7 @@
             }
         }
 
+        // --- SORTING LOGIC ---
         function handleSort(module, key, type) {
             if(sortState[module].key === key) {
                 sortState[module].dir = sortState[module].dir === 'asc' ? 'desc' : 'asc';
@@ -254,7 +271,7 @@
             }
         }
 
-        // --- OPTIMIZED STOCK LOGIC ---
+        // --- STOCK MODULE LOGIC ---
         function processStockData() {
             groupedStock = rawData.stock.reduce((acc, curr) => {
                 if(!acc[curr.itemName]) acc[curr.itemName] = [];
@@ -277,11 +294,8 @@
             });
         }
 
-        // SUPER CEPAT: Menggunakan Map & Join (String Builder) alih-alih innerHTML += loop
         function renderStockList(data) {
             const tbody = document.getElementById('stockTableBody');
-            
-            // Teknik Optimasi: Build String sekali jalan
             const htmlRows = data.map(i => `
                 <tr class="border-b hover:bg-slate-50">
                     <td class="px-6 py-4 text-xs font-mono text-slate-500">${i.code || '-'}</td>
@@ -289,9 +303,8 @@
                     <td class="px-6 py-4 text-right font-bold text-blue-600">${i.balance.toLocaleString('id-ID')}</td>
                     <td class="px-6 py-4 text-center"><button onclick="viewStockDetail('${i.name.replace(/'/g, "\\'")}')" class="text-blue-600 hover:underline">View</button></td>
                 </tr>
-            `).join(''); // Gabungkan jadi satu string raksasa
-            
-            tbody.innerHTML = htmlRows; // Render ke layar HANYA 1 KALI
+            `).join('');
+            tbody.innerHTML = htmlRows;
         }
 
         function viewStockDetail(name) {
@@ -303,7 +316,6 @@
             let runBal = 0, totIn = 0, totOut = 0;
             const tbody = document.getElementById('stockDetailBody');
 
-            // Teknik Optimasi: Build String
             const htmlRows = data.map(r => {
                 let qty = parseFloat(r.qty), inV = 0, outV = 0;
                 if(r.status === 'Positive' && qty >= 0) { inV = qty; runBal += qty; totIn += qty; }
@@ -340,7 +352,7 @@
             link.download = "StockData.csv"; link.click();
         }
 
-        // --- OPTIMIZED COGS LOGIC ---
+        // --- COGS MODULE LOGIC ---
         function processCogsData() {
             const grouped = rawData.cogs.reduce((acc, curr) => {
                 if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
@@ -381,17 +393,16 @@
                 document.getElementById('cogsEmptyState').classList.add('hidden');
                 document.querySelector('#moduleCogs table').classList.remove('hidden');
                 
-                // Teknik Optimasi: Build String
                 const htmlRows = data.map(inv => {
                     const dataStr = encodeURIComponent(JSON.stringify(inv));
                     return `
                         <tr class="border-b hover:bg-slate-50">
                             <td class="px-6 py-4 font-medium text-blue-600">${inv.orderNumber}</td>
                             <td class="px-6 py-4">${inv.customer}</td>
-                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs">${inv.orderType}</span></td>
+                            <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border">${inv.orderType}</span></td>
                             <td class="px-6 py-4">${new Date(inv.issueDate).toLocaleDateString('id-ID')}</td>
                             <td class="px-6 py-4 text-center font-bold">${inv.items.length}</td>
-                            <td class="px-6 py-4 text-center"><button onclick="viewCogsDetail('${dataStr}')" class="text-xs border px-3 py-1 rounded hover:bg-slate-100">Rincian</button></td>
+                            <td class="px-6 py-4 text-center"><button onclick="viewCogsDetail('${dataStr}')" class="text-xs border border-blue-200 text-blue-600 px-3 py-1 rounded hover:bg-blue-50 font-medium">Rincian</button></td>
                         </tr>`;
                 }).join('');
 
@@ -399,6 +410,7 @@
             }
         }
 
+        // --- UPDATE PENTING: MENAMPILKAN SALES TYPE ---
         function viewCogsDetail(str) {
             currentCogsDetail = JSON.parse(decodeURIComponent(str));
             document.getElementById('cogsListView').classList.add('hidden');
@@ -408,9 +420,17 @@
             
             const tbody = document.getElementById('cogsDetailBody');
             
-            // Teknik Optimasi: Build String
             const htmlRows = currentCogsDetail.items.map(i => 
-                `<tr class="border-b"><td class="px-6 py-4">${i.itemName}</td><td class="px-6 py-4 text-right">${i.qty}</td><td class="px-6 py-4 italic text-xs">${i.status}</td></tr>`
+                `<tr class="border-b hover:bg-slate-50">
+                    <td class="px-6 py-4 font-medium text-slate-800">
+                        <span class="bg-yellow-50 text-yellow-700 px-2 py-1 rounded text-xs border border-yellow-200 font-bold">
+                            ${i.salesType || '-'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">${i.itemName}</td>
+                    <td class="px-6 py-4 text-right font-mono">${i.qty}</td>
+                    <td class="px-6 py-4 italic text-xs text-slate-500">${i.status}</td>
+                </tr>`
             ).join('');
 
             tbody.innerHTML = htmlRows;
@@ -421,20 +441,30 @@
         async function triggerApplyCOGS(btn) {
             if(!currentCogsDetail) return;
             const originalText = btn.innerHTML;
-            btn.innerHTML = "Processing..."; btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`; 
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
             
             try {
                 const url = `${API_URL}?action=apply&inv=${currentCogsDetail.orderNumber}`;
                 const res = await fetch(url);
                 const json = await res.json();
                 
-                alert(json.message);
-                backToCogsList();
-                fetchData(); 
+                if(json.success) {
+                    alert(json.message);
+                    backToCogsList();
+                    // Show Loading again while refreshing data
+                    document.getElementById('loadingOverlay').classList.remove('hidden');
+                    fetchData(); 
+                } else {
+                    alert("Gagal: " + json.message);
+                }
             } catch(e) {
-                alert("Error: " + e);
+                alert("Error System: " + e);
             } finally {
-                btn.innerHTML = originalText; btn.disabled = false;
+                btn.innerHTML = originalText; 
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
             }
         }
     </script>
