@@ -73,32 +73,36 @@
                     </div>
                 </div>
 
-                <div id="stockDetailView" class="hidden">
-                    <button onclick="backToStockList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Item Name</h2>
-                        <button onclick="downloadCSVStock()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div class="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm"><p class="text-xs font-bold text-slate-500">MASUK</p><p id="kpiIn" class="text-2xl font-bold">0</p></div>
-                        <div class="bg-white p-5 rounded-xl border-l-4 border-red-500 shadow-sm"><p class="text-xs font-bold text-slate-500">KELUAR</p><p id="kpiOut" class="text-2xl font-bold">0</p></div>
-                        <div class="bg-blue-600 p-5 rounded-xl shadow-lg text-white"><p class="text-xs font-bold text-blue-100">SALDO AKHIR</p><p id="kpiBalance" class="text-3xl font-bold">0</p></div>
-                    </div>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <table class="w-full text-sm text-left text-slate-600">
-                            <thead class="bg-slate-100 uppercase text-xs font-bold text-slate-700">
-                                <tr>
-                                    <th class="px-6 py-3">Tanggal</th>
-                                    <th class="px-6 py-3">Ref</th>
-                                    <th class="px-6 py-3 text-right text-green-700">Masuk</th>
-                                    <th class="px-6 py-3 text-right text-red-700">Keluar</th>
-                                    <th class="px-6 py-3 text-right font-bold text-blue-700">Saldo</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stockDetailBody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
+<div id="stockDetailView" class="hidden">
+    <button onclick="backToStockList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+    <div class="flex justify-between items-center mb-6">
+        <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Item Name</h2>
+        <button onclick="downloadCSVStock()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm"><p class="text-xs font-bold text-slate-500">TOTAL MASUK</p><p id="kpiIn" class="text-2xl font-bold">0</p></div>
+        <div class="bg-white p-5 rounded-xl border-l-4 border-red-500 shadow-sm"><p class="text-xs font-bold text-slate-500">TOTAL KELUAR</p><p id="kpiOut" class="text-2xl font-bold">0</p></div>
+        <div class="bg-blue-600 p-5 rounded-xl shadow-lg text-white"><p class="text-xs font-bold text-blue-100">SALDO AKHIR</p><p id="kpiBalance" class="text-3xl font-bold">0</p></div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-sm text-left text-slate-600">
+            <thead class="bg-slate-100 uppercase text-xs font-bold text-slate-700">
+                <tr>
+                    <th class="px-6 py-3">Tanggal</th>
+                    <th class="px-6 py-3">Item Type</th>
+                    <th class="px-6 py-3">KPC</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3 text-right">Qty</th>
+                    <th class="px-6 py-3 text-right">Price</th>
+                    <th class="px-6 py-3 text-right font-bold text-blue-700">Total</th>
+                </tr>
+            </thead>
+            <tbody id="stockDetailBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+    </div>
+</div>
             </div>
 
             <div id="moduleCogs" class="hidden fade-in">
@@ -157,7 +161,7 @@
 
 <script>
         // --- !!! WAJIB: GANTI URL DI BAWAH INI DENGAN URL DEPLOY TERBARU ANDA !!! ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbwm5UPdBZPD6toa-BBnMRm3GrpasHaOybN_6UJrSARwApTq2fqu1fSJk0MoRaq89rbq/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbw-TqtTSPIzOs0TaNpSxKCead6FoYFnuINM3VAJbkem_PBqQGzS6laup8Zm5XhYMVr8/exec"; 
         
         let rawData = { stock: [], cogs: [] };
         let groupedStock = {};
@@ -339,18 +343,45 @@
 
         function backToStockList() { document.getElementById('stockDetailView').classList.add('hidden'); document.getElementById('stockListView').classList.remove('hidden'); }
         
-        function downloadCSVStock() {
-            const rows = document.querySelectorAll("#stockDetailBody tr");
-            let csv = ["Tanggal,Ref,Masuk,Keluar,Saldo"];
-            rows.forEach(r => {
-                let row = [], cols = r.querySelectorAll("td");
-                cols.forEach(c => row.push(`"${c.innerText}"`));
-                csv.push(row.join(","));
-            });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(new Blob([csv.join("\n")], {type: "text/csv"}));
-            link.download = "StockData.csv"; link.click();
-        }
+// --- REVISI FUNCTION: DOWNLOAD CSV ---
+function downloadCSVStock() {
+    const rows = document.querySelectorAll("#stockDetailBody tr");
+    // Header CSV Baru sesuai Kolom Tampilan
+    let csv = ["Tanggal,Item Type,KPC,Status,Qty,Price,Total"];
+    
+    rows.forEach(r => {
+        let row = [], cols = r.querySelectorAll("td");
+        cols.forEach(c => {
+            // Ambil text, hapus enter/spasi, hapus "Rp" dan titik ribuan agar jadi angka murni di Excel
+            let text = c.innerText.replace(/(\r\n|\n|\r)/gm, "").trim();
+            // Membersihkan format mata uang (Rp dan titik)
+            if(text.includes("Rp")) {
+                text = text.replace("Rp ", "").replace(/\./g, ""); 
+            }
+            // Membersihkan ribuan pada Qty (jika ada titik)
+            else if(!isNaN(text.replace(/\./g, "")) && text.length > 3) {
+                 // Opsional: Jika ingin Qty jadi angka murni di Excel, hilangkan titik
+                 // text = text.replace(/\./g, ""); 
+            }
+            
+            row.push(`"${text}"`);
+        });
+        csv.push(row.join(","));
+    });
+    
+    // Buat file dan download
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([csv.join("\n")], {type: "text/csv"}));
+    
+    // Nama file dinamis
+    let itemName = document.getElementById('detailItemName').innerText;
+    let safeName = itemName.replace(/[^a-zA-Z0-9]/g, "_");
+    link.download = `Stock_${safeName}.csv`; 
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
         // --- COGS MODULE LOGIC ---
         function processCogsData() {
