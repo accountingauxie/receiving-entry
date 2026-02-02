@@ -141,7 +141,7 @@
     </main>
 <script>
         // --- PASTE URL WEB APP HASIL DEPLOY DI SINI ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbwdRI916vd2MWSLO76L86V_z0l7_X2motA0IfV-rYG1MPk_fCTPJbiinVeGPoej-S2N/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbwv9agPhEx9NQHJA_rULrBmcKX3ETQzcU5aMXian-_wA5zyUR0FERabNpBHPMBzJPcQ/exec"; 
         
         let rawData = { stock: [], cogs: [] };
         let groupedStock = {};
@@ -410,7 +410,7 @@
             
             // Teknik Optimasi: Build String
             const htmlRows = currentCogsDetail.items.map(i => 
-                `<tr class="border-b"><td class="px-6 py-4">${i.itemName}</td><td class="px-6 py-4 text-right">${i.qty}</td><td class="px-6 py-4 italic text-xs">${i.status}</td></tr>`
+                `<tr class="border-b"><td class="px-6 py-4">${i.itemName}</td><td class="px-6 py-4 text-right">${i.qty}</td><td class="px-6 py-4 italic text-xs">${i.displayStatus}</td></tr>`
             ).join('');
 
             tbody.innerHTML = htmlRows;
