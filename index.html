@@ -13,6 +13,11 @@
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .hidden { display: none !important; }
+        /* Style untuk Header yang bisa disort */
+        th.sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
+        th.sortable:hover { background-color: #e2e8f0; }
+        th.sortable i { margin-left: 5px; color: #94a3b8; font-size: 0.8em; }
+        th.sortable.active-sort i { color: #2563eb; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
@@ -30,7 +35,7 @@
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v1.0</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v1.1</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -56,9 +61,9 @@
                         <table class="w-full text-sm text-left text-slate-600">
                             <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
                                 <tr>
-                                    <th class="px-6 py-4">Kode</th>
-                                    <th class="px-6 py-4">Nama Barang</th>
-                                    <th class="px-6 py-4 text-right">Stok Akhir</th>
+                                    <th class="px-6 py-4 sortable" onclick="handleSort('stock', 'code', 'string')">Kode <i id="sort-stock-code" class="fa-solid fa-sort"></i></th>
+                                    <th class="px-6 py-4 sortable" onclick="handleSort('stock', 'name', 'string')">Nama Barang <i id="sort-stock-name" class="fa-solid fa-sort"></i></th>
+                                    <th class="px-6 py-4 sortable text-right" onclick="handleSort('stock', 'balance', 'number')">Stok Akhir <i id="sort-stock-balance" class="fa-solid fa-sort"></i></th>
                                     <th class="px-6 py-4 text-center">Aksi</th>
                                 </tr>
                             </thead>
@@ -91,13 +96,20 @@
             <div id="moduleCogs" class="hidden fade-in">
                 <div id="cogsListView">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 flex justify-between items-center">
-                        <input type="text" id="searchCogs" placeholder="Cari Invoice..." class="w-full md:w-1/2 p-3 border rounded-lg bg-slate-50 outline-none">
+                        <input type="text" id="searchCogs" placeholder="Cari Invoice / Customer..." class="w-full md:w-1/2 p-3 border rounded-lg bg-slate-50 outline-none">
                         <div class="text-sm text-slate-500">Pending: <span id="countCogs" class="font-bold text-blue-600">0</span></div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm text-left text-slate-600">
                             <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
-                                <tr><th class="px-6 py-4">No Order</th><th class="px-6 py-4">Customer</th><th class="px-6 py-4">Type</th><th class="px-6 py-4">Date</th><th class="px-6 py-4 text-center">Items</th><th class="px-6 py-4 text-center">Aksi</th></tr>
+                                <tr>
+                                    <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'orderNumber', 'string')">No Order <i id="sort-cogs-orderNumber" class="fa-solid fa-sort"></i></th>
+                                    <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'customer', 'string')">Customer <i id="sort-cogs-customer" class="fa-solid fa-sort"></i></th>
+                                    <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'orderType', 'string')">Type <i id="sort-cogs-orderType" class="fa-solid fa-sort"></i></th>
+                                    <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'issueDate', 'date')">Date <i id="sort-cogs-issueDate" class="fa-solid fa-sort"></i></th>
+                                    <th class="px-6 py-4 text-center">Items</th>
+                                    <th class="px-6 py-4 text-center">Aksi</th>
+                                </tr>
                             </thead>
                             <tbody id="cogsTableBody"></tbody>
                         </table>
@@ -133,9 +145,20 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwdRI916vd2MWSLO76L86V_z0l7_X2motA0IfV-rYG1MPk_fCTPJbiinVeGPoej-S2N/exec"; 
         
         let rawData = { stock: [], cogs: [] };
+        
+        // Data Processed Containers
         let groupedStock = {};
-        let summaryStock = [];
+        let summaryStock = []; // Array utama untuk Stock
+        let cogsList = []; // Array utama untuk COGS
         let currentCogsDetail = null;
+
+        // State Sorting
+        // Stock Default: Name, ASC (A-Z)
+        // COGS Default: issueDate, ASC (Lama ke Baru)
+        let sortState = {
+            stock: { key: 'name', dir: 'asc' }, 
+            cogs: { key: 'issueDate', dir: 'asc' } 
+        };
 
         document.addEventListener('DOMContentLoaded', fetchData);
 
@@ -147,6 +170,11 @@
                 processStockData();
                 processCogsData();
                 document.getElementById('loadingOverlay').classList.add('hidden');
+                
+                // Set default icon state secara visual saat load
+                updateSortIcons('stock', 'name', 'asc');
+                updateSortIcons('cogs', 'issueDate', 'asc');
+
             } catch (error) {
                 alert("Gagal koneksi ke API: " + error);
             }
@@ -173,6 +201,72 @@
             }
         }
 
+        // --- GENERAL SORT FUNCTION ---
+        function handleSort(module, key, type) {
+            // Tentukan arah sort: kalau klik kolom yang sama, balik arah. Kalau beda, default 'asc'
+            if(sortState[module].key === key) {
+                sortState[module].dir = sortState[module].dir === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState[module].key = key;
+                sortState[module].dir = 'asc';
+            }
+
+            const direction = sortState[module].dir === 'asc' ? 1 : -1;
+            let dataToSort = module === 'stock' ? summaryStock : cogsList;
+
+            dataToSort.sort((a, b) => {
+                let valA = a[key];
+                let valB = b[key];
+
+                if (type === 'number') {
+                    return (parseFloat(valA) - parseFloat(valB)) * direction;
+                } else if (type === 'date') {
+                    return (new Date(valA) - new Date(valB)) * direction;
+                } else {
+                    // String (case insensitive)
+                    valA = valA ? valA.toString().toLowerCase() : '';
+                    valB = valB ? valB.toString().toLowerCase() : '';
+                    if (valA < valB) return -1 * direction;
+                    if (valA > valB) return 1 * direction;
+                    return 0;
+                }
+            });
+
+            // Update UI Icons
+            updateSortIcons(module, key, sortState[module].dir);
+
+            // Re-render table
+            if(module === 'stock') {
+                // Saat sort, kita harus mempertimbangkan filter search yang mungkin aktif
+                const term = document.getElementById('searchStock').value.toLowerCase();
+                renderStockList(dataToSort.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
+            } else {
+                // Re-render COGS
+                const term = document.getElementById('searchCogs').value.toLowerCase();
+                renderCogsList(dataToSort.filter(i => 
+                    i.orderNumber.toLowerCase().includes(term) || 
+                    i.customer.toLowerCase().includes(term)
+                ));
+            }
+        }
+
+        function updateSortIcons(module, activeKey, dir) {
+            // Reset semua icon di modul tersebut ke default (fa-sort abu-abu)
+            const headers = document.querySelectorAll(`#module${module.charAt(0).toUpperCase() + module.slice(1)} th.sortable i`);
+            headers.forEach(icon => {
+                icon.className = 'fa-solid fa-sort';
+                icon.parentElement.classList.remove('active-sort');
+            });
+
+            // Set icon aktif
+            const activeIcon = document.getElementById(`sort-${module}-${activeKey}`);
+            if(activeIcon) {
+                activeIcon.className = dir === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+                activeIcon.parentElement.classList.add('active-sort');
+            }
+        }
+
+
         // --- LOGIC STOCK ---
         function processStockData() {
             groupedStock = rawData.stock.reduce((acc, curr) => {
@@ -185,13 +279,17 @@
                 let bal = 0;
                 items.forEach(i => bal += (i.status === 'Positive' && i.qty >= 0) ? parseFloat(i.qty) : -Math.abs(parseFloat(i.qty)));
                 return { name: key, code: items[0].itemCode, balance: bal };
-            }).sort((a,b) => a.name.localeCompare(b.name));
+            });
+
+            // Default Sort: Name Ascending
+            summaryStock.sort((a,b) => a.name.localeCompare(b.name));
 
             renderStockList(summaryStock);
 
             document.getElementById('searchStock').addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase();
-                renderStockList(summaryStock.filter(i => i.name.toLowerCase().includes(term)));
+                // Filter dari summaryStock (yang sudah tersortir)
+                renderStockList(summaryStock.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
             });
         }
 
@@ -253,19 +351,50 @@
 
         // --- LOGIC COGS ---
         function processCogsData() {
+            // 1. Group Data
             const grouped = rawData.cogs.reduce((acc, curr) => {
                 if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
                 acc[curr.orderNumber].items.push(curr); return acc;
             }, {});
             
-            const list = Object.values(grouped);
-            document.getElementById('countCogs').innerText = list.length;
+            // 2. Convert to Array
+            cogsList = Object.values(grouped);
+            document.getElementById('countCogs').innerText = cogsList.length;
+
+            // 3. Apply Default Sort (Date ASC, then OrderNo ASC)
+            // Lama ke Baru = Ascending (Tgl kecil ke besar)
+            cogsList.sort((a, b) => {
+                const dateA = new Date(a.issueDate);
+                const dateB = new Date(b.issueDate);
+                if (dateA < dateB) return -1;
+                if (dateA > dateB) return 1;
+                // Jika tanggal sama, urutkan berdasarkan Order Number
+                return a.orderNumber.localeCompare(b.orderNumber);
+            });
+
+            renderCogsList(cogsList);
+
+            document.getElementById('searchCogs').addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = cogsList.filter(i => 
+                    i.orderNumber.toLowerCase().includes(term) || 
+                    i.customer.toLowerCase().includes(term)
+                );
+                renderCogsList(filtered);
+            });
+        }
+
+        function renderCogsList(data) {
             const tbody = document.getElementById('cogsTableBody'); tbody.innerHTML = "";
             
-            if(list.length === 0) document.getElementById('cogsEmptyState').classList.remove('hidden');
-            else {
+            if(data.length === 0) {
+                document.getElementById('cogsEmptyState').classList.remove('hidden');
+                document.querySelector('#moduleCogs table').classList.add('hidden');
+            } else {
                 document.getElementById('cogsEmptyState').classList.add('hidden');
-                list.forEach(inv => {
+                document.querySelector('#moduleCogs table').classList.remove('hidden');
+                
+                data.forEach(inv => {
                     const dataStr = encodeURIComponent(JSON.stringify(inv));
                     tbody.innerHTML += `
                         <tr class="border-b hover:bg-slate-50">
@@ -278,9 +407,6 @@
                         </tr>`;
                 });
             }
-            document.getElementById('searchCogs').addEventListener('input', (e) => {
-               // Simple filter logic here if needed
-            });
         }
 
         function viewCogsDetail(str) {
