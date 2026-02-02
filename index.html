@@ -141,7 +141,7 @@
     </main>
 <script>
         // --- PASTE URL WEB APP HASIL DEPLOY DI SINI ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbyhTi3qtpDjJJeycIaKPpmkLMN6tx70uVvoCoYtlUxANFrmtaHPd-ROU3O7ZJygN-Sd/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycby9PmKEemsfQFWbveXWhZsUFFGF-cJ3hLTqUov6XoPon0rZpaCMVRzReIHVr_fs6zw_/exec"; 
         
         let rawData = { stock: [], cogs: [] };
         let groupedStock = {};
@@ -399,7 +399,7 @@
             }
         }
 
-        function viewCogsDetail(str) {
+ function viewCogsDetail(str) {
             currentCogsDetail = JSON.parse(decodeURIComponent(str));
             document.getElementById('cogsListView').classList.add('hidden');
             document.getElementById('cogsDetailView').classList.remove('hidden');
@@ -408,14 +408,17 @@
             
             const tbody = document.getElementById('cogsDetailBody');
             
-            // Teknik Optimasi: Build String
+            // PERBAIKAN DI SINI: Gunakan i.status (bukan i.displayStatus)
             const htmlRows = currentCogsDetail.items.map(i => 
-                `<tr class="border-b"><td class="px-6 py-4">${i.itemName}</td><td class="px-6 py-4 text-right">${i.qty}</td><td class="px-6 py-4 italic text-xs">${i.displayStatus}</td></tr>`
+                `<tr class="border-b">
+                    <td class="px-6 py-4">${i.itemName}</td>
+                    <td class="px-6 py-4 text-right">${i.qty}</td>
+                    <td class="px-6 py-4 italic text-xs">${i.status || '-'}</td>
+                </tr>`
             ).join('');
 
             tbody.innerHTML = htmlRows;
         }
-
         function backToCogsList() { document.getElementById('cogsDetailView').classList.add('hidden'); document.getElementById('cogsListView').classList.remove('hidden'); }
 
         async function triggerApplyCOGS(btn) {
