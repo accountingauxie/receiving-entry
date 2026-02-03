@@ -7,9 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        /* Custom Scrollbar untuk Table Horizontal */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .hidden { display: none !important; }
@@ -19,8 +22,8 @@
         th.sortable i { margin-left: 5px; color: #94a3b8; font-size: 0.8em; }
         th.sortable.active-sort i { color: #2563eb; }
         
-        /* Table Cell Truncate for Raw Data */
-        .truncate-cell { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Dropdown Menu Z-Index agar muncul di atas header tabel */
+        .dropdown-menu { z-index: 50; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
@@ -41,7 +44,7 @@
                 <i class="fa-solid fa-table-list w-5"></i> Rincian Stock
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.1 (Full Access)</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.2 (Filtered)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -164,37 +167,68 @@
                 </div>
             </div>
 
-            <div id="moduleRaw" class="hidden fade-in">
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                    <h2 class="text-lg font-bold text-slate-700 mb-2">Rincian Data Persediaan</h2>
-                    <p class="text-xs text-slate-400 mb-4">Menampilkan Kolom A-O (Tanpa Kolom M)</p>
-                    <input type="text" id="searchRaw" placeholder="Cari Batch ID, KPC, Kode, atau Nama Barang..." class="w-full p-3 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+            <div id="moduleRaw" class="hidden fade-in h-full flex flex-col">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-4 flex-shrink-0">
+                    <div class="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-700">Rincian Data Persediaan</h2>
+                            <p class="text-xs text-slate-400">Database View (A-O)</p>
+                        </div>
+                        
+                        <div class="flex gap-2 relative">
+                            <div class="relative">
+                                <button onclick="toggleDropdown('colPickerDropdown')" class="bg-white border border-slate-300 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-table-columns"></i> Pilih Kolom
+                                </button>
+                                <div id="colPickerDropdown" class="dropdown-menu hidden absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-xl p-3 max-h-60 overflow-y-auto">
+                                    <h4 class="text-xs font-bold text-slate-500 mb-2 uppercase">Tampilkan Kolom</h4>
+                                    <div id="colPickerList" class="space-y-2"></div>
+                                </div>
+                            </div>
+
+                            <div class="relative">
+                                <button onclick="toggleDropdown('filterDropdown')" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-100 shadow-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-filter"></i> Filter Kondisi
+                                </button>
+                                <div id="filterDropdown" class="dropdown-menu hidden absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-xl p-4">
+                                    <div class="mb-3">
+                                        <label class="text-xs font-bold text-slate-500 block mb-1">Kolom</label>
+                                        <select id="filterColumn" class="w-full text-sm border border-slate-300 rounded p-2 bg-slate-50 outline-none">
+                                            </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="text-xs font-bold text-slate-500 block mb-1">Kondisi (Berisi)</label>
+                                        <input type="text" id="filterValue" placeholder="Contoh: Positive..." class="w-full text-sm border border-slate-300 rounded p-2 outline-none">
+                                    </div>
+                                    <div class="flex justify-end gap-2">
+                                        <button onclick="resetFilter()" class="text-xs text-slate-500 hover:text-slate-700 px-3 py-2">Reset</button>
+                                        <button onclick="applyFilter()" class="bg-blue-600 text-white text-xs px-4 py-2 rounded hover:bg-blue-700 font-bold">Terapkan</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="text" id="searchRaw" placeholder="Cari cepat di semua kolom..." class="w-full p-2.5 text-sm border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                    
+                    <div id="activeFilterBadge" class="hidden mt-3 inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold border border-blue-200">
+                        <span id="activeFilterText">Status = Positive</span>
+                        <button onclick="resetFilter()" class="hover:text-blue-900"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
                 </div>
                 
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
-                    <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
-                        <thead class="bg-slate-50 border-b uppercase font-bold text-slate-700">
-                            <tr>
-                                <th class="px-4 py-3">Batch ID (A)</th>
-                                <th class="px-4 py-3">Status (B)</th>
-                                <th class="px-4 py-3">Contact (C)</th>
-                                <th class="px-4 py-3">Ref (D)</th>
-                                <th class="px-4 py-3">Akun (E)</th>
-                                <th class="px-4 py-3">Kode (F)</th>
-                                <th class="px-4 py-3">KPC (G)</th>
-                                <th class="px-4 py-3">Item Name (H)</th>
-                                <th class="px-4 py-3">Date (I)</th>
-                                <th class="px-4 py-3 text-right">Qty (J)</th>
-                                <th class="px-4 py-3 text-right">Price (K)</th>
-                                <th class="px-4 py-3 text-right">Total (L)</th>
-                                <th class="px-4 py-3">Type (N)</th>
-                                <th class="px-4 py-3">Inv Ref (O)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rawTableBody" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                    <div id="rawLimitMsg" class="p-4 text-center text-xs text-slate-400 hidden bg-slate-50 border-t">
-                        <i class="fa-solid fa-circle-info mr-2"></i> Menampilkan 500 data terbaru agar performa lancar. Gunakan pencarian untuk data yang lebih lama.
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 overflow-hidden flex flex-col">
+                    <div class="overflow-x-auto overflow-y-auto flex-1">
+                        <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap min-w-[1500px]">
+                            <thead class="bg-slate-50 border-b uppercase font-bold text-slate-700 sticky top-0 z-10 shadow-sm">
+                                <tr id="rawTableHeader">
+                                    </tr>
+                            </thead>
+                            <tbody id="rawTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                    <div id="rawLimitMsg" class="p-2 text-center text-[10px] text-slate-400 bg-slate-50 border-t flex-shrink-0">
+                        <i class="fa-solid fa-circle-info mr-1"></i> Menampilkan 500 data terbaru. Gunakan filter untuk mencari data lama.
                     </div>
                 </div>
             </div>
@@ -206,7 +240,29 @@
         // URL API ANDA (UPDATED)
         const API_URL = "https://script.google.com/macros/s/AKfycbyJxK_lche5N7Km22btby1-cjU32txd5cgAYAqzjdgvpsGLM2S8XwAdIa7A94P6OR5k/exec"; 
         
-        let rawData = { stock: [], cogs: [], rawStock: [] }; // Updated structure
+        let rawData = { stock: [], cogs: [], rawStock: [] };
+        
+        // --- CONFIG UNTUK MODUL BARU (Header Bersih) ---
+        // Index sesuai urutan array dari backend. Karena Kolom M (Index 12) dibuang, maka N jadi 12, O jadi 13.
+        const rawColumnsConfig = [
+            { idx: 0, name: 'Batch ID', visible: true },
+            { idx: 1, name: 'Status', visible: true },
+            { idx: 2, name: 'Contact', visible: true },
+            { idx: 3, name: 'Ref', visible: true },
+            { idx: 4, name: 'Akun', visible: true },
+            { idx: 5, name: 'Kode Item', visible: true },
+            { idx: 6, name: 'KPC', visible: true },
+            { idx: 7, name: 'Nama Barang', visible: true },
+            { idx: 8, name: 'Tanggal', visible: true },
+            { idx: 9, name: 'Qty', visible: true },
+            { idx: 10, name: 'Harga', visible: true },
+            { idx: 11, name: 'Total', visible: true },
+            { idx: 12, name: 'Type', visible: true },
+            { idx: 13, name: 'Inv Ref', visible: true }
+        ];
+
+        let activeFilter = null; // Menyimpan status filter saat ini
+
         let groupedStock = {};
         let summaryStock = [];
         let cogsList = [];
@@ -217,7 +273,18 @@
             cogs: { key: 'issueDate', dir: 'asc' } 
         };
 
-        document.addEventListener('DOMContentLoaded', fetchData);
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+            initColumnPicker();
+            initFilterOptions();
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', (e) => {
+                if(!e.target.closest('.relative')) {
+                    document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden'));
+                }
+            });
+        });
 
         async function fetchData() {
             try {
@@ -247,6 +314,7 @@
             }
         }
 
+        // --- NAVIGATION LOGIC ---
         function switchModule(mod) {
             const navs = ['stock', 'cogs', 'raw'];
             const titles = {
@@ -261,7 +329,7 @@
                 const btn = document.getElementById('btnNav' + n.charAt(0).toUpperCase() + n.slice(1));
                 btn.classList.replace('text-blue-700', 'text-slate-600');
                 btn.classList.replace('bg-blue-50', 'border-transparent');
-                btn.classList.remove('bg-blue-50'); // Safety remove
+                btn.classList.remove('bg-blue-50'); 
             });
 
             // Activate Selected
@@ -273,6 +341,9 @@
             activeBtn.classList.replace('border-transparent', 'bg-blue-50');
             
             document.getElementById('pageTitle').innerText = titles[mod];
+            
+            // Re-render raw list agar layout tabel rapi (fix display:none width issue)
+            if(mod === 'raw' && rawData.rawStock.length > 0) renderRawList(rawData.rawStock);
         }
 
         // --- SORTING ---
@@ -569,103 +640,147 @@
             }
         }
 
-        // --- MODULE 3: RAW STOCK (RINCIAN) LOGIC ---
+        // --- MODULE 3: RAW STOCK (RINCIAN) LOGIC - NEW REVISION ---
+
         function renderRawList(data) {
-            // Logic Limit Display (agar browser tidak crash jika data ribuan)
-            let displayData = data; 
-            const limitMsg = document.getElementById('rawLimitMsg');
-            
-            // Tampilkan hanya 500 baris pertama jika data > 500 dan sedang tidak mencari
-            if(data.length > 500) {
-                displayData = data.slice(0, 500);
-                limitMsg.classList.remove('hidden');
-            } else {
-                limitMsg.classList.add('hidden');
+            // 1. Logic Filter (Kondisi)
+            let filteredData = data;
+            if (activeFilter) {
+                const term = activeFilter.val.toLowerCase();
+                filteredData = data.filter(row => {
+                    const cellVal = String(row[activeFilter.colIdx] || "").toLowerCase();
+                    return cellVal.includes(term);
+                });
             }
 
+            // 2. Logic Global Search
+            const searchVal = document.getElementById('searchRaw').value.toLowerCase();
+            if(searchVal) {
+                filteredData = filteredData.filter(row => 
+                    row.some(cell => String(cell).toLowerCase().includes(searchVal))
+                );
+            }
+
+            // 3. Logic Limit (Performance)
+            let displayData = filteredData.length > 500 ? filteredData.slice(0, 500) : filteredData;
+            
+            // Tampilkan pesan limit jika data terpotong
+            const limitMsg = document.getElementById('rawLimitMsg');
+            if(filteredData.length > 500) limitMsg.classList.remove('hidden');
+            else limitMsg.classList.add('hidden');
+
+            // 4. Render Headers (Dinamis berdasarkan Config Visible)
+            const thead = document.getElementById('rawTableHeader');
+            thead.innerHTML = rawColumnsConfig.map(col => 
+                col.visible ? `<th class="px-4 py-3 border-b border-slate-200 bg-slate-50">${col.name}</th>` : ''
+            ).join('');
+
+            // 5. Render Body
             const tbody = document.getElementById('rawTableBody');
+            
+            if(displayData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${rawColumnsConfig.length}" class="p-8 text-center text-slate-400">Data tidak ditemukan</td></tr>`;
+                return;
+            }
+
             const html = displayData.map(row => {
-                // Index 0-11 = A-L. Index 12 = N, Index 13 = O (Karena M dibuang di backend)
+                let rowHtml = '<tr class="hover:bg-blue-50 border-b border-slate-50 transition">';
                 
-                // Format Date (I / Index 8)
-                let dateVal = row[8];
-                try { 
-                    if(dateVal) dateVal = new Date(dateVal).toLocaleDateString('id-ID'); 
-                    else dateVal = '-';
-                } catch(e){}
+                rawColumnsConfig.forEach(col => {
+                    if(!col.visible) return;
 
-                // Format Angka (J, K, L)
-                const qty = parseFloat(row[9] || 0).toLocaleString('id-ID');
-                const price = parseFloat(row[10] || 0).toLocaleString('id-ID');
-                const total = parseFloat(row[11] || 0).toLocaleString('id-ID');
+                    let content = row[col.idx] || '-';
+                    let cssClass = "px-4 py-2";
 
-                return `<tr class="hover:bg-blue-50 border-b border-slate-50">
-                    <td class="px-4 py-2 font-mono text-slate-500">${row[0] || ''}</td> 
-                    <td class="px-4 py-2"><span class="px-2 py-0.5 rounded text-[10px] border ${row[1]==='Positive'?'bg-green-100 text-green-700 border-green-200':'bg-red-50 text-red-700 border-red-200'}">${row[1]}</span></td>
-                    <td class="px-4 py-2 text-slate-600 truncate-cell" title="${row[2]}">${row[2] || ''}</td>
-                    <td class="px-4 py-2 text-slate-400 text-[10px] truncate-cell">${row[3] || ''}</td>
-                    <td class="px-4 py-2 text-slate-400 text-[10px]">${row[4] || ''}</td>
-                    <td class="px-4 py-2 font-bold text-slate-700">${row[5] || ''}</td>
-                    <td class="px-4 py-2 font-mono text-xs">${row[6] || ''}</td>
-                    <td class="px-4 py-2 font-medium text-blue-900 truncate-cell" title="${row[7]}">${row[7] || ''}</td>
-                    <td class="px-4 py-2 whitespace-nowrap text-xs">${dateVal}</td>
-                    <td class="px-4 py-2 text-right font-bold text-slate-700">${qty}</td>
-                    <td class="px-4 py-2 text-right text-slate-500 text-xs">${price}</td>
-                    <td class="px-4 py-2 text-right text-slate-700 text-xs">${total}</td>
-                    <td class="px-4 py-2 text-purple-600 text-[10px] font-bold">${row[12] || '-'}</td>
-                    <td class="px-4 py-2 font-mono text-xs text-slate-500">${row[13] || '-'}</td>
-                </tr>`;
+                    // Custom Formatting Per Kolom
+                    if(col.name === 'Status') {
+                        const color = content === 'Positive' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200';
+                        content = `<span class="px-2 py-0.5 rounded text-[10px] border font-bold ${color}">${content}</span>`;
+                    } 
+                    else if (col.name === 'Tanggal') {
+                         try { content = new Date(content).toLocaleDateString('id-ID'); } catch(e){}
+                         cssClass += " whitespace-nowrap";
+                    }
+                    else if (['Qty', 'Harga', 'Total'].includes(col.name)) {
+                        content = parseFloat(content).toLocaleString('id-ID');
+                        cssClass += " text-right font-mono";
+                    }
+                    else if (col.name === 'Batch ID') {
+                        cssClass += " font-mono text-slate-400 text-[10px]";
+                    }
+                    else {
+                        // Truncate text panjang biar tabel rapi
+                        cssClass += " truncate max-w-[200px]";
+                        content = `<span title="${content}">${content}</span>`;
+                    }
+
+                    rowHtml += `<td class="${cssClass}">${content}</td>`;
+                });
+
+                rowHtml += '</tr>';
+                return rowHtml;
             }).join('');
             
             tbody.innerHTML = html;
         }
 
-        // Search Logic untuk Rincian Stock
-        document.getElementById('searchRaw').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
+        // --- NEW UI FUNCTIONS ---
+
+        function initColumnPicker() {
+            const list = document.getElementById('colPickerList');
+            list.innerHTML = rawColumnsConfig.map((col, i) => `
+                <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-slate-50 p-1 rounded">
+                    <input type="checkbox" onchange="toggleColumn(${i})" ${col.visible ? 'checked' : ''} class="rounded text-blue-600 focus:ring-blue-500">
+                    <span>${col.name}</span>
+                </label>
+            `).join('');
+        }
+
+        function toggleColumn(idx) {
+            rawColumnsConfig[idx].visible = !rawColumnsConfig[idx].visible;
+            renderRawList(rawData.rawStock);
+        }
+
+        function initFilterOptions() {
+            const select = document.getElementById('filterColumn');
+            select.innerHTML = rawColumnsConfig.map((col, i) => `<option value="${i}">${col.name}</option>`).join('');
+        }
+
+        function applyFilter() {
+            const colIdx = parseInt(document.getElementById('filterColumn').value);
+            const val = document.getElementById('filterValue').value;
             
-            if(term === "") {
-                renderRawList(rawData.rawStock); // Reset ke limit default
-            } else {
-                // Filter semua kolom penting
-                const filtered = rawData.rawStock.filter(row => {
-                    return String(row[0]).toLowerCase().includes(term) || // Batch ID
-                           String(row[5]).toLowerCase().includes(term) || // Kode
-                           String(row[6]).toLowerCase().includes(term) || // KPC
-                           String(row[7]).toLowerCase().includes(term);   // Nama
-                });
-                
-                // Hide limit message saat searching
-                document.getElementById('rawLimitMsg').classList.add('hidden');
-                
-                // Render hasil filter (Bypass fungsi renderRawList agar tidak kena slice limit)
-                const tbody = document.getElementById('rawTableBody');
-                const html = filtered.map(row => {
-                     let dateVal = row[8];
-                     try { if(dateVal) dateVal = new Date(dateVal).toLocaleDateString('id-ID'); } catch(e){}
-                     const qty = parseFloat(row[9] || 0).toLocaleString('id-ID');
-                     const price = parseFloat(row[10] || 0).toLocaleString('id-ID');
-                     const total = parseFloat(row[11] || 0).toLocaleString('id-ID');
-                     return `<tr class="hover:bg-blue-50 border-b border-slate-50">
-                        <td class="px-4 py-2 font-mono text-slate-500">${row[0] || ''}</td>
-                        <td class="px-4 py-2 text-[10px]">${row[1]}</td>
-                        <td class="px-4 py-2 truncate-cell">${row[2] || ''}</td>
-                        <td class="px-4 py-2 text-[10px] truncate-cell">${row[3] || ''}</td>
-                        <td class="px-4 py-2 text-[10px]">${row[4] || ''}</td>
-                        <td class="px-4 py-2 font-bold">${row[5] || ''}</td>
-                        <td class="px-4 py-2 font-mono text-xs">${row[6] || ''}</td>
-                        <td class="px-4 py-2 font-medium text-blue-900 truncate-cell">${row[7] || ''}</td>
-                        <td class="px-4 py-2 text-xs">${dateVal}</td>
-                        <td class="px-4 py-2 text-right font-bold">${qty}</td>
-                        <td class="px-4 py-2 text-right text-xs">${price}</td>
-                        <td class="px-4 py-2 text-right text-xs">${total}</td>
-                        <td class="px-4 py-2 text-purple-600 text-[10px] font-bold">${row[12] || '-'}</td>
-                        <td class="px-4 py-2 font-mono text-xs">${row[13] || '-'}</td>
-                    </tr>`;
-                }).join('');
-                tbody.innerHTML = html;
-            }
-        });
+            if(!val) return;
+
+            activeFilter = { colIdx, val };
+            
+            // Show Badge
+            document.getElementById('activeFilterBadge').classList.remove('hidden');
+            const colName = rawColumnsConfig.find(c => c.idx === colIdx).name;
+            document.getElementById('activeFilterText').innerText = `${colName} berisi "${val}"`;
+            document.getElementById('filterDropdown').classList.add('hidden'); // Close dropdown
+            
+            renderRawList(rawData.rawStock);
+        }
+
+        function resetFilter() {
+            activeFilter = null;
+            document.getElementById('filterValue').value = '';
+            document.getElementById('activeFilterBadge').classList.add('hidden');
+            renderRawList(rawData.rawStock);
+        }
+
+        function toggleDropdown(id) {
+            // Close others first
+            document.querySelectorAll('.dropdown-menu').forEach(el => {
+                if(el.id !== id) el.classList.add('hidden');
+            });
+            document.getElementById(id).classList.toggle('hidden');
+        }
+        
+        // Search trigger re-render
+        document.getElementById('searchRaw').addEventListener('input', () => renderRawList(rawData.rawStock));
+
     </script>
 </body>
 </html>
