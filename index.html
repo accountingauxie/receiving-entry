@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Stock & COGS Portal - Advanced Filter (Fixed)</title>
+    <title>Smart Stock & COGS Portal - Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -27,6 +27,14 @@
         /* Style khusus untuk Checkbox Filter List */
         .filter-checkbox:checked + div { background-color: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
         .filter-checkbox:checked + div .check-icon { display: block; }
+
+        /* Animasi Pulse Sekali untuk Chip */
+        @keyframes pulseOnce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .animate-pulse-once { animation: pulseOnce 0.3s ease-in-out; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
@@ -47,7 +55,7 @@
                 <i class="fa-solid fa-table-list w-5"></i> Rincian Stock
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.5 (Stable Reset)</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.3 (Optimized)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -61,7 +69,7 @@
         <div class="flex-1 overflow-auto p-4 md:p-8 relative">
             <div id="loadingOverlay" class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
                 <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
-                <p class="text-slate-500 font-medium animate-pulse">Mengambil data Realtime...</p>
+                <p class="text-slate-500 font-medium animate-pulse">Memproses Data...</p>
             </div>
 
             <div id="moduleStock" class="fade-in">
@@ -172,7 +180,7 @@
                         <div class="flex justify-between items-center">
                             <div>
                                 <h2 class="text-lg font-bold text-slate-700">Rincian Data Persediaan</h2>
-                                <p class="text-xs text-slate-400">Database View (Cascading Filter)</p>
+                                <p class="text-xs text-slate-400">Database View (Async Render)</p>
                             </div>
                             
                             <div class="flex gap-2 relative">
@@ -188,26 +196,26 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg shadow-inner">
+                        <div class="flex flex-wrap items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-lg">
                             <div class="relative">
-                                <button onclick="toggleDropdown('addFilterDropdown')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md flex items-center gap-2 transition transform hover:scale-105">
-                                    <i class="fa-solid fa-filter"></i> Add Filter
+                                <button onclick="toggleDropdown('addFilterDropdown')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition">
+                                    <i class="fa-solid fa-plus"></i> Add Filter
                                 </button>
                                 <div id="addFilterDropdown" class="dropdown-menu hidden absolute left-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-xl p-1 z-50">
                                     <div class="p-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Select Column</div>
                                     <div id="addFilterColumnList" class="max-h-60 overflow-y-auto">
-                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="h-6 w-px bg-slate-300 mx-2"></div>
                             
-                            <div id="activeFiltersContainer" class="flex flex-wrap gap-2 items-center flex-1">
+                            <div id="activeFiltersContainer" class="flex flex-wrap gap-2 items-center">
                                 <span class="text-sm text-slate-400 italic" id="noFiltersText">No active filters.</span>
                             </div>
                             
-                            <button id="resetAllFiltersBtn" onclick="resetAllFilters()" class="hidden text-xs text-red-500 hover:text-red-700 font-bold px-3 py-1 border border-transparent hover:border-red-200 rounded transition">
-                                <i class="fa-solid fa-rotate-left mr-1"></i> Reset All
+                            <button id="resetAllFiltersBtn" onclick="resetAllFilters()" class="hidden ml-auto text-xs text-red-500 hover:text-red-700 font-bold px-3">
+                                Reset All
                             </button>
                         </div>
                     </div>
@@ -238,40 +246,36 @@
     </main>
 
     <div id="filterValueModal" class="fixed inset-0 bg-slate-900/50 z-[100] hidden flex items-center justify-center backdrop-blur-sm fade-in">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col max-h-[80vh] animate-bounce-in">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col max-h-[80vh]">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-xl">
                 <div>
-                    <h3 class="font-bold text-slate-800" id="filterModalTitle">Filter</h3>
+                    <h3 class="font-bold text-slate-800" id="filterModalTitle">Filter by Status</h3>
                     <p class="text-xs text-slate-500">Select one or more values</p>
                 </div>
-                <button onclick="closeFilterModal()" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="closeFilterModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
 
-            <div class="p-3 border-b bg-white">
-                <div class="relative">
-                    <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-xs"></i>
-                    <input type="text" id="filterValueSearch" placeholder="Search values..." class="w-full pl-8 p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
+            <div class="p-3 border-b">
+                <input type="text" id="filterValueSearch" placeholder="Search values..." class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
 
             <div class="flex-1 overflow-y-auto p-2 space-y-1" id="filterValueList">
-                </div>
+            </div>
 
             <div class="p-4 border-t bg-slate-50 rounded-b-xl flex justify-between items-center">
                 <button onclick="toggleSelectAllFilter()" class="text-xs text-blue-600 font-bold hover:underline">Select All</button>
                 <div class="flex gap-2">
-                    <button onclick="closeFilterModal()" class="px-4 py-2 rounded text-slate-600 text-sm font-medium hover:bg-slate-200 transition">Cancel</button>
-                    <button onclick="applyFilterValues()" class="px-4 py-2 rounded bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 shadow transition">Apply Filter</button>
+                    <button onclick="closeFilterModal()" class="px-4 py-2 rounded text-slate-600 text-sm font-medium hover:bg-slate-200">Cancel</button>
+                    <button onclick="applyFilterValues()" class="px-4 py-2 rounded bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 shadow">Apply Filter</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // API Configuration
+        // URL API ANDA
         const API_URL = "https://script.google.com/macros/s/AKfycbxNr8fdDF1CPwuASgj04L83bkha533N-nEyycmadAhNW5TZJKgig5u9bO0qTo2PFVJK/exec"; 
         
-        // State Management
         let rawData = { stock: [], cogs: [], rawStock: [] };
         
         // --- CONFIG UNTUK MODUL RAW ---
@@ -293,15 +297,41 @@
         ];
 
         // --- FILTER STATE ---
-        let activeFilters = []; // [{ colIdx: 1, values: ['Positive'] }]
-        let currentEditingFilterIdx = null;
+        let activeFilters = []; 
+        let currentEditingFilterIdx = null; 
 
-        // Variables
+        // Global Variables
         let groupedStock = {};
         let summaryStock = [];
         let cogsList = [];
         let currentCogsDetail = null;
-        let sortState = { stock: { key: 'name', dir: 'asc' }, cogs: { key: 'issueDate', dir: 'asc' } };
+
+        let sortState = {
+            stock: { key: 'name', dir: 'asc' }, 
+            cogs: { key: 'issueDate', dir: 'asc' } 
+        };
+
+        // --- UTILITY: DEBOUNCE (Mencegah Lag saat mengetik) ---
+        function debounce(func, timeout = 300){
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => { func.apply(this, args); }, timeout);
+            };
+        }
+
+        // --- UTILITY: LOADING SPINNER HELPER ---
+        function showMainLoading(show) {
+            const el = document.getElementById('loadingOverlay');
+            if(show) {
+                el.classList.remove('hidden');
+                // Force browser render frame
+                return new Promise(resolve => requestAnimationFrame(resolve));
+            } else {
+                el.classList.add('hidden');
+                return Promise.resolve();
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchData();
@@ -319,6 +349,10 @@
             document.getElementById('filterValueSearch').addEventListener('input', (e) => {
                 filterCheckboxList(e.target.value);
             });
+
+            // Debounce Search Raw Data
+            const processSearchRaw = debounce(() => renderRawList(rawData.rawStock));
+            document.getElementById('searchRaw').addEventListener('input', processSearchRaw);
         });
 
         async function fetchData() {
@@ -326,17 +360,15 @@
                 const response = await fetch(API_URL);
                 const result = await response.json();
                 
-                requestAnimationFrame(() => {
-                    rawData = result;
-                    processStockData();
-                    processCogsData();
-                    
-                    if(rawData.rawStock) {
-                        renderRawList(rawData.rawStock);
-                    }
+                rawData = result;
+                processStockData();
+                processCogsData();
+                
+                if(rawData.rawStock) {
+                    setTimeout(() => renderRawList(rawData.rawStock), 50);
+                }
 
-                    document.getElementById('loadingOverlay').classList.add('hidden');
-                });
+                document.getElementById('loadingOverlay').classList.add('hidden');
 
             } catch (error) {
                 alert("Gagal koneksi ke API.");
@@ -361,7 +393,9 @@
             activeBtn.className = "w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition bg-blue-50 text-blue-700 font-medium border border-blue-100";
             document.getElementById('pageTitle').innerText = titles[mod];
             
-            if(mod === 'raw' && rawData.rawStock.length > 0) renderRawList(rawData.rawStock);
+            if(mod === 'raw' && rawData.rawStock.length > 0) {
+                 setTimeout(() => renderRawList(rawData.rawStock), 0);
+            }
         }
 
         // --- SORTING LOGIC ---
@@ -567,10 +601,9 @@
         }
 
         // =========================================================================
-        // --- ADVANCED FILTER LOGIC (CASCADING & MODAL) ---
+        // --- ADVANCED FILTER LOGIC (NEW REVISION - PERFORMANCE FIX) ---
         // =========================================================================
 
-        // 1. Initialize Add Filter Dropdown List
         function initAddFilterDropdown() {
             const list = document.getElementById('addFilterColumnList');
             list.innerHTML = rawColumnsConfig.map((col) => `
@@ -580,29 +613,26 @@
             `).join('');
         }
 
-        // 2. Cascading Logic: Only show options that are available based on OTHER filters
+        // Optimized Cascading Logic
         function getCascadingOptions(targetColIdx) {
-            // Filter raw data based on ALL active filters EXCEPT the one we are currently editing
             const relevantData = rawData.rawStock.filter(row => {
                 return activeFilters.every(f => {
-                    if (f.colIdx === targetColIdx) return true; // Ignore self to allow changing selection
+                    if (f.colIdx === targetColIdx) return true; 
                     const cellValue = String(row[f.colIdx]);
                     return f.values.includes(cellValue);
                 });
             });
 
-            // Extract unique values from the filtered data
             const uniqueValues = new Set();
-            relevantData.forEach(row => {
-                let val = row[targetColIdx];
+            for (let i = 0; i < relevantData.length; i++) {
+                let val = relevantData[i][targetColIdx];
                 if(val === null || val === undefined) val = "";
                 uniqueValues.add(String(val));
-            });
+            }
 
             return Array.from(uniqueValues).sort();
         }
 
-        // 3. Open Modal
         function openFilterModalForColumn(colIdx) {
             currentEditingFilterIdx = colIdx;
             
@@ -614,67 +644,73 @@
             const existingFilter = activeFilters.find(f => f.colIdx === colIdx);
             const selectedSet = new Set(existingFilter ? existingFilter.values : []);
 
-            const options = getCascadingOptions(colIdx);
-            
-            const listContainer = document.getElementById('filterValueList');
-            if(options.length === 0) {
-                listContainer.innerHTML = `<div class="p-4 text-center text-slate-400 text-sm">No data available (restricted by other filters).</div>`;
-            } else {
-                listContainer.innerHTML = options.map(val => {
-                    const isChecked = selectedSet.has(val) ? 'checked' : '';
-                    return `
-                        <label class="cursor-pointer group block">
-                            <input type="checkbox" class="filter-checkbox hidden" value="${val}" ${isChecked}>
-                            <div class="flex items-center justify-between p-2 rounded hover:bg-slate-100 border border-transparent transition group-hover:border-slate-200">
-                                <span class="text-sm text-slate-700 truncate">${val === "" ? "(Empty)" : val}</span>
-                                <i class="fa-solid fa-check text-blue-600 hidden check-icon"></i>
-                            </div>
-                        </label>
-                    `;
-                }).join('');
-            }
+            setTimeout(() => {
+                const options = getCascadingOptions(colIdx);
+                
+                const listContainer = document.getElementById('filterValueList');
+                if(options.length === 0) {
+                    listContainer.innerHTML = `<div class="p-4 text-center text-slate-400 text-sm">No data available based on other filters.</div>`;
+                } else {
+                    listContainer.innerHTML = options.map(val => {
+                        const isChecked = selectedSet.has(val) ? 'checked' : '';
+                        return `
+                            <label class="cursor-pointer group block">
+                                <input type="checkbox" class="filter-checkbox hidden" value="${val}" ${isChecked}>
+                                <div class="flex items-center justify-between p-2 rounded hover:bg-slate-100 border border-transparent transition group-hover:border-slate-200">
+                                    <span class="text-sm text-slate-700 truncate">${val === "" ? "(Empty)" : val}</span>
+                                    <i class="fa-solid fa-check text-blue-600 hidden check-icon"></i>
+                                </div>
+                            </label>
+                        `;
+                    }).join('');
+                }
+            }, 10);
 
             document.getElementById('filterValueSearch').value = '';
             document.getElementById('filterValueModal').classList.remove('hidden');
         }
 
-        // 4. Modal Search
         function filterCheckboxList(searchTerm) {
             const term = searchTerm.toLowerCase();
-            document.querySelectorAll('#filterValueList label').forEach(lbl => {
+            const labels = document.querySelectorAll('#filterValueList label');
+            labels.forEach(lbl => {
                 const text = lbl.querySelector('span').innerText.toLowerCase();
                 if(text.includes(term)) lbl.classList.remove('hidden');
                 else lbl.classList.add('hidden');
             });
         }
 
-        // 5. Select All
         function toggleSelectAllFilter() {
             const checkboxes = document.querySelectorAll('.filter-checkbox');
-            const allChecked = Array.from(checkboxes).every(c => c.checked);
-            checkboxes.forEach(c => c.checked = !allChecked);
+            const visibleCheckboxes = Array.from(checkboxes).filter(c => !c.parentElement.classList.contains('hidden'));
+            if(visibleCheckboxes.length === 0) return;
+            const allChecked = visibleCheckboxes.every(c => c.checked);
+            visibleCheckboxes.forEach(c => c.checked = !allChecked);
         }
 
-        // 6. Apply Filter Logic
+        // --- ASYNC APPLY FILTER (PREVENT FREEZE) ---
         function applyFilterValues() {
-            const checkboxes = document.querySelectorAll('.filter-checkbox:checked');
-            const selectedValues = Array.from(checkboxes).map(c => c.value);
+            showMainLoading(true);
+            setTimeout(() => {
+                const checkboxes = document.querySelectorAll('.filter-checkbox:checked');
+                const selectedValues = Array.from(checkboxes).map(c => c.value);
 
-            if (selectedValues.length > 0) {
-                const existingIdx = activeFilters.findIndex(f => f.colIdx === currentEditingFilterIdx);
-                if(existingIdx >= 0) {
-                    activeFilters[existingIdx].values = selectedValues;
+                if (selectedValues.length > 0) {
+                    const existingIdx = activeFilters.findIndex(f => f.colIdx === currentEditingFilterIdx);
+                    if(existingIdx >= 0) {
+                        activeFilters[existingIdx].values = selectedValues;
+                    } else {
+                        activeFilters.push({ colIdx: currentEditingFilterIdx, values: selectedValues });
+                    }
                 } else {
-                    activeFilters.push({ colIdx: currentEditingFilterIdx, values: selectedValues });
+                    activeFilters = activeFilters.filter(f => f.colIdx !== currentEditingFilterIdx);
                 }
-            } else {
-                // If user unchecks everything, remove the filter
-                activeFilters = activeFilters.filter(f => f.colIdx !== currentEditingFilterIdx);
-            }
 
-            closeFilterModal();
-            renderFilterChips();
-            renderRawList(rawData.rawStock);
+                closeFilterModal();
+                renderFilterChips();
+                renderRawList(rawData.rawStock);
+                showMainLoading(false); 
+            }, 50);
         }
 
         function closeFilterModal() {
@@ -682,13 +718,12 @@
             currentEditingFilterIdx = null;
         }
 
-        // 7. Render Active Chips
         function renderFilterChips() {
             const container = document.getElementById('activeFiltersContainer');
             const noText = document.getElementById('noFiltersText');
             const resetBtn = document.getElementById('resetAllFiltersBtn');
 
-            container.innerHTML = '';
+            container.innerHTML = ''; 
             
             if(activeFilters.length === 0) {
                 noText.classList.remove('hidden');
@@ -707,7 +742,7 @@
                 chip.className = "flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full border border-blue-200 shadow-sm animate-pulse-once";
                 chip.innerHTML = `
                     <span class="font-bold">${colName}:</span>
-                    <span class="max-w-[100px] truncate" title="${f.values.join(', ')}">${valText}</span>
+                    <span class="max-w-[100px] truncate">${valText}</span>
                     <button onclick="removeFilter(${idx})" class="ml-1 hover:text-red-500 w-4 h-4 flex items-center justify-center rounded-full hover:bg-white transition"><i class="fa-solid fa-xmark"></i></button>
                     <button onclick="openFilterModalForColumn(${f.colIdx})" class="ml-0.5 hover:text-blue-600 w-4 h-4 flex items-center justify-center rounded-full hover:bg-white transition"><i class="fa-solid fa-pencil"></i></button>
                 `;
@@ -716,30 +751,40 @@
         }
 
         function removeFilter(arrayIdx) {
-            activeFilters.splice(arrayIdx, 1);
-            renderFilterChips();
-            renderRawList(rawData.rawStock);
+            showMainLoading(true);
+            setTimeout(() => {
+                activeFilters.splice(arrayIdx, 1);
+                renderFilterChips();
+                renderRawList(rawData.rawStock);
+                showMainLoading(false);
+            }, 50);
         }
 
-        // FIXED: Reset Logic that doesn't need refresh
+        // --- ASYNC RESET (THE FIX FOR "HANG") ---
         function resetAllFilters() {
-            activeFilters = [];
-            renderFilterChips();
-            document.getElementById('searchRaw').value = ''; // Reset Search text too
-            renderRawList(rawData.rawStock); // Re-render with full data
+            showMainLoading(true);
+            setTimeout(() => {
+                activeFilters = [];
+                document.getElementById('searchRaw').value = '';
+                renderFilterChips();
+                renderRawList(rawData.rawStock);
+                showMainLoading(false);
+            }, 50);
         }
 
-        // 8. Main Render Function (Applies Active Filters)
+        // --- MAIN RENDER FUNCTION ---
         function renderRawList(data) {
-            // Apply Column Filters (AND Logic)
-            let filteredData = data.filter(row => {
-                return activeFilters.every(f => {
-                    const cellVal = String(row[f.colIdx]);
-                    return f.values.includes(cellVal);
+            let filteredData = data;
+            
+            if (activeFilters.length > 0) {
+                filteredData = data.filter(row => {
+                    return activeFilters.every(f => {
+                        const cellVal = String(row[f.colIdx]);
+                        return f.values.includes(cellVal);
+                    });
                 });
-            });
+            }
 
-            // Apply Global Search Text
             const searchVal = document.getElementById('searchRaw').value.toLowerCase();
             if(searchVal) {
                 filteredData = filteredData.filter(row => 
@@ -749,26 +794,31 @@
             
             document.getElementById('recordCountDisplay').innerText = `${filteredData.length.toLocaleString()} Records`;
 
-            // Limit display for performance
             let displayData = filteredData.length > 500 ? filteredData.slice(0, 500) : filteredData;
 
-            // Render Header
-            document.getElementById('rawTableHeader').innerHTML = rawColumnsConfig.map(col => 
-                col.visible ? `<th class="px-4 py-3 border-b border-slate-200 bg-slate-50">${col.name}</th>` : ''
+            const headerHTML = rawColumnsConfig.map(col => 
+                col.visible ? `<th class="px-4 py-3 border-b border-slate-200 bg-slate-50 sticky top-0 z-10">${col.name}</th>` : ''
             ).join('');
+            
+            const tableHeader = document.getElementById('rawTableHeader');
+            if(tableHeader.innerHTML !== headerHTML) tableHeader.innerHTML = headerHTML;
 
-            // Render Body
             const tbody = document.getElementById('rawTableBody');
+            
             if(displayData.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="${rawColumnsConfig.length}" class="p-8 text-center text-slate-400">Data tidak ditemukan / Filter terlalu spesifik.</td></tr>`;
                 return;
             }
 
             const html = displayData.map(row => {
-                let rowHtml = '<tr class="hover:bg-blue-50 border-b border-slate-50 transition">';
-                rawColumnsConfig.forEach(col => {
-                    if(!col.visible) return;
-                    let content = row[col.idx] || '-';
+                let cells = '';
+                for(let i=0; i<rawColumnsConfig.length; i++) {
+                    const col = rawColumnsConfig[i];
+                    if(!col.visible) continue;
+                    
+                    let content = row[col.idx];
+                    if(content === null || content === undefined) content = '-';
+                    
                     let cssClass = "px-4 py-2";
 
                     if(col.type === 'status') {
@@ -784,12 +834,10 @@
                         cssClass += " font-mono text-slate-400 text-[10px]";
                     } else {
                         cssClass += " truncate max-w-[200px]";
-                        content = `<span title="${content}">${content}</span>`;
                     }
-                    rowHtml += `<td class="${cssClass}">${content}</td>`;
-                });
-                rowHtml += '</tr>';
-                return rowHtml;
+                    cells += `<td class="${cssClass}">${content}</td>`;
+                }
+                return `<tr class="hover:bg-blue-50 border-b border-slate-50 transition">${cells}</tr>`;
             }).join('');
             
             tbody.innerHTML = html;
@@ -817,9 +865,6 @@
             });
             document.getElementById(id).classList.toggle('hidden');
         }
-
-        // Search trigger re-render
-        document.getElementById('searchRaw').addEventListener('input', () => renderRawList(rawData.rawStock));
 
     </script>
 </body>
