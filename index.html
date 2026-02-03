@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Stock & COGS Portal - Optimized</title>
+    <title>Smart Stock Portal - High Performance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -19,16 +19,13 @@
         
         th.sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
         th.sortable:hover { background-color: #e2e8f0; }
-        th.sortable i { margin-left: 5px; color: #94a3b8; font-size: 0.8em; }
-        th.sortable.active-sort i { color: #2563eb; }
         
-        .dropdown-menu { z-index: 50; }
+        /* Loading Overlay Transition */
+        #loadingOverlay { transition: opacity 0.2s; }
 
-        /* Style khusus untuk Checkbox Filter List */
         .filter-checkbox:checked + div { background-color: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
         .filter-checkbox:checked + div .check-icon { display: block; }
 
-        /* Animasi Pulse Sekali untuk Chip */
         @keyframes pulseOnce {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -55,7 +52,7 @@
                 <i class="fa-solid fa-table-list w-5"></i> Rincian Stock
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.3 (Optimized)</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.4 (Stable)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -67,9 +64,10 @@
         </header>
 
         <div class="flex-1 overflow-auto p-4 md:p-8 relative">
+            
             <div id="loadingOverlay" class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
                 <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
-                <p class="text-slate-500 font-medium animate-pulse">Memproses Data...</p>
+                <p id="loadingText" class="text-slate-500 font-medium animate-pulse">Memproses Data...</p>
             </div>
 
             <div id="moduleStock" class="fade-in">
@@ -180,7 +178,7 @@
                         <div class="flex justify-between items-center">
                             <div>
                                 <h2 class="text-lg font-bold text-slate-700">Rincian Data Persediaan</h2>
-                                <p class="text-xs text-slate-400">Database View (Async Render)</p>
+                                <p class="text-xs text-slate-400">Interactive Database View</p>
                             </div>
                             
                             <div class="flex gap-2 relative">
@@ -222,7 +220,7 @@
 
                     <div class="mt-4 relative">
                         <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400"></i>
-                        <input type="text" id="searchRaw" placeholder="Search anything in displayed data..." class="w-full pl-10 p-2.5 text-sm border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input type="text" id="searchRaw" placeholder="Search data..." class="w-full pl-10 p-2.5 text-sm border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
                 </div>
                 
@@ -236,7 +234,7 @@
                         </table>
                     </div>
                     <div class="p-2 flex justify-between items-center text-[10px] text-slate-400 bg-slate-50 border-t flex-shrink-0">
-                        <span><i class="fa-solid fa-circle-info mr-1"></i> Data Limit: 500 rows for performance.</span>
+                        <span><i class="fa-solid fa-circle-info mr-1"></i> Showing top 500 rows.</span>
                         <span id="recordCountDisplay">0 Records</span>
                     </div>
                 </div>
@@ -249,8 +247,8 @@
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col max-h-[80vh]">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-xl">
                 <div>
-                    <h3 class="font-bold text-slate-800" id="filterModalTitle">Filter by Status</h3>
-                    <p class="text-xs text-slate-500">Select one or more values</p>
+                    <h3 class="font-bold text-slate-800" id="filterModalTitle">Filter</h3>
+                    <p class="text-xs text-slate-500">Select Values</p>
                 </div>
                 <button onclick="closeFilterModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
@@ -278,7 +276,7 @@
         
         let rawData = { stock: [], cogs: [], rawStock: [] };
         
-        // --- CONFIG UNTUK MODUL RAW ---
+        // Config Column
         const rawColumnsConfig = [
             { idx: 0, name: 'Batch ID', visible: true, type: 'text' },
             { idx: 1, name: 'Status', visible: true, type: 'status' },
@@ -296,7 +294,7 @@
             { idx: 13, name: 'Inv Ref', visible: true, type: 'text' }
         ];
 
-        // --- FILTER STATE ---
+        // Filter State
         let activeFilters = []; 
         let currentEditingFilterIdx = null; 
 
@@ -321,12 +319,13 @@
         }
 
         // --- UTILITY: LOADING SPINNER HELPER ---
-        function showMainLoading(show) {
+        function showMainLoading(show, text = "Memproses Data...") {
             const el = document.getElementById('loadingOverlay');
+            document.getElementById('loadingText').innerText = text;
             if(show) {
                 el.classList.remove('hidden');
-                // Force browser render frame
-                return new Promise(resolve => requestAnimationFrame(resolve));
+                // Force browser render frame immediately
+                return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
             } else {
                 el.classList.add('hidden');
                 return Promise.resolve();
@@ -357,6 +356,7 @@
 
         async function fetchData() {
             try {
+                showMainLoading(true, "Mengambil Data...");
                 const response = await fetch(API_URL);
                 const result = await response.json();
                 
@@ -368,11 +368,10 @@
                     setTimeout(() => renderRawList(rawData.rawStock), 50);
                 }
 
-                document.getElementById('loadingOverlay').classList.add('hidden');
-
             } catch (error) {
                 alert("Gagal koneksi ke API.");
-                document.getElementById('loadingOverlay').innerHTML = `<p class="text-red-500 font-bold">Error Connection. Refresh page.</p>`;
+            } finally {
+                showMainLoading(false);
             }
         }
 
@@ -419,9 +418,7 @@
                 if (valA > valB) return 1 * direction;
                 return 0;
             });
-
             updateSortIcons(module, key, sortState[module].dir);
-
             if(module === 'stock') {
                 const term = document.getElementById('searchStock').value.toLowerCase();
                 renderStockList(dataToSort.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
@@ -434,11 +431,6 @@
         function updateSortIcons(module, activeKey, dir) {
             const headers = document.querySelectorAll(`#module${module.charAt(0).toUpperCase() + module.slice(1)} th.sortable i`);
             headers.forEach(icon => { icon.className = 'fa-solid fa-sort'; icon.parentElement.classList.remove('active-sort'); });
-            const activeIcon = document.getElementById(`sort-${module}-${activeKey}`);
-            if(activeIcon) {
-                activeIcon.className = dir === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
-                activeIcon.parentElement.classList.add('active-sort');
-            }
         }
 
         // --- STOCK LOGIC ---
@@ -489,7 +481,6 @@
                 let currentRowTotal = parseFloat(r.total || 0);
                 if (r.status === 'Positive') { runningRp += currentRowTotal; } else { runningRp -= currentRowTotal; }
                 const statusClass = r.status === 'Positive' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200';
-                
                 return `<tr class="bg-white border-b hover:bg-slate-50 transition">
                         <td class="px-6 py-4 font-mono text-slate-500">${r.date ? new Date(r.date).toLocaleDateString('id-ID') : "-"}</td>
                         <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>
@@ -601,7 +592,7 @@
         }
 
         // =========================================================================
-        // --- ADVANCED FILTER LOGIC (NEW REVISION - PERFORMANCE FIX) ---
+        // --- ADVANCED FILTER LOGIC (FIXED: NO MORE HANGING) ---
         // =========================================================================
 
         function initAddFilterDropdown() {
@@ -613,12 +604,11 @@
             `).join('');
         }
 
-        // Optimized Cascading Logic
         function getCascadingOptions(targetColIdx) {
             const relevantData = rawData.rawStock.filter(row => {
                 return activeFilters.every(f => {
                     if (f.colIdx === targetColIdx) return true; 
-                    const cellValue = String(row[f.colIdx]);
+                    const cellValue = String(row[f.colIdx] ?? "");
                     return f.values.includes(cellValue);
                 });
             });
@@ -629,13 +619,11 @@
                 if(val === null || val === undefined) val = "";
                 uniqueValues.add(String(val));
             }
-
             return Array.from(uniqueValues).sort();
         }
 
         function openFilterModalForColumn(colIdx) {
             currentEditingFilterIdx = colIdx;
-            
             document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden'));
             
             const colConfig = rawColumnsConfig.find(c => c.idx === colIdx);
@@ -646,10 +634,9 @@
 
             setTimeout(() => {
                 const options = getCascadingOptions(colIdx);
-                
                 const listContainer = document.getElementById('filterValueList');
                 if(options.length === 0) {
-                    listContainer.innerHTML = `<div class="p-4 text-center text-slate-400 text-sm">No data available based on other filters.</div>`;
+                    listContainer.innerHTML = `<div class="p-4 text-center text-slate-400 text-sm">No data available.</div>`;
                 } else {
                     listContainer.innerHTML = options.map(val => {
                         const isChecked = selectedSet.has(val) ? 'checked' : '';
@@ -688,28 +675,37 @@
             visibleCheckboxes.forEach(c => c.checked = !allChecked);
         }
 
-        // --- ASYNC APPLY FILTER (PREVENT FREEZE) ---
+        // --- SAFE APPLY (TRY-CATCH ADDED) ---
         function applyFilterValues() {
-            showMainLoading(true);
+            showMainLoading(true, "Menerapkan Filter...");
+            
             setTimeout(() => {
-                const checkboxes = document.querySelectorAll('.filter-checkbox:checked');
-                const selectedValues = Array.from(checkboxes).map(c => c.value);
+                try {
+                    const checkboxes = document.querySelectorAll('.filter-checkbox:checked');
+                    const selectedValues = Array.from(checkboxes).map(c => c.value);
 
-                if (selectedValues.length > 0) {
-                    const existingIdx = activeFilters.findIndex(f => f.colIdx === currentEditingFilterIdx);
-                    if(existingIdx >= 0) {
-                        activeFilters[existingIdx].values = selectedValues;
+                    if (selectedValues.length > 0) {
+                        const existingIdx = activeFilters.findIndex(f => f.colIdx === currentEditingFilterIdx);
+                        if(existingIdx >= 0) {
+                            activeFilters[existingIdx].values = selectedValues;
+                        } else {
+                            activeFilters.push({ colIdx: currentEditingFilterIdx, values: selectedValues });
+                        }
                     } else {
-                        activeFilters.push({ colIdx: currentEditingFilterIdx, values: selectedValues });
+                        activeFilters = activeFilters.filter(f => f.colIdx !== currentEditingFilterIdx);
                     }
-                } else {
-                    activeFilters = activeFilters.filter(f => f.colIdx !== currentEditingFilterIdx);
-                }
 
-                closeFilterModal();
-                renderFilterChips();
-                renderRawList(rawData.rawStock);
-                showMainLoading(false); 
+                    closeFilterModal();
+                    renderFilterChips();
+                    renderRawList(rawData.rawStock);
+
+                } catch (error) {
+                    console.error("Filter Error:", error);
+                    alert("Terjadi kesalahan saat filter. Data akan di-reset.");
+                    resetAllFilters(); // Emergency Reset
+                } finally {
+                    showMainLoading(false);
+                }
             }, 50);
         }
 
@@ -760,15 +756,20 @@
             }, 50);
         }
 
-        // --- ASYNC RESET (THE FIX FOR "HANG") ---
+        // --- SAFE RESET (FIX "REFRESH GA SELESAI2") ---
         function resetAllFilters() {
-            showMainLoading(true);
+            showMainLoading(true, "Reset Data...");
             setTimeout(() => {
-                activeFilters = [];
-                document.getElementById('searchRaw').value = '';
-                renderFilterChips();
-                renderRawList(rawData.rawStock);
-                showMainLoading(false);
+                try {
+                    activeFilters = [];
+                    document.getElementById('searchRaw').value = '';
+                    renderFilterChips();
+                    renderRawList(rawData.rawStock);
+                } catch (error) {
+                    console.error("Reset Error:", error);
+                } finally {
+                    showMainLoading(false); // ALWAYS RUN THIS
+                }
             }, 50);
         }
 
@@ -776,26 +777,30 @@
         function renderRawList(data) {
             let filteredData = data;
             
+            // 1. Apply Active Filters
             if (activeFilters.length > 0) {
                 filteredData = data.filter(row => {
                     return activeFilters.every(f => {
-                        const cellVal = String(row[f.colIdx]);
+                        const cellVal = String(row[f.colIdx] ?? ""); // Safe Convert
                         return f.values.includes(cellVal);
                     });
                 });
             }
 
+            // 2. Apply Search
             const searchVal = document.getElementById('searchRaw').value.toLowerCase();
             if(searchVal) {
                 filteredData = filteredData.filter(row => 
-                    row.some(cell => String(cell).toLowerCase().includes(searchVal))
+                    row.some(cell => String(cell ?? "").toLowerCase().includes(searchVal))
                 );
             }
             
             document.getElementById('recordCountDisplay').innerText = `${filteredData.length.toLocaleString()} Records`;
 
+            // 3. Pagination Limit (Critical for Performance)
             let displayData = filteredData.length > 500 ? filteredData.slice(0, 500) : filteredData;
 
+            // 4. Build Table
             const headerHTML = rawColumnsConfig.map(col => 
                 col.visible ? `<th class="px-4 py-3 border-b border-slate-200 bg-slate-50 sticky top-0 z-10">${col.name}</th>` : ''
             ).join('');
@@ -806,7 +811,7 @@
             const tbody = document.getElementById('rawTableBody');
             
             if(displayData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${rawColumnsConfig.length}" class="p-8 text-center text-slate-400">Data tidak ditemukan / Filter terlalu spesifik.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${rawColumnsConfig.length}" class="p-8 text-center text-slate-400">Data tidak ditemukan.</td></tr>`;
                 return;
             }
 
