@@ -47,7 +47,7 @@
                 <i class="fa-solid fa-table-list w-5"></i> Rincian Stock
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.3 (Cascading Filter)</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.4 (Fixed Logic)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -188,10 +188,10 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-lg">
+                        <div class="flex flex-wrap items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg shadow-inner">
                             <div class="relative">
-                                <button onclick="toggleDropdown('addFilterDropdown')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition">
-                                    <i class="fa-solid fa-plus"></i> Add Filter
+                                <button onclick="toggleDropdown('addFilterDropdown')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md flex items-center gap-2 transition transform hover:scale-105">
+                                    <i class="fa-solid fa-filter"></i> Add Filter
                                 </button>
                                 <div id="addFilterDropdown" class="dropdown-menu hidden absolute left-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-xl p-1 z-50">
                                     <div class="p-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Select Column</div>
@@ -202,12 +202,12 @@
 
                             <div class="h-6 w-px bg-slate-300 mx-2"></div>
                             
-                            <div id="activeFiltersContainer" class="flex flex-wrap gap-2 items-center">
+                            <div id="activeFiltersContainer" class="flex flex-wrap gap-2 items-center flex-1">
                                 <span class="text-sm text-slate-400 italic" id="noFiltersText">No active filters.</span>
-                                </div>
+                            </div>
                             
-                            <button id="resetAllFiltersBtn" onclick="resetAllFilters()" class="hidden ml-auto text-xs text-red-500 hover:text-red-700 font-bold px-3">
-                                Reset All
+                            <button id="resetAllFiltersBtn" onclick="resetAllFilters()" class="hidden text-xs text-red-500 hover:text-red-700 font-bold px-3 py-1 border border-transparent hover:border-red-200 rounded transition">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> Reset All
                             </button>
                         </div>
                     </div>
@@ -238,17 +238,20 @@
     </main>
 
     <div id="filterValueModal" class="fixed inset-0 bg-slate-900/50 z-[100] hidden flex items-center justify-center backdrop-blur-sm fade-in">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col max-h-[80vh]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col max-h-[80vh] animate-bounce-in">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-xl">
                 <div>
-                    <h3 class="font-bold text-slate-800" id="filterModalTitle">Filter by Status</h3>
+                    <h3 class="font-bold text-slate-800" id="filterModalTitle">Filter</h3>
                     <p class="text-xs text-slate-500">Select one or more values</p>
                 </div>
-                <button onclick="closeFilterModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="closeFilterModal()" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
 
-            <div class="p-3 border-b">
-                <input type="text" id="filterValueSearch" placeholder="Search values..." class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            <div class="p-3 border-b bg-white">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-xs"></i>
+                    <input type="text" id="filterValueSearch" placeholder="Search values..." class="w-full pl-8 p-2 border rounded text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
             </div>
 
             <div class="flex-1 overflow-y-auto p-2 space-y-1" id="filterValueList">
@@ -257,17 +260,18 @@
             <div class="p-4 border-t bg-slate-50 rounded-b-xl flex justify-between items-center">
                 <button onclick="toggleSelectAllFilter()" class="text-xs text-blue-600 font-bold hover:underline">Select All</button>
                 <div class="flex gap-2">
-                    <button onclick="closeFilterModal()" class="px-4 py-2 rounded text-slate-600 text-sm font-medium hover:bg-slate-200">Cancel</button>
-                    <button onclick="applyFilterValues()" class="px-4 py-2 rounded bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 shadow">Apply Filter</button>
+                    <button onclick="closeFilterModal()" class="px-4 py-2 rounded text-slate-600 text-sm font-medium hover:bg-slate-200 transition">Cancel</button>
+                    <button onclick="applyFilterValues()" class="px-4 py-2 rounded bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 shadow transition">Apply Filter</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // URL API ANDA
+        // API Configuration
         const API_URL = "https://script.google.com/macros/s/AKfycbxNr8fdDF1CPwuASgj04L83bkha533N-nEyycmadAhNW5TZJKgig5u9bO0qTo2PFVJK/exec"; 
         
+        // State Management
         let rawData = { stock: [], cogs: [], rawStock: [] };
         
         // --- CONFIG UNTUK MODUL RAW ---
@@ -288,21 +292,16 @@
             { idx: 13, name: 'Inv Ref', visible: true, type: 'text' }
         ];
 
-        // --- NEW FILTER STATE ---
-        // Array of objects: { colIdx: 1, values: ['Positive', 'Negative'] }
-        let activeFilters = []; 
-        let currentEditingFilterIdx = null; // Temp store for modal
+        // --- FILTER STATE ---
+        let activeFilters = []; // [{ colIdx: 1, values: ['Positive'] }]
+        let currentEditingFilterIdx = null;
 
-        // Global Variables
+        // Variables
         let groupedStock = {};
         let summaryStock = [];
         let cogsList = [];
         let currentCogsDetail = null;
-
-        let sortState = {
-            stock: { key: 'name', dir: 'asc' }, 
-            cogs: { key: 'issueDate', dir: 'asc' } 
-        };
+        let sortState = { stock: { key: 'name', dir: 'asc' }, cogs: { key: 'issueDate', dir: 'asc' } };
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchData();
@@ -568,7 +567,7 @@
         }
 
         // =========================================================================
-        // --- ADVANCED FILTER LOGIC (NEW REVISION) ---
+        // --- ADVANCED FILTER LOGIC (CASCADING & MODAL) ---
         // =========================================================================
 
         // 1. Initialize Add Filter Dropdown List
@@ -581,20 +580,18 @@
             `).join('');
         }
 
-        // 2. Determine Available Options (Cascading Logic)
-        // returns unique values for a column based on rows that pass ALL OTHER active filters
+        // 2. Cascading Logic: Only show options that are available based on OTHER filters
         function getCascadingOptions(targetColIdx) {
-            // Filter data based on filters other than the one currently being edited
+            // Filter raw data based on ALL active filters EXCEPT the one we are currently editing
             const relevantData = rawData.rawStock.filter(row => {
                 return activeFilters.every(f => {
-                    if (f.colIdx === targetColIdx) return true; // Ignore self
-                    // Check inclusion
+                    if (f.colIdx === targetColIdx) return true; // Ignore self to allow changing selection
                     const cellValue = String(row[f.colIdx]);
                     return f.values.includes(cellValue);
                 });
             });
 
-            // Extract unique values
+            // Extract unique values from the filtered data
             const uniqueValues = new Set();
             relevantData.forEach(row => {
                 let val = row[targetColIdx];
@@ -609,24 +606,19 @@
         function openFilterModalForColumn(colIdx) {
             currentEditingFilterIdx = colIdx;
             
-            // Close dropdowns
             document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden'));
             
-            // Get Config
             const colConfig = rawColumnsConfig.find(c => c.idx === colIdx);
             document.getElementById('filterModalTitle').innerText = `Filter: ${colConfig.name}`;
             
-            // Check if filter exists
             const existingFilter = activeFilters.find(f => f.colIdx === colIdx);
             const selectedSet = new Set(existingFilter ? existingFilter.values : []);
 
-            // Get Options (Cascading)
             const options = getCascadingOptions(colIdx);
             
-            // Render Checkboxes
             const listContainer = document.getElementById('filterValueList');
             if(options.length === 0) {
-                listContainer.innerHTML = `<div class="p-4 text-center text-slate-400 text-sm">No data available based on other filters.</div>`;
+                listContainer.innerHTML = `<div class="p-4 text-center text-slate-400 text-sm">No data available (restricted by other filters).</div>`;
             } else {
                 listContainer.innerHTML = options.map(val => {
                     const isChecked = selectedSet.has(val) ? 'checked' : '';
@@ -646,18 +638,17 @@
             document.getElementById('filterValueModal').classList.remove('hidden');
         }
 
-        // 4. Modal Search Logic
+        // 4. Modal Search
         function filterCheckboxList(searchTerm) {
             const term = searchTerm.toLowerCase();
-            const labels = document.querySelectorAll('#filterValueList label');
-            labels.forEach(lbl => {
+            document.querySelectorAll('#filterValueList label').forEach(lbl => {
                 const text = lbl.querySelector('span').innerText.toLowerCase();
                 if(text.includes(term)) lbl.classList.remove('hidden');
                 else lbl.classList.add('hidden');
             });
         }
 
-        // 5. Select All Helper
+        // 5. Select All
         function toggleSelectAllFilter() {
             const checkboxes = document.querySelectorAll('.filter-checkbox');
             const allChecked = Array.from(checkboxes).every(c => c.checked);
@@ -669,7 +660,6 @@
             const checkboxes = document.querySelectorAll('.filter-checkbox:checked');
             const selectedValues = Array.from(checkboxes).map(c => c.value);
 
-            // Update Active Filters
             if (selectedValues.length > 0) {
                 const existingIdx = activeFilters.findIndex(f => f.colIdx === currentEditingFilterIdx);
                 if(existingIdx >= 0) {
@@ -678,7 +668,7 @@
                     activeFilters.push({ colIdx: currentEditingFilterIdx, values: selectedValues });
                 }
             } else {
-                // If nothing selected, remove filter
+                // If user unchecks everything, remove the filter
                 activeFilters = activeFilters.filter(f => f.colIdx !== currentEditingFilterIdx);
             }
 
@@ -692,13 +682,13 @@
             currentEditingFilterIdx = null;
         }
 
-        // 7. Render Chips
+        // 7. Render Active Chips
         function renderFilterChips() {
             const container = document.getElementById('activeFiltersContainer');
             const noText = document.getElementById('noFiltersText');
             const resetBtn = document.getElementById('resetAllFiltersBtn');
 
-            container.innerHTML = ''; // Clear chips (keep noText outside logically, or handle append)
+            container.innerHTML = '';
             
             if(activeFilters.length === 0) {
                 noText.classList.remove('hidden');
@@ -717,7 +707,7 @@
                 chip.className = "flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full border border-blue-200 shadow-sm animate-pulse-once";
                 chip.innerHTML = `
                     <span class="font-bold">${colName}:</span>
-                    <span class="max-w-[100px] truncate">${valText}</span>
+                    <span class="max-w-[100px] truncate" title="${f.values.join(', ')}">${valText}</span>
                     <button onclick="removeFilter(${idx})" class="ml-1 hover:text-red-500 w-4 h-4 flex items-center justify-center rounded-full hover:bg-white transition"><i class="fa-solid fa-xmark"></i></button>
                     <button onclick="openFilterModalForColumn(${f.colIdx})" class="ml-0.5 hover:text-blue-600 w-4 h-4 flex items-center justify-center rounded-full hover:bg-white transition"><i class="fa-solid fa-pencil"></i></button>
                 `;
@@ -731,15 +721,17 @@
             renderRawList(rawData.rawStock);
         }
 
+        // FIXED: Reset Logic that doesn't need refresh
         function resetAllFilters() {
             activeFilters = [];
             renderFilterChips();
-            renderRawList(rawData.rawStock);
+            document.getElementById('searchRaw').value = ''; // Reset Search text too
+            renderRawList(rawData.rawStock); // Re-render with full data
         }
 
-        // 8. Main Render Raw List (Updated for Multi Filter)
+        // 8. Main Render Function (Applies Active Filters)
         function renderRawList(data) {
-            // Apply Filters (AND Logic between columns, OR logic within values)
+            // Apply Column Filters (AND Logic)
             let filteredData = data.filter(row => {
                 return activeFilters.every(f => {
                     const cellVal = String(row[f.colIdx]);
@@ -747,7 +739,7 @@
                 });
             });
 
-            // Global Search Logic
+            // Apply Global Search Text
             const searchVal = document.getElementById('searchRaw').value.toLowerCase();
             if(searchVal) {
                 filteredData = filteredData.filter(row => 
@@ -757,7 +749,7 @@
             
             document.getElementById('recordCountDisplay').innerText = `${filteredData.length.toLocaleString()} Records`;
 
-            // Pagination/Limit
+            // Limit display for performance
             let displayData = filteredData.length > 500 ? filteredData.slice(0, 500) : filteredData;
 
             // Render Header
@@ -779,7 +771,6 @@
                     let content = row[col.idx] || '-';
                     let cssClass = "px-4 py-2";
 
-                    // Formatting
                     if(col.type === 'status') {
                         const color = content === 'Positive' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200';
                         content = `<span class="px-2 py-0.5 rounded text-[10px] border font-bold ${color}">${content}</span>`;
@@ -789,7 +780,7 @@
                     } else if (['number', 'money'].includes(col.type)) {
                         content = parseFloat(content).toLocaleString('id-ID');
                         cssClass += " text-right font-mono";
-                    } else if (col.idx === 0) { // Batch ID
+                    } else if (col.idx === 0) { 
                         cssClass += " font-mono text-slate-400 text-[10px]";
                     } else {
                         cssClass += " truncate max-w-[200px]";
