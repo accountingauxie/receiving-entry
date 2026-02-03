@@ -18,6 +18,12 @@
         th.sortable:hover { background-color: #e2e8f0; }
         th.sortable i { margin-left: 5px; color: #94a3b8; font-size: 0.8em; }
         th.sortable.active-sort i { color: #2563eb; }
+        
+        /* Custom date input styling */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(0.5);
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
@@ -35,7 +41,7 @@
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.0 (FIFO)</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.1 (Date Filter)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -55,7 +61,7 @@
             <div id="moduleStock" class="fade-in">
                 <div id="stockListView">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                        <input type="text" id="searchStock" placeholder="Cari Kode / Nama Barang..." class="w-full p-3 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input type="text" id="searchStock" placeholder="Cari Kode / Nama Barang..." class="w-full p-3 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition">
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm text-left text-slate-600">
@@ -76,7 +82,7 @@
                     <button onclick="backToStockList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
                     <div class="flex justify-between items-center mb-6">
                         <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Item Name</h2>
-                        <button onclick="downloadCSVStock()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
+                        <button onclick="downloadCSVStock()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm flex items-center transition"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -108,10 +114,35 @@
 
             <div id="moduleCogs" class="hidden fade-in">
                 <div id="cogsListView">
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 flex justify-between items-center">
-                        <input type="text" id="searchCogs" placeholder="Cari Invoice / Customer..." class="w-full md:w-1/2 p-3 border rounded-lg bg-slate-50 outline-none">
-                        <div class="text-sm text-slate-500">Pending Approval: <span id="countCogs" class="font-bold text-blue-600">0</span></div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                        <div class="flex flex-col md:flex-row gap-4 justify-between items-end md:items-center">
+                            
+                            <div class="w-full md:w-1/3">
+                                <label class="text-xs font-bold text-slate-500 mb-1 block">Cari Data</label>
+                                <input type="text" id="searchCogs" placeholder="Cari Invoice / Customer..." class="w-full p-2 border rounded bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div class="flex gap-3 w-full md:w-auto items-end">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-500 mb-1 block">Dari Tanggal</label>
+                                    <input type="date" id="startDateCogs" class="p-2 border rounded bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-500 mb-1 block">Sampai Tanggal</label>
+                                    <input type="date" id="endDateCogs" class="p-2 border rounded bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <button onclick="resetCogsFilter()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded border border-slate-300 transition" title="Reset Filter">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </button>
+                            </div>
+
+                            <div class="text-sm text-right min-w-[120px]">
+                                <span class="text-slate-500 block text-xs">Pending Approval</span>
+                                <span id="countCogs" class="font-bold text-blue-600 text-xl">0</span>
+                            </div>
+                        </div>
                     </div>
+
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <table class="w-full text-sm text-left text-slate-600">
                             <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
@@ -126,7 +157,10 @@
                             </thead>
                             <tbody id="cogsTableBody"></tbody>
                         </table>
-                        <div id="cogsEmptyState" class="hidden p-10 text-center text-slate-400">Semua Invoice Aman!</div>
+                        <div id="cogsEmptyState" class="hidden p-10 text-center text-slate-400">
+                            <i class="fa-regular fa-folder-open text-4xl mb-3 block opacity-50"></i>
+                            Data tidak ditemukan
+                        </div>
                     </div>
                 </div>
 
@@ -161,7 +195,7 @@
     </main>
 
 <script>
-        // URL API Terbaru Anda
+        // URL API Anda
         const API_URL = "https://script.google.com/macros/s/AKfycbzdCd9Yb1Uw5L2fZW3mO5ndpsF-ng-cJk88TF0f20S8tD-Uqn-qHqfw_AslE7uClphI/exec"; 
         
         let rawData = { stock: [], cogs: [] };
@@ -175,7 +209,13 @@
             cogs: { key: 'issueDate', dir: 'asc' } 
         };
 
-        document.addEventListener('DOMContentLoaded', fetchData);
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+            // Attach unified filter listener for COGS
+            document.getElementById('searchCogs').addEventListener('input', filterCogsData);
+            document.getElementById('startDateCogs').addEventListener('change', filterCogsData);
+            document.getElementById('endDateCogs').addEventListener('change', filterCogsData);
+        });
 
         async function fetchData() {
             try {
@@ -228,7 +268,9 @@
             }
 
             const direction = sortState[module].dir === 'asc' ? 1 : -1;
-            let dataToSort = module === 'stock' ? summaryStock : cogsList;
+            
+            // Sort master arrays directly
+            const dataToSort = module === 'stock' ? summaryStock : cogsList;
 
             dataToSort.sort((a, b) => {
                 let valA = a[key];
@@ -253,11 +295,7 @@
                 const term = document.getElementById('searchStock').value.toLowerCase();
                 renderStockList(dataToSort.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
             } else {
-                const term = document.getElementById('searchCogs').value.toLowerCase();
-                renderCogsList(dataToSort.filter(i => 
-                    i.orderNumber.toLowerCase().includes(term) || 
-                    i.customer.toLowerCase().includes(term)
-                ));
+                filterCogsData(); // Re-apply filters on the sorted list
             }
         }
 
@@ -325,11 +363,11 @@
             const data = groupedStock[decodedName].sort((a,b) => new Date(a.date) - new Date(b.date));
             
             let runBal = 0, totIn = 0, totOut = 0;
-            let runningRp = 0; // Init Running Rp
+            let runningRp = 0;
 
             const tbody = document.getElementById('stockDetailBody');
 
-            // Loop 1: KPI
+            // KPI & Table Render
             data.forEach(r => {
                 let qty = parseFloat(r.qty || 0);
                 if(r.status === 'Positive') { 
@@ -346,28 +384,23 @@
             document.getElementById('kpiOut').innerText = totOut.toLocaleString('id-ID');
             document.getElementById('kpiBalance').innerText = runBal.toLocaleString('id-ID');
 
-            // Loop 2: Render Table
             const htmlRows = data.map(r => {
                 let dateStr = r.date ? new Date(r.date).toLocaleDateString('id-ID') : "-";
                 const formatRp = (num) => "Rp " + parseFloat(num || 0).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 0});
                 const formatQty = (num) => parseFloat(num || 0).toLocaleString('id-ID');
                 const statusClass = r.status === 'Positive' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200';
 
-                // Hitung Saldo Rp Berjalan
                 let currentRowTotal = parseFloat(r.total || 0);
-                if (r.status === 'Positive') {
-                    runningRp += currentRowTotal;
-                } else {
-                    runningRp -= currentRowTotal;
-                }
+                if (r.status === 'Positive') runningRp += currentRowTotal;
+                else runningRp -= currentRowTotal;
 
                 return `
                     <tr class="bg-white border-b hover:bg-slate-50 transition">
-                        <td class="px-6 py-4 font-mono text-slate-500">${dateStr}</td>       
-                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>           
+                        <td class="px-6 py-4 font-mono text-slate-500">${dateStr}</td>        
+                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>            
                         <td class="px-6 py-4 font-bold text-slate-700">${r.kpc || '-'}</td> 
                         <td class="px-6 py-4 text-sm text-slate-600">${r.invRef || '-'}</td>
-                        <td class="px-6 py-4">                                               
+                        <td class="px-6 py-4">                                              
                             <span class="px-2 py-1 rounded text-xs font-bold border ${statusClass}">${r.status}</span>
                         </td>
                         <td class="px-6 py-4 text-right font-medium">${formatQty(r.qty)}</td>  
@@ -384,7 +417,6 @@
         
         function downloadCSVStock() {
             const rows = document.querySelectorAll("#stockDetailBody tr");
-            // Header CSV diupdate dengan Inv Ref dan Saldo Rp
             let csv = ["Tanggal,Item Type,KPC,Inv Ref,Status,Qty,Price,Total,Saldo Rp"];
             
             rows.forEach(r => {
@@ -406,7 +438,7 @@
             document.body.removeChild(link);
         }
 
-        // --- COGS LOGIC ---
+        // --- COGS LOGIC & FILTER ---
         function processCogsData() {
             const grouped = rawData.cogs.reduce((acc, curr) => {
                 if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
@@ -425,27 +457,62 @@
             });
 
             renderCogsList(cogsList);
+        }
 
-            document.getElementById('searchCogs').addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                const filtered = cogsList.filter(i => 
-                    i.orderNumber.toLowerCase().includes(term) || 
-                    i.customer.toLowerCase().includes(term)
-                );
-                renderCogsList(filtered);
+        // --- FUNGSI FILTER BARU ---
+        function filterCogsData() {
+            const term = document.getElementById('searchCogs').value.toLowerCase();
+            const startVal = document.getElementById('startDateCogs').value;
+            const endVal = document.getElementById('endDateCogs').value;
+
+            // Buat Date Object untuk start & end (Set waktu ke midnight)
+            const startDate = startVal ? new Date(startVal) : null;
+            if(startDate) startDate.setHours(0,0,0,0);
+            
+            const endDate = endVal ? new Date(endVal) : null;
+            if(endDate) endDate.setHours(23,59,59,999); // Akhir hari
+
+            const filtered = cogsList.filter(i => {
+                // 1. Text Filter
+                const textMatch = i.orderNumber.toLowerCase().includes(term) || 
+                                  i.customer.toLowerCase().includes(term);
+                
+                // 2. Date Range Filter
+                let dateMatch = true;
+                if (startDate || endDate) {
+                    const itemDate = new Date(i.issueDate);
+                    // Pastikan valid date
+                    if(!isNaN(itemDate.getTime())) {
+                        if (startDate && itemDate < startDate) dateMatch = false;
+                        if (endDate && itemDate > endDate) dateMatch = false;
+                    }
+                }
+
+                return textMatch && dateMatch;
             });
+
+            renderCogsList(filtered);
+        }
+
+        function resetCogsFilter() {
+            document.getElementById('searchCogs').value = "";
+            document.getElementById('startDateCogs').value = "";
+            document.getElementById('endDateCogs').value = "";
+            filterCogsData();
         }
 
         function renderCogsList(data) {
             const tbody = document.getElementById('cogsTableBody');
+            const emptyState = document.getElementById('cogsEmptyState');
+            const table = document.querySelector('#moduleCogs table');
             
             if(data.length === 0) {
-                document.getElementById('cogsEmptyState').classList.remove('hidden');
-                document.querySelector('#moduleCogs table').classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                table.classList.add('hidden');
                 tbody.innerHTML = "";
             } else {
-                document.getElementById('cogsEmptyState').classList.add('hidden');
-                document.querySelector('#moduleCogs table').classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                table.classList.remove('hidden');
                 
                 const htmlRows = data.map(inv => {
                     const dataStr = encodeURIComponent(JSON.stringify(inv));
