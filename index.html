@@ -18,6 +18,9 @@
         th.sortable:hover { background-color: #e2e8f0; }
         th.sortable i { margin-left: 5px; color: #94a3b8; font-size: 0.8em; }
         th.sortable.active-sort i { color: #2563eb; }
+        
+        /* Table Cell Truncate for Raw Data */
+        .truncate-cell { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
@@ -34,8 +37,11 @@
             <button onclick="switchModule('cogs')" id="btnNavCogs" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition text-slate-600 hover:bg-slate-50 border border-transparent">
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
             </button>
+            <button onclick="switchModule('raw')" id="btnNavRaw" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition text-slate-600 hover:bg-slate-50 border border-transparent">
+                <i class="fa-solid fa-table-list w-5"></i> Rincian Stock
+            </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.0 (FIFO)</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.1 (Full Access)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -157,14 +163,50 @@
                     </div>
                 </div>
             </div>
+
+            <div id="moduleRaw" class="hidden fade-in">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                    <h2 class="text-lg font-bold text-slate-700 mb-2">Rincian Data Persediaan</h2>
+                    <p class="text-xs text-slate-400 mb-4">Menampilkan Kolom A-O (Tanpa Kolom M)</p>
+                    <input type="text" id="searchRaw" placeholder="Cari Batch ID, KPC, Kode, atau Nama Barang..." class="w-full p-3 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-600 whitespace-nowrap">
+                        <thead class="bg-slate-50 border-b uppercase font-bold text-slate-700">
+                            <tr>
+                                <th class="px-4 py-3">Batch ID (A)</th>
+                                <th class="px-4 py-3">Status (B)</th>
+                                <th class="px-4 py-3">Contact (C)</th>
+                                <th class="px-4 py-3">Ref (D)</th>
+                                <th class="px-4 py-3">Akun (E)</th>
+                                <th class="px-4 py-3">Kode (F)</th>
+                                <th class="px-4 py-3">KPC (G)</th>
+                                <th class="px-4 py-3">Item Name (H)</th>
+                                <th class="px-4 py-3">Date (I)</th>
+                                <th class="px-4 py-3 text-right">Qty (J)</th>
+                                <th class="px-4 py-3 text-right">Price (K)</th>
+                                <th class="px-4 py-3 text-right">Total (L)</th>
+                                <th class="px-4 py-3">Type (N)</th>
+                                <th class="px-4 py-3">Inv Ref (O)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rawTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                    <div id="rawLimitMsg" class="p-4 text-center text-xs text-slate-400 hidden bg-slate-50 border-t">
+                        <i class="fa-solid fa-circle-info mr-2"></i> Menampilkan 500 data terbaru agar performa lancar. Gunakan pencarian untuk data yang lebih lama.
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
 
-<script>
-        // URL API Terbaru Anda
-        const API_URL = "https://script.google.com/macros/s/AKfycbxdAlTv5RoV_Y9Q9gukZ5MwYa1bkhzpfwNZABMorA6wWHSy1O4-NIK7kyuHIKgbv5bd/exec"; 
+    <script>
+        // URL API ANDA (UPDATED)
+        const API_URL = "https://script.google.com/macros/s/AKfycbyJxK_lche5N7Km22btby1-cjU32txd5cgAYAqzjdgvpsGLM2S8XwAdIa7A94P6OR5k/exec"; 
         
-        let rawData = { stock: [], cogs: [] };
+        let rawData = { stock: [], cogs: [], rawStock: [] }; // Updated structure
         let groupedStock = {};
         let summaryStock = [];
         let cogsList = [];
@@ -186,6 +228,12 @@
                     rawData = result;
                     processStockData();
                     processCogsData();
+                    
+                    // Render Modul Baru
+                    if(rawData.rawStock) {
+                        renderRawList(rawData.rawStock);
+                    }
+
                     document.getElementById('loadingOverlay').classList.add('hidden');
                     
                     updateSortIcons('stock', 'name', 'asc');
@@ -193,29 +241,38 @@
                 });
 
             } catch (error) {
-                alert("Gagal koneksi ke API. Pastikan URL benar.");
+                alert("Gagal koneksi ke API.");
+                console.error(error);
                 document.getElementById('loadingOverlay').innerHTML = `<p class="text-red-500 font-bold">Error Connection. Refresh page.</p>`;
             }
         }
 
         function switchModule(mod) {
-            const stockBtn = document.getElementById('btnNavStock');
-            const cogsBtn = document.getElementById('btnNavCogs');
-            const stockView = document.getElementById('moduleStock');
-            const cogsView = document.getElementById('moduleCogs');
-            const title = document.getElementById('pageTitle');
+            const navs = ['stock', 'cogs', 'raw'];
+            const titles = {
+                'stock': 'Kartu Stock (Realtime)',
+                'cogs': 'Approval Invoice COGS',
+                'raw': 'Rincian Database Persediaan'
+            };
 
-            if (mod === 'stock') {
-                stockView.classList.remove('hidden'); cogsView.classList.add('hidden');
-                stockBtn.classList.replace('text-slate-600','text-blue-700'); stockBtn.classList.replace('border-transparent','bg-blue-50');
-                cogsBtn.classList.replace('text-blue-700','text-slate-600'); cogsBtn.classList.replace('bg-blue-50','border-transparent');
-                title.innerText = "Kartu Stock (Realtime)";
-            } else {
-                cogsView.classList.remove('hidden'); stockView.classList.add('hidden');
-                cogsBtn.classList.replace('text-slate-600','text-blue-700'); cogsBtn.classList.replace('border-transparent','bg-blue-50');
-                stockBtn.classList.replace('text-blue-700','text-slate-600'); stockBtn.classList.replace('bg-blue-50','border-transparent');
-                title.innerText = "Approval Invoice COGS";
-            }
+            // Reset UI
+            navs.forEach(n => {
+                document.getElementById('module' + n.charAt(0).toUpperCase() + n.slice(1)).classList.add('hidden');
+                const btn = document.getElementById('btnNav' + n.charAt(0).toUpperCase() + n.slice(1));
+                btn.classList.replace('text-blue-700', 'text-slate-600');
+                btn.classList.replace('bg-blue-50', 'border-transparent');
+                btn.classList.remove('bg-blue-50'); // Safety remove
+            });
+
+            // Activate Selected
+            const activeView = document.getElementById('module' + mod.charAt(0).toUpperCase() + mod.slice(1));
+            const activeBtn = document.getElementById('btnNav' + mod.charAt(0).toUpperCase() + mod.slice(1));
+            
+            activeView.classList.remove('hidden');
+            activeBtn.classList.replace('text-slate-600', 'text-blue-700');
+            activeBtn.classList.replace('border-transparent', 'bg-blue-50');
+            
+            document.getElementById('pageTitle').innerText = titles[mod];
         }
 
         // --- SORTING ---
@@ -275,7 +332,7 @@
             }
         }
 
-        // --- STOCK LOGIC ---
+        // --- MODULE 1: STOCK LOGIC ---
         function processStockData() {
             groupedStock = rawData.stock.reduce((acc, curr) => {
                 if(!acc[curr.itemName]) acc[curr.itemName] = [];
@@ -325,11 +382,10 @@
             const data = groupedStock[decodedName].sort((a,b) => new Date(a.date) - new Date(b.date));
             
             let runBal = 0, totIn = 0, totOut = 0;
-            let runningRp = 0; // Init Running Rp
+            let runningRp = 0;
 
             const tbody = document.getElementById('stockDetailBody');
 
-            // Loop 1: KPI
             data.forEach(r => {
                 let qty = parseFloat(r.qty || 0);
                 if(r.status === 'Positive') { 
@@ -346,28 +402,22 @@
             document.getElementById('kpiOut').innerText = totOut.toLocaleString('id-ID');
             document.getElementById('kpiBalance').innerText = runBal.toLocaleString('id-ID');
 
-            // Loop 2: Render Table
             const htmlRows = data.map(r => {
                 let dateStr = r.date ? new Date(r.date).toLocaleDateString('id-ID') : "-";
                 const formatRp = (num) => "Rp " + parseFloat(num || 0).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 0});
                 const formatQty = (num) => parseFloat(num || 0).toLocaleString('id-ID');
                 const statusClass = r.status === 'Positive' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200';
 
-                // Hitung Saldo Rp Berjalan
                 let currentRowTotal = parseFloat(r.total || 0);
-                if (r.status === 'Positive') {
-                    runningRp += currentRowTotal;
-                } else {
-                    runningRp -= currentRowTotal;
-                }
+                if (r.status === 'Positive') { runningRp += currentRowTotal; } else { runningRp -= currentRowTotal; }
 
                 return `
                     <tr class="bg-white border-b hover:bg-slate-50 transition">
-                        <td class="px-6 py-4 font-mono text-slate-500">${dateStr}</td>       
-                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>           
+                        <td class="px-6 py-4 font-mono text-slate-500">${dateStr}</td>        
+                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>            
                         <td class="px-6 py-4 font-bold text-slate-700">${r.kpc || '-'}</td> 
                         <td class="px-6 py-4 text-sm text-slate-600">${r.invRef || '-'}</td>
-                        <td class="px-6 py-4">                                               
+                        <td class="px-6 py-4">                                              
                             <span class="px-2 py-1 rounded text-xs font-bold border ${statusClass}">${r.status}</span>
                         </td>
                         <td class="px-6 py-4 text-right font-medium">${formatQty(r.qty)}</td>  
@@ -384,7 +434,6 @@
         
         function downloadCSVStock() {
             const rows = document.querySelectorAll("#stockDetailBody tr");
-            // Header CSV diupdate dengan Inv Ref dan Saldo Rp
             let csv = ["Tanggal,Item Type,KPC,Inv Ref,Status,Qty,Price,Total,Saldo Rp"];
             
             rows.forEach(r => {
@@ -406,7 +455,7 @@
             document.body.removeChild(link);
         }
 
-        // --- COGS LOGIC ---
+        // --- MODULE 2: COGS LOGIC ---
         function processCogsData() {
             const grouped = rawData.cogs.reduce((acc, curr) => {
                 if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
@@ -519,6 +568,104 @@
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
             }
         }
+
+        // --- MODULE 3: RAW STOCK (RINCIAN) LOGIC ---
+        function renderRawList(data) {
+            // Logic Limit Display (agar browser tidak crash jika data ribuan)
+            let displayData = data; 
+            const limitMsg = document.getElementById('rawLimitMsg');
+            
+            // Tampilkan hanya 500 baris pertama jika data > 500 dan sedang tidak mencari
+            if(data.length > 500) {
+                displayData = data.slice(0, 500);
+                limitMsg.classList.remove('hidden');
+            } else {
+                limitMsg.classList.add('hidden');
+            }
+
+            const tbody = document.getElementById('rawTableBody');
+            const html = displayData.map(row => {
+                // Index 0-11 = A-L. Index 12 = N, Index 13 = O (Karena M dibuang di backend)
+                
+                // Format Date (I / Index 8)
+                let dateVal = row[8];
+                try { 
+                    if(dateVal) dateVal = new Date(dateVal).toLocaleDateString('id-ID'); 
+                    else dateVal = '-';
+                } catch(e){}
+
+                // Format Angka (J, K, L)
+                const qty = parseFloat(row[9] || 0).toLocaleString('id-ID');
+                const price = parseFloat(row[10] || 0).toLocaleString('id-ID');
+                const total = parseFloat(row[11] || 0).toLocaleString('id-ID');
+
+                return `<tr class="hover:bg-blue-50 border-b border-slate-50">
+                    <td class="px-4 py-2 font-mono text-slate-500">${row[0] || ''}</td> 
+                    <td class="px-4 py-2"><span class="px-2 py-0.5 rounded text-[10px] border ${row[1]==='Positive'?'bg-green-100 text-green-700 border-green-200':'bg-red-50 text-red-700 border-red-200'}">${row[1]}</span></td>
+                    <td class="px-4 py-2 text-slate-600 truncate-cell" title="${row[2]}">${row[2] || ''}</td>
+                    <td class="px-4 py-2 text-slate-400 text-[10px] truncate-cell">${row[3] || ''}</td>
+                    <td class="px-4 py-2 text-slate-400 text-[10px]">${row[4] || ''}</td>
+                    <td class="px-4 py-2 font-bold text-slate-700">${row[5] || ''}</td>
+                    <td class="px-4 py-2 font-mono text-xs">${row[6] || ''}</td>
+                    <td class="px-4 py-2 font-medium text-blue-900 truncate-cell" title="${row[7]}">${row[7] || ''}</td>
+                    <td class="px-4 py-2 whitespace-nowrap text-xs">${dateVal}</td>
+                    <td class="px-4 py-2 text-right font-bold text-slate-700">${qty}</td>
+                    <td class="px-4 py-2 text-right text-slate-500 text-xs">${price}</td>
+                    <td class="px-4 py-2 text-right text-slate-700 text-xs">${total}</td>
+                    <td class="px-4 py-2 text-purple-600 text-[10px] font-bold">${row[12] || '-'}</td>
+                    <td class="px-4 py-2 font-mono text-xs text-slate-500">${row[13] || '-'}</td>
+                </tr>`;
+            }).join('');
+            
+            tbody.innerHTML = html;
+        }
+
+        // Search Logic untuk Rincian Stock
+        document.getElementById('searchRaw').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            
+            if(term === "") {
+                renderRawList(rawData.rawStock); // Reset ke limit default
+            } else {
+                // Filter semua kolom penting
+                const filtered = rawData.rawStock.filter(row => {
+                    return String(row[0]).toLowerCase().includes(term) || // Batch ID
+                           String(row[5]).toLowerCase().includes(term) || // Kode
+                           String(row[6]).toLowerCase().includes(term) || // KPC
+                           String(row[7]).toLowerCase().includes(term);   // Nama
+                });
+                
+                // Hide limit message saat searching
+                document.getElementById('rawLimitMsg').classList.add('hidden');
+                
+                // Render hasil filter (Bypass fungsi renderRawList agar tidak kena slice limit)
+                const tbody = document.getElementById('rawTableBody');
+                const html = filtered.map(row => {
+                     let dateVal = row[8];
+                     try { if(dateVal) dateVal = new Date(dateVal).toLocaleDateString('id-ID'); } catch(e){}
+                     const qty = parseFloat(row[9] || 0).toLocaleString('id-ID');
+                     const price = parseFloat(row[10] || 0).toLocaleString('id-ID');
+                     const total = parseFloat(row[11] || 0).toLocaleString('id-ID');
+                     return `<tr class="hover:bg-blue-50 border-b border-slate-50">
+                        <td class="px-4 py-2 font-mono text-slate-500">${row[0] || ''}</td>
+                        <td class="px-4 py-2 text-[10px]">${row[1]}</td>
+                        <td class="px-4 py-2 truncate-cell">${row[2] || ''}</td>
+                        <td class="px-4 py-2 text-[10px] truncate-cell">${row[3] || ''}</td>
+                        <td class="px-4 py-2 text-[10px]">${row[4] || ''}</td>
+                        <td class="px-4 py-2 font-bold">${row[5] || ''}</td>
+                        <td class="px-4 py-2 font-mono text-xs">${row[6] || ''}</td>
+                        <td class="px-4 py-2 font-medium text-blue-900 truncate-cell">${row[7] || ''}</td>
+                        <td class="px-4 py-2 text-xs">${dateVal}</td>
+                        <td class="px-4 py-2 text-right font-bold">${qty}</td>
+                        <td class="px-4 py-2 text-right text-xs">${price}</td>
+                        <td class="px-4 py-2 text-right text-xs">${total}</td>
+                        <td class="px-4 py-2 text-purple-600 text-[10px] font-bold">${row[12] || '-'}</td>
+                        <td class="px-4 py-2 font-mono text-xs">${row[13] || '-'}</td>
+                    </tr>`;
+                }).join('');
+                tbody.innerHTML = html;
+            }
+        });
     </script>
 </body>
 </html>
