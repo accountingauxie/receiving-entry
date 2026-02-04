@@ -197,8 +197,9 @@
     </main>
 
 <script>
-        // URL API Anda
-        const API_URL = "https://script.google.com/macros/s/AKfycbxw5Rn0TFkc0GrzM1vUN10o9E7r-_vvj1PdibFmdZaEE8I9RPq3Q9r2dqqGghUtlE9X/exec"; 
+        // --- KONFIGURASI URL API ---
+        // Pastikan URL ini sesuai dengan deployment terbaru AppScript Anda
+        const API_URL = "https://script.google.com/macros/s/AKfycbwzqVmcBBHoqjxSh6IHYCHnwyC1o9rFhl-1OajDHIibortqrOo77iARWgHWW9h1f0R4/exec"; 
         
         let rawData = { stock: [], cogs: [] };
         let groupedStock = {};
@@ -259,7 +260,7 @@
             }
         }
 
-        // --- SORTING ---
+        // --- SORTING LOGIC ---
         function handleSort(module, key, type) {
             if(sortState[module].key === key) {
                 sortState[module].dir = sortState[module].dir === 'asc' ? 'desc' : 'asc';
@@ -371,7 +372,6 @@
 
             const tbody = document.getElementById('stockDetailBody');
 
-            // KPI & Table Render
             data.forEach(r => {
                 let qty = parseFloat(r.qty || 0);
                 if(r.status === 'Positive') { 
@@ -442,7 +442,7 @@
             document.body.removeChild(link);
         }
 
-        // --- COGS LOGIC & FILTER (UPDATED) ---
+        // --- COGS LOGIC & FILTER (UPDATED FOR 3 LEVEL SORT) ---
         function processCogsData() {
             const grouped = rawData.cogs.reduce((acc, curr) => {
                 if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
@@ -452,7 +452,7 @@
             cogsList = Object.values(grouped);
             document.getElementById('countCogs').innerText = cogsList.length;
 
-            // --- 3 LEVEL SORTING (UPDATE UTAMA) ---
+            // --- 3 LEVEL SORTING IMPLEMENTATION ---
             cogsList.sort((a, b) => {
                 // Level 1: Tanggal Invoice (Date) - Oldest First
                 const dateA = new Date(a.issueDate);
@@ -510,7 +510,7 @@
             filterCogsData();
         }
 
-        // --- FUNGSI FORMAT WAKTU WIB ---
+        // --- FUNGSI FORMAT WAKTU WIB (TAMPILAN 2 BARIS) ---
         function formatWIB(isoString) {
             if (!isoString) return '-';
             const d = new Date(isoString);
@@ -520,9 +520,10 @@
             const datePart = d.toLocaleDateString('id-ID', {
                 day: '2-digit', month: 'short', year: 'numeric'
             });
-            // Ambil Jam (Browser di Indo biasanya auto WIB, kalau tidak, ini ikut local browser time)
+            // Ambil Jam (Browser di Indo biasanya auto WIB)
             const timePart = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
 
+            // Return HTML String untuk render di cell
             return `<div class="leading-tight"><span class="font-bold text-slate-700">${datePart}</span><br><span class="text-xs text-slate-400 font-normal">${timePart}</span></div>`;
         }
 
@@ -603,6 +604,7 @@
                     document.getElementById('loadingOverlay').classList.remove('hidden');
                     fetchData(); 
                 } else {
+                    // Alert untuk Error dari Backend (Misal: Stok Kurang)
                     alert("Gagal: " + json.message);
                 }
             } catch(e) {
