@@ -41,7 +41,7 @@
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.1 (Date Filter)</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.2 (Timestamp Logic)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -147,10 +147,12 @@
                         <table class="w-full text-sm text-left text-slate-600">
                             <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
                                 <tr>
+                                    <th class="px-6 py-4 sortable bg-blue-50 text-blue-800" onclick="handleSort('cogs', 'timestamp', 'date')">Input Time <i id="sort-cogs-timestamp" class="fa-solid fa-sort"></i></th>
+                                    
                                     <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'orderNumber', 'string')">No Order <i id="sort-cogs-orderNumber" class="fa-solid fa-sort"></i></th>
                                     <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'customer', 'string')">Customer <i id="sort-cogs-customer" class="fa-solid fa-sort"></i></th>
                                     <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'orderType', 'string')">Type <i id="sort-cogs-orderType" class="fa-solid fa-sort"></i></th>
-                                    <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'issueDate', 'date')">Date <i id="sort-cogs-issueDate" class="fa-solid fa-sort"></i></th>
+                                    <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'issueDate', 'date')">Inv Date <i id="sort-cogs-issueDate" class="fa-solid fa-sort"></i></th>
                                     <th class="px-6 py-4 text-center">Items</th>
                                     <th class="px-6 py-4 text-center">Aksi</th>
                                 </tr>
@@ -196,7 +198,7 @@
 
 <script>
         // URL API Anda
-        const API_URL = "https://script.google.com/macros/s/AKfycbzdCd9Yb1Uw5L2fZW3mO5ndpsF-ng-cJk88TF0f20S8tD-Uqn-qHqfw_AslE7uClphI/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbxw5Rn0TFkc0GrzM1vUN10o9E7r-_vvj1PdibFmdZaEE8I9RPq3Q9r2dqqGghUtlE9X/exec"; 
         
         let rawData = { stock: [], cogs: [] };
         let groupedStock = {};
@@ -206,12 +208,11 @@
 
         let sortState = {
             stock: { key: 'name', dir: 'asc' }, 
-            cogs: { key: 'issueDate', dir: 'asc' } 
+            cogs: { key: 'issueDate', dir: 'asc' } // Default Sort by Date
         };
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchData();
-            // Attach unified filter listener for COGS
             document.getElementById('searchCogs').addEventListener('input', filterCogsData);
             document.getElementById('startDateCogs').addEventListener('change', filterCogsData);
             document.getElementById('endDateCogs').addEventListener('change', filterCogsData);
@@ -279,7 +280,10 @@
                 if (type === 'number') {
                     return (parseFloat(valA) - parseFloat(valB)) * direction;
                 } else if (type === 'date') {
-                    return (new Date(valA) - new Date(valB)) * direction;
+                    // Handle empty dates safely
+                    const dateA = valA ? new Date(valA).getTime() : 0;
+                    const dateB = valB ? new Date(valB).getTime() : 0;
+                    return (dateA - dateB) * direction;
                 } else {
                     valA = valA ? valA.toString().toLowerCase() : '';
                     valB = valB ? valB.toString().toLowerCase() : '';
@@ -397,10 +401,10 @@
                 return `
                     <tr class="bg-white border-b hover:bg-slate-50 transition">
                         <td class="px-6 py-4 font-mono text-slate-500">${dateStr}</td>        
-                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>            
+                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>             
                         <td class="px-6 py-4 font-bold text-slate-700">${r.kpc || '-'}</td> 
                         <td class="px-6 py-4 text-sm text-slate-600">${r.invRef || '-'}</td>
-                        <td class="px-6 py-4">                                              
+                        <td class="px-6 py-4">                                          
                             <span class="px-2 py-1 rounded text-xs font-bold border ${statusClass}">${r.status}</span>
                         </td>
                         <td class="px-6 py-4 text-right font-medium">${formatQty(r.qty)}</td>  
@@ -438,7 +442,7 @@
             document.body.removeChild(link);
         }
 
-        // --- COGS LOGIC & FILTER ---
+        // --- COGS LOGIC & FILTER (UPDATED) ---
         function processCogsData() {
             const grouped = rawData.cogs.reduce((acc, curr) => {
                 if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
@@ -448,46 +452,51 @@
             cogsList = Object.values(grouped);
             document.getElementById('countCogs').innerText = cogsList.length;
 
+            // --- 3 LEVEL SORTING (UPDATE UTAMA) ---
             cogsList.sort((a, b) => {
+                // Level 1: Tanggal Invoice (Date) - Oldest First
                 const dateA = new Date(a.issueDate);
                 const dateB = new Date(b.issueDate);
                 if (dateA < dateB) return -1;
                 if (dateA > dateB) return 1;
+
+                // Level 2: Timestamp (Input Time) - Oldest First
+                // Gunakan timestamp dari data (UTC string)
+                const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+                const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+                if (timeA < timeB) return -1;
+                if (timeA > timeB) return 1;
+
+                // Level 3: Nomor Invoice - A-Z
                 return a.orderNumber.localeCompare(b.orderNumber);
             });
 
             renderCogsList(cogsList);
         }
 
-        // --- FUNGSI FILTER BARU ---
         function filterCogsData() {
             const term = document.getElementById('searchCogs').value.toLowerCase();
             const startVal = document.getElementById('startDateCogs').value;
             const endVal = document.getElementById('endDateCogs').value;
 
-            // Buat Date Object untuk start & end (Set waktu ke midnight)
             const startDate = startVal ? new Date(startVal) : null;
             if(startDate) startDate.setHours(0,0,0,0);
             
             const endDate = endVal ? new Date(endVal) : null;
-            if(endDate) endDate.setHours(23,59,59,999); // Akhir hari
+            if(endDate) endDate.setHours(23,59,59,999); 
 
             const filtered = cogsList.filter(i => {
-                // 1. Text Filter
                 const textMatch = i.orderNumber.toLowerCase().includes(term) || 
                                   i.customer.toLowerCase().includes(term);
                 
-                // 2. Date Range Filter
                 let dateMatch = true;
                 if (startDate || endDate) {
                     const itemDate = new Date(i.issueDate);
-                    // Pastikan valid date
                     if(!isNaN(itemDate.getTime())) {
                         if (startDate && itemDate < startDate) dateMatch = false;
                         if (endDate && itemDate > endDate) dateMatch = false;
                     }
                 }
-
                 return textMatch && dateMatch;
             });
 
@@ -499,6 +508,22 @@
             document.getElementById('startDateCogs').value = "";
             document.getElementById('endDateCogs').value = "";
             filterCogsData();
+        }
+
+        // --- FUNGSI FORMAT WAKTU WIB ---
+        function formatWIB(isoString) {
+            if (!isoString) return '-';
+            const d = new Date(isoString);
+            if (isNaN(d.getTime())) return '-';
+
+            // Ambil Tanggal
+            const datePart = d.toLocaleDateString('id-ID', {
+                day: '2-digit', month: 'short', year: 'numeric'
+            });
+            // Ambil Jam (Browser di Indo biasanya auto WIB, kalau tidak, ini ikut local browser time)
+            const timePart = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+
+            return `<div class="leading-tight"><span class="font-bold text-slate-700">${datePart}</span><br><span class="text-xs text-slate-400 font-normal">${timePart}</span></div>`;
         }
 
         function renderCogsList(data) {
@@ -518,6 +543,8 @@
                     const dataStr = encodeURIComponent(JSON.stringify(inv));
                     return `
                         <tr class="border-b hover:bg-slate-50">
+                            <td class="px-6 py-4 text-sm">${formatWIB(inv.timestamp)}</td>
+
                             <td class="px-6 py-4 font-medium text-blue-600">${inv.orderNumber}</td>
                             <td class="px-6 py-4">${inv.customer}</td>
                             <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border">${inv.orderType}</span></td>
