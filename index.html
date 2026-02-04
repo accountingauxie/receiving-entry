@@ -7,23 +7,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Scrollbar Styling */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* Animations */
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .hidden { display: none !important; }
         
+        /* Table Sorting & Inputs */
         th.sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
         th.sortable:hover { background-color: #e2e8f0; }
         th.sortable i { margin-left: 5px; color: #94a3b8; font-size: 0.8em; }
         th.sortable.active-sort i { color: #2563eb; }
-        
-        /* Custom date input styling */
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            cursor: pointer;
-            filter: invert(0.5);
-        }
+        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.5); }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
@@ -41,7 +40,7 @@
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
             </button>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.2 (Timestamp Logic)</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.3 (Strict FIFO)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
@@ -53,6 +52,7 @@
         </header>
 
         <div class="flex-1 overflow-auto p-4 md:p-8 relative">
+            
             <div id="loadingOverlay" class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
                 <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
                 <p class="text-slate-500 font-medium animate-pulse">Mengambil data Realtime...</p>
@@ -148,7 +148,6 @@
                             <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
                                 <tr>
                                     <th class="px-6 py-4 sortable bg-blue-50 text-blue-800" onclick="handleSort('cogs', 'timestamp', 'date')">Input Time <i id="sort-cogs-timestamp" class="fa-solid fa-sort"></i></th>
-                                    
                                     <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'orderNumber', 'string')">No Order <i id="sort-cogs-orderNumber" class="fa-solid fa-sort"></i></th>
                                     <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'customer', 'string')">Customer <i id="sort-cogs-customer" class="fa-solid fa-sort"></i></th>
                                     <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'orderType', 'string')">Type <i id="sort-cogs-orderType" class="fa-solid fa-sort"></i></th>
@@ -196,9 +195,25 @@
         </div>
     </main>
 
+    <div id="appModal" class="hidden fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform scale-100 transition-all">
+            <div class="flex flex-col items-center text-center">
+                <div id="modalIconContainer" class="w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                    <i id="modalIcon" class="fa-solid text-3xl"></i>
+                </div>
+                
+                <h3 id="modalTitle" class="text-xl font-bold text-slate-800 mb-2">Notification</h3>
+                <p id="modalMessage" class="text-slate-600 text-sm mb-6 leading-relaxed">Message goes here...</p>
+                
+                <button onclick="closeModal()" id="modalBtn" class="w-full py-2.5 rounded-lg font-medium text-white transition hover:opacity-90 active:scale-95">
+                    OK, Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
+
 <script>
         // --- KONFIGURASI URL API ---
-        // Pastikan URL ini sesuai dengan deployment terbaru AppScript Anda
         const API_URL = "https://script.google.com/macros/s/AKfycbwzqVmcBBHoqjxSh6IHYCHnwyC1o9rFhl-1OajDHIibortqrOo77iARWgHWW9h1f0R4/exec"; 
         
         let rawData = { stock: [], cogs: [] };
@@ -209,8 +224,41 @@
 
         let sortState = {
             stock: { key: 'name', dir: 'asc' }, 
-            cogs: { key: 'issueDate', dir: 'asc' } // Default Sort by Date
+            cogs: { key: 'issueDate', dir: 'asc' } 
         };
+
+        // --- MODAL FUNCTIONS (PENGGANTI ALERT) ---
+        function showModal(title, message, type = 'info') {
+            const modal = document.getElementById('appModal');
+            const iconCont = document.getElementById('modalIconContainer');
+            const icon = document.getElementById('modalIcon');
+            const btn = document.getElementById('modalBtn');
+            const msgEl = document.getElementById('modalMessage');
+
+            document.getElementById('modalTitle').innerText = title;
+            msgEl.innerText = message;
+
+            // Styling based on type
+            if (type === 'success') {
+                iconCont.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-green-100 text-green-600';
+                icon.className = 'fa-solid fa-check text-3xl';
+                btn.className = 'w-full py-2.5 rounded-lg font-medium text-white transition hover:opacity-90 active:scale-95 bg-green-600';
+            } else if (type === 'error') {
+                iconCont.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-red-100 text-red-600';
+                icon.className = 'fa-solid fa-circle-exclamation text-3xl';
+                btn.className = 'w-full py-2.5 rounded-lg font-medium text-white transition hover:opacity-90 active:scale-95 bg-red-600';
+            } else {
+                iconCont.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-blue-100 text-blue-600';
+                icon.className = 'fa-solid fa-info text-3xl';
+                btn.className = 'w-full py-2.5 rounded-lg font-medium text-white transition hover:opacity-90 active:scale-95 bg-blue-600';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('appModal').classList.add('hidden');
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchData();
@@ -235,7 +283,8 @@
                 });
 
             } catch (error) {
-                alert("Gagal koneksi ke API. Pastikan URL benar.");
+                // Ganti Alert dengan Modal
+                showModal('Kesalahan Koneksi', 'Gagal terhubung ke Server API. Pastikan URL benar atau refresh halaman.', 'error');
                 document.getElementById('loadingOverlay').innerHTML = `<p class="text-red-500 font-bold">Error Connection. Refresh page.</p>`;
             }
         }
@@ -270,8 +319,6 @@
             }
 
             const direction = sortState[module].dir === 'asc' ? 1 : -1;
-            
-            // Sort master arrays directly
             const dataToSort = module === 'stock' ? summaryStock : cogsList;
 
             dataToSort.sort((a, b) => {
@@ -281,7 +328,6 @@
                 if (type === 'number') {
                     return (parseFloat(valA) - parseFloat(valB)) * direction;
                 } else if (type === 'date') {
-                    // Handle empty dates safely
                     const dateA = valA ? new Date(valA).getTime() : 0;
                     const dateB = valB ? new Date(valB).getTime() : 0;
                     return (dateA - dateB) * direction;
@@ -300,7 +346,7 @@
                 const term = document.getElementById('searchStock').value.toLowerCase();
                 renderStockList(dataToSort.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
             } else {
-                filterCogsData(); // Re-apply filters on the sorted list
+                filterCogsData(); 
             }
         }
 
@@ -442,7 +488,7 @@
             document.body.removeChild(link);
         }
 
-        // --- COGS LOGIC & FILTER (UPDATED FOR 3 LEVEL SORT) ---
+        // --- COGS LOGIC & FILTER ---
         function processCogsData() {
             const grouped = rawData.cogs.reduce((acc, curr) => {
                 if(!acc[curr.orderNumber]) acc[curr.orderNumber] = { ...curr, items: [] };
@@ -452,22 +498,20 @@
             cogsList = Object.values(grouped);
             document.getElementById('countCogs').innerText = cogsList.length;
 
-            // --- 3 LEVEL SORTING IMPLEMENTATION ---
             cogsList.sort((a, b) => {
-                // Level 1: Tanggal Invoice (Date) - Oldest First
+                // Level 1: Tanggal Invoice (Date)
                 const dateA = new Date(a.issueDate);
                 const dateB = new Date(b.issueDate);
                 if (dateA < dateB) return -1;
                 if (dateA > dateB) return 1;
 
-                // Level 2: Timestamp (Input Time) - Oldest First
-                // Gunakan timestamp dari data (UTC string)
+                // Level 2: Timestamp (Input Time)
                 const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
                 const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
                 if (timeA < timeB) return -1;
                 if (timeA > timeB) return 1;
 
-                // Level 3: Nomor Invoice - A-Z
+                // Level 3: Nomor Invoice
                 return a.orderNumber.localeCompare(b.orderNumber);
             });
 
@@ -510,20 +554,16 @@
             filterCogsData();
         }
 
-        // --- FUNGSI FORMAT WAKTU WIB (TAMPILAN 2 BARIS) ---
         function formatWIB(isoString) {
             if (!isoString) return '-';
             const d = new Date(isoString);
             if (isNaN(d.getTime())) return '-';
 
-            // Ambil Tanggal
             const datePart = d.toLocaleDateString('id-ID', {
                 day: '2-digit', month: 'short', year: 'numeric'
             });
-            // Ambil Jam (Browser di Indo biasanya auto WIB)
             const timePart = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
 
-            // Return HTML String untuk render di cell
             return `<div class="leading-tight"><span class="font-bold text-slate-700">${datePart}</span><br><span class="text-xs text-slate-400 font-normal">${timePart}</span></div>`;
         }
 
@@ -545,7 +585,6 @@
                     return `
                         <tr class="border-b hover:bg-slate-50">
                             <td class="px-6 py-4 text-sm">${formatWIB(inv.timestamp)}</td>
-
                             <td class="px-6 py-4 font-medium text-blue-600">${inv.orderNumber}</td>
                             <td class="px-6 py-4">${inv.customer}</td>
                             <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border">${inv.orderType}</span></td>
@@ -599,16 +638,19 @@
                 const json = await res.json();
                 
                 if(json.success) {
-                    alert(json.message);
+                    // SUKSES: Tampilkan Modal Hijau
+                    showModal('Berhasil!', json.message, 'success');
+                    
                     backToCogsList();
                     document.getElementById('loadingOverlay').classList.remove('hidden');
                     fetchData(); 
                 } else {
-                    // Alert untuk Error dari Backend (Misal: Stok Kurang)
-                    alert("Gagal: " + json.message);
+                    // ERROR DARI BACKEND (STOK KURANG DLL): Tampilkan Modal Merah
+                    showModal('Gagal Posting', json.message, 'error');
                 }
             } catch(e) {
-                alert("Error System: " + e);
+                // SYSTEM ERROR: Tampilkan Modal Merah
+                showModal('System Error', "Terjadi kesalahan sistem: " + e, 'error');
             } finally {
                 btn.innerHTML = originalText; 
                 btn.disabled = false;
