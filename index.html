@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -28,10 +27,17 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
 
-    <aside class="w-64 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col z-20 shadow-md">
-        <div class="h-16 flex items-center px-6 border-b border-slate-100">
-            <i class="fa-solid fa-cube text-blue-600 text-xl mr-3"></i>
-            <span class="font-bold text-lg text-slate-800">Smart Portal</span>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-30 hidden md:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out w-64 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col z-40 shadow-xl md:shadow-md">
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-100">
+            <div class="flex items-center">
+                <i class="fa-solid fa-cube text-blue-600 text-xl mr-3"></i>
+                <span class="font-bold text-lg text-slate-800">Smart Portal</span>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-red-500">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
         </div>
         <nav class="p-4 space-y-2 flex-1">
             <button onclick="switchModule('stock')" id="btnNavStock" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition bg-blue-50 text-blue-700 font-medium border border-blue-100">
@@ -44,11 +50,16 @@
         <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.3 (Strict FIFO)</div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm flex-shrink-0">
-            <h1 id="pageTitle" class="text-xl font-bold text-slate-700">Kartu Stock</h1>
-            <span class="text-xs font-medium bg-green-100 text-green-700 py-1 px-3 rounded-full flex items-center gap-2 border border-green-200">
-                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> API Connected
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50 w-full">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 shadow-sm flex-shrink-0">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-600 hover:text-blue-600 transition">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <h1 id="pageTitle" class="text-xl font-bold text-slate-700">Kartu Stock</h1>
+            </div>
+            <span class="text-xs font-medium bg-green-100 text-green-700 py-1 px-2 md:px-3 rounded-full flex items-center gap-1 md:gap-2 border border-green-200">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> <span class="hidden md:inline">API Connected</span><span class="md:hidden">Connected</span>
             </span>
         </header>
 
@@ -61,11 +72,11 @@
 
             <div id="moduleStock" class="fade-in">
                 <div id="stockListView">
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6 mb-6">
                         <input type="text" id="searchStock" placeholder="Cari Kode / Nama Barang..." class="w-full p-3 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition">
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <table class="w-full text-sm text-left text-slate-600">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-600 whitespace-nowrap">
                             <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
                                 <tr>
                                     <th class="px-6 py-4 sortable" onclick="handleSort('stock', 'code', 'string')">Kode <i id="sort-stock-code" class="fa-solid fa-sort"></i></th>
@@ -81,19 +92,19 @@
 
                 <div id="stockDetailView" class="hidden">
                     <button onclick="backToStockList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 id="detailItemName" class="text-2xl font-bold text-slate-800">Item Name</h2>
-                        <button onclick="downloadCSVStock()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm flex items-center transition"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <h2 id="detailItemName" class="text-xl md:text-2xl font-bold text-slate-800 break-words">Item Name</h2>
+                        <button onclick="downloadCSVStock()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm flex items-center transition w-full md:w-auto justify-center"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
                         <div class="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm"><p class="text-xs font-bold text-slate-500">TOTAL MASUK</p><p id="kpiIn" class="text-2xl font-bold">0</p></div>
                         <div class="bg-white p-5 rounded-xl border-l-4 border-red-500 shadow-sm"><p class="text-xs font-bold text-slate-500">TOTAL KELUAR</p><p id="kpiOut" class="text-2xl font-bold">0</p></div>
                         <div class="bg-blue-600 p-5 rounded-xl shadow-lg text-white"><p class="text-xs font-bold text-blue-100">SALDO AKHIR</p><p id="kpiBalance" class="text-3xl font-bold">0</p></div>
                     </div>
 
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <table class="w-full text-sm text-left text-slate-600">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-600 whitespace-nowrap">
                             <thead class="bg-slate-100 uppercase text-xs font-bold text-slate-700">
                                 <tr>
                                     <th class="px-6 py-3">Tanggal</th>
@@ -115,37 +126,37 @@
 
             <div id="moduleCogs" class="hidden fade-in">
                 <div id="cogsListView">
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                        <div class="flex flex-col md:flex-row gap-4 justify-between items-end md:items-center">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6 mb-6">
+                        <div class="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-end">
                             
-                            <div class="w-full md:w-1/3">
+                            <div class="w-full lg:w-1/3">
                                 <label class="text-xs font-bold text-slate-500 mb-1 block">Cari Data</label>
                                 <input type="text" id="searchCogs" placeholder="Cari Invoice / Customer..." class="w-full p-2 border rounded bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500">
                             </div>
 
-                            <div class="flex gap-3 w-full md:w-auto items-end">
-                                <div>
+                            <div class="flex flex-wrap md:flex-nowrap gap-3 w-full lg:w-auto items-end">
+                                <div class="w-full md:w-auto flex-1">
                                     <label class="text-xs font-bold text-slate-500 mb-1 block">Dari Tanggal</label>
-                                    <input type="date" id="startDateCogs" class="p-2 border rounded bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="date" id="startDateCogs" class="w-full md:w-auto p-2 border rounded bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
-                                <div>
+                                <div class="w-full md:w-auto flex-1">
                                     <label class="text-xs font-bold text-slate-500 mb-1 block">Sampai Tanggal</label>
-                                    <input type="date" id="endDateCogs" class="p-2 border rounded bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="date" id="endDateCogs" class="w-full md:w-auto p-2 border rounded bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
-                                <button onclick="resetCogsFilter()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded border border-slate-300 transition" title="Reset Filter">
-                                    <i class="fa-solid fa-rotate-left"></i>
+                                <button onclick="resetCogsFilter()" class="bg-slate-100 w-full md:w-auto hover:bg-slate-200 text-slate-600 px-4 py-2 rounded border border-slate-300 transition" title="Reset Filter">
+                                    <i class="fa-solid fa-rotate-left"></i> <span class="md:hidden ml-2">Reset</span>
                                 </button>
                             </div>
 
-                            <div class="text-sm text-right min-w-[120px]">
+                            <div class="text-left lg:text-right w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 mt-2 lg:mt-0">
                                 <span class="text-slate-500 block text-xs">Pending Approval</span>
                                 <span id="countCogs" class="font-bold text-blue-600 text-xl">0</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <table class="w-full text-sm text-left text-slate-600">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-600 whitespace-nowrap">
                             <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
                                 <tr>
                                     <th class="px-6 py-4 sortable bg-blue-50 text-blue-800" onclick="handleSort('cogs', 'timestamp', 'date')">Input Time <i id="sort-cogs-timestamp" class="fa-solid fa-sort"></i></th>
@@ -168,18 +179,18 @@
 
                 <div id="cogsDetailView" class="hidden">
                     <button onclick="backToCogsList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 flex justify-between items-center">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
-                            <h2 id="detailInvoiceNum" class="text-2xl font-bold text-slate-800">INV-001</h2>
+                            <h2 id="detailInvoiceNum" class="text-xl md:text-2xl font-bold text-slate-800">INV-001</h2>
                             <p id="detailCustomer" class="text-slate-500 text-sm">Customer Name</p>
                         </div>
-                        <button onclick="triggerApplyCOGS(this)" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow font-medium flex items-center gap-2 transition">
+                        <button onclick="triggerApplyCOGS(this)" class="w-full md:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow font-medium flex items-center gap-2 transition">
                             <i class="fa-solid fa-calculator"></i> Apply FIFO & Post
                         </button>
                     </div>
                     
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <table class="w-full text-sm text-left text-slate-600">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-600 whitespace-nowrap">
                             <thead class="bg-slate-50 uppercase text-xs font-bold text-slate-700">
                                 <tr>
                                     <th class="px-6 py-3">Type Penjualan</th>
@@ -196,7 +207,7 @@
         </div>
     </main>
 
-    <div id="appModal" class="hidden fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center backdrop-blur-sm transition-opacity duration-300">
+    <div id="appModal" class="hidden fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center backdrop-blur-sm transition-opacity duration-300 p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform scale-100 transition-all">
             <div class="flex flex-col items-center text-center">
                 <div id="modalIconContainer" class="w-16 h-16 rounded-full flex items-center justify-center mb-4">
@@ -214,6 +225,15 @@
     </div>
 
 <script>
+        // --- JAVASCRIPT TAMBAHAN UNTUK SIDEBAR MOBILE ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
         // --- KONFIGURASI URL API ---
         const API_URL = "https://script.google.com/macros/s/AKfycbzjEedWEtBQ-MBDl4Ll4OpDX1KzLp8wo1B7FEI9SS77qAdpiu0Tdgw24pnJfEapy7yS/exec"; 
         
@@ -228,7 +248,6 @@
             cogs: { key: 'issueDate', dir: 'asc' } 
         };
 
-        // --- MODAL FUNCTIONS (PENGGANTI ALERT) ---
         function showModal(title, message, type = 'info') {
             const modal = document.getElementById('appModal');
             const iconCont = document.getElementById('modalIconContainer');
@@ -239,7 +258,6 @@
             document.getElementById('modalTitle').innerText = title;
             msgEl.innerText = message;
 
-            // Styling based on type
             if (type === 'success') {
                 iconCont.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-green-100 text-green-600';
                 icon.className = 'fa-solid fa-check text-3xl';
@@ -284,7 +302,6 @@
                 });
 
             } catch (error) {
-                // Ganti Alert dengan Modal
                 showModal('Kesalahan Koneksi', 'Gagal terhubung ke Server API. Pastikan URL benar atau refresh halaman.', 'error');
                 document.getElementById('loadingOverlay').innerHTML = `<p class="text-red-500 font-bold">Error Connection. Refresh page.</p>`;
             }
@@ -307,6 +324,11 @@
                 cogsBtn.classList.replace('text-slate-600','text-blue-700'); cogsBtn.classList.replace('border-transparent','bg-blue-50');
                 stockBtn.classList.replace('text-blue-700','text-slate-600'); stockBtn.classList.replace('bg-blue-50','border-transparent');
                 title.innerText = "Approval Invoice COGS";
+            }
+            
+            // TERTUTUP OTOMATIS SAAT MENU DIKLIK (MOBILE)
+            if (window.innerWidth < 768) {
+                toggleSidebar();
             }
         }
 
@@ -448,10 +470,10 @@
                 return `
                     <tr class="bg-white border-b hover:bg-slate-50 transition">
                         <td class="px-6 py-4 font-mono text-slate-500">${dateStr}</td>        
-                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>             
+                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>              
                         <td class="px-6 py-4 font-bold text-slate-700">${r.kpc || '-'}</td> 
                         <td class="px-6 py-4 text-sm text-slate-600">${r.invRef || '-'}</td>
-                        <td class="px-6 py-4">                                          
+                        <td class="px-6 py-4">                                        
                             <span class="px-2 py-1 rounded text-xs font-bold border ${statusClass}">${r.status}</span>
                         </td>
                         <td class="px-6 py-4 text-right font-medium">${formatQty(r.qty)}</td>  
@@ -500,19 +522,16 @@
             document.getElementById('countCogs').innerText = cogsList.length;
 
             cogsList.sort((a, b) => {
-                // Level 1: Tanggal Invoice (Date)
                 const dateA = new Date(a.issueDate);
                 const dateB = new Date(b.issueDate);
                 if (dateA < dateB) return -1;
                 if (dateA > dateB) return 1;
 
-                // Level 2: Timestamp (Input Time)
                 const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
                 const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
                 if (timeA < timeB) return -1;
                 if (timeA > timeB) return 1;
 
-                // Level 3: Nomor Invoice
                 return a.orderNumber.localeCompare(b.orderNumber);
             });
 
@@ -571,7 +590,7 @@
         function renderCogsList(data) {
             const tbody = document.getElementById('cogsTableBody');
             const emptyState = document.getElementById('cogsEmptyState');
-            const table = document.querySelector('#moduleCogs table');
+            const table = document.querySelector('#moduleCogs table').parentElement;
             
             if(data.length === 0) {
                 emptyState.classList.remove('hidden');
@@ -639,18 +658,15 @@
                 const json = await res.json();
                 
                 if(json.success) {
-                    // SUKSES: Tampilkan Modal Hijau
                     showModal('Berhasil!', json.message, 'success');
                     
                     backToCogsList();
                     document.getElementById('loadingOverlay').classList.remove('hidden');
                     fetchData(); 
                 } else {
-                    // ERROR DARI BACKEND (STOK KURANG DLL): Tampilkan Modal Merah
                     showModal('Gagal Posting', json.message, 'error');
                 }
             } catch(e) {
-                // SYSTEM ERROR: Tampilkan Modal Merah
                 showModal('System Error', "Terjadi kesalahan sistem: " + e, 'error');
             } finally {
                 btn.innerHTML = originalText; 
