@@ -23,6 +23,9 @@
         th.sortable i { margin-left: 5px; color: #94a3b8; font-size: 0.8em; }
         th.sortable.active-sort i { color: #2563eb; }
         input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.5); }
+        
+        /* Checkbox Customization */
+        input[type="checkbox"] { accent-color: #2563eb; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
@@ -44,7 +47,7 @@
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
             </div>
         </nav>
-        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.3 (Strict FIFO)</div>
+        <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.4 (Bulk FIFO)</div>
     </aside>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50 w-full">
@@ -64,7 +67,7 @@
             
             <div id="loadingOverlay" class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
                 <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mb-4"></div>
-                <p class="text-slate-500 font-medium animate-pulse">Mengambil data Realtime...</p>
+                <p class="text-slate-500 font-medium animate-pulse" id="loadingText">Mengambil data Realtime...</p>
             </div>
 
             <div id="moduleCogs" class="fade-in">
@@ -91,9 +94,15 @@
                                 </button>
                             </div>
 
-                            <div class="text-left lg:text-right w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 mt-2 lg:mt-0">
-                                <span class="text-slate-500 block text-xs">Pending Approval</span>
-                                <span id="countCogs" class="font-bold text-blue-600 text-xl">0</span>
+                            <div class="flex gap-4 items-end w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 mt-2 lg:mt-0 justify-between lg:justify-end">
+                                <button id="btnBulk" onclick="triggerApplyBulkCOGS(this)" class="hidden bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow font-medium transition flex items-center gap-2 text-sm">
+                                    <i class="fa-solid fa-layer-group"></i> Proses <span id="bulkCount" class="bg-white text-blue-600 rounded-full px-2 text-xs py-0.5">0</span>
+                                </button>
+                                
+                                <div class="text-right">
+                                    <span class="text-slate-500 block text-xs">Pending Approval</span>
+                                    <span id="countCogs" class="font-bold text-blue-600 text-xl">0</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -102,6 +111,9 @@
                         <table class="w-full text-sm text-left text-slate-600 whitespace-nowrap">
                             <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
                                 <tr>
+                                    <th class="px-6 py-4 w-10 text-center border-r border-slate-200">
+                                        <input type="checkbox" id="selectAll" onclick="toggleAll(this)" class="w-4 h-4 cursor-pointer" title="Pilih semua di layar ini">
+                                    </th>
                                     <th class="px-6 py-4 sortable bg-blue-50 text-blue-800" onclick="handleSort('cogs', 'timestamp', 'date')">Input Time <i id="sort-cogs-timestamp" class="fa-solid fa-sort"></i></th>
                                     <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'orderNumber', 'string')">No Order <i id="sort-cogs-orderNumber" class="fa-solid fa-sort"></i></th>
                                     <th class="px-6 py-4 sortable" onclick="handleSort('cogs', 'customer', 'string')">Customer <i id="sort-cogs-customer" class="fa-solid fa-sort"></i></th>
@@ -127,7 +139,7 @@
                             <h2 id="detailInvoiceNum" class="text-xl md:text-2xl font-bold text-slate-800">INV-001</h2>
                             <p id="detailCustomer" class="text-slate-500 text-sm">Customer Name</p>
                         </div>
-                        <button onclick="triggerApplyCOGS(this)" class="w-full md:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow font-medium flex items-center gap-2 transition">
+                        <button onclick="triggerApplySingleCOGS(this)" class="w-full md:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow font-medium flex items-center gap-2 transition">
                             <i class="fa-solid fa-calculator"></i> Apply FIFO & Post
                         </button>
                     </div>
@@ -168,22 +180,23 @@
     </div>
 
     <script>
-        // --- JAVASCRIPT TAMBAHAN UNTUK SIDEBAR MOBILE ---
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            
             sidebar.classList.toggle('-translate-x-full');
             overlay.classList.toggle('hidden');
         }
 
         // --- KONFIGURASI URL API ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbwEP6L21mcbfEtyMrf00zNm3Ti0ML0y1gMPw3mIxL9mL93eH-4Ps1fGQqr9nYuzEHdy/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbxWGnQ6Y6qPSx7TKFFgLW9WykpA2mrZ1Zl1An3VueeOYraFJLMQYzqnXqxzjRISmVxN/exec"; 
         
         let rawData = { cogs: [] };
         let cogsList = [];
         let currentCogsDetail = null;
-
+        
+        // State management untuk Checkbox Massal
+        let selectedInvoices = new Set(); 
+        
         let sortState = {
             cogs: { key: 'issueDate', dir: 'asc' } 
         };
@@ -228,14 +241,18 @@
 
         async function fetchData() {
             try {
+                document.getElementById('loadingText').innerText = "Mengambil data Realtime...";
                 const response = await fetch(API_URL);
                 const result = await response.json();
                 
                 requestAnimationFrame(() => {
                     rawData = result;
+                    // Reset seleksi saat mengambil data baru
+                    selectedInvoices.clear();
                     processCogsData();
                     document.getElementById('loadingOverlay').classList.add('hidden');
                     updateSortIcons('cogs', 'issueDate', 'asc');
+                    updateBulkUI();
                 });
 
             } catch (error) {
@@ -369,6 +386,59 @@
             return `<div class="leading-tight"><span class="font-bold text-slate-700">${datePart}</span><br><span class="text-xs text-slate-400 font-normal">${timePart}</span></div>`;
         }
 
+        // --- CHECKBOX LOGIC ---
+        function toggleAll(masterCb) {
+            const isChecked = masterCb.checked;
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            
+            checkboxes.forEach(cb => {
+                cb.checked = isChecked;
+                if(isChecked) {
+                    selectedInvoices.add(cb.value);
+                } else {
+                    selectedInvoices.delete(cb.value);
+                }
+            });
+            updateBulkUI();
+        }
+
+        function toggleRow(cb) {
+            if(cb.checked) {
+                selectedInvoices.add(cb.value);
+            } else {
+                selectedInvoices.delete(cb.value);
+            }
+            updateBulkUI();
+        }
+
+        function updateBulkUI() {
+            const btnBulk = document.getElementById('btnBulk');
+            const bulkCount = document.getElementById('bulkCount');
+            const masterCb = document.getElementById('selectAll');
+            
+            // Hitung total di-set
+            bulkCount.innerText = selectedInvoices.size;
+            
+            if (selectedInvoices.size > 0) {
+                btnBulk.classList.remove('hidden');
+            } else {
+                btnBulk.classList.add('hidden');
+            }
+
+            // Atur status master checkbox berdasar data yang tampil di layar saja
+            const visibleCheckboxes = document.querySelectorAll('.row-checkbox');
+            if (visibleCheckboxes.length > 0) {
+                const allChecked = Array.from(visibleCheckboxes).every(cb => cb.checked);
+                const someChecked = Array.from(visibleCheckboxes).some(cb => cb.checked);
+                
+                masterCb.checked = allChecked;
+                masterCb.indeterminate = someChecked && !allChecked;
+            } else {
+                masterCb.checked = false;
+                masterCb.indeterminate = false;
+            }
+        }
+
         function renderCogsList(data) {
             const tbody = document.getElementById('cogsTableBody');
             const emptyState = document.getElementById('cogsEmptyState');
@@ -384,19 +454,29 @@
                 
                 const htmlRows = data.map(inv => {
                     const dataStr = encodeURIComponent(JSON.stringify(inv));
+                    const isChecked = selectedInvoices.has(inv.orderNumber) ? 'checked' : '';
+                    
                     return `
-                        <tr class="border-b hover:bg-slate-50">
-                            <td class="px-6 py-4 text-sm">${formatWIB(inv.timestamp)}</td>
+                        <tr class="border-b hover:bg-slate-50 transition">
+                            <td class="px-6 py-4 text-center border-r border-slate-100">
+                                <input type="checkbox" class="row-checkbox w-4 h-4 cursor-pointer" value="${inv.orderNumber}" onclick="toggleRow(this)" ${isChecked}>
+                            </td>
+                            <td class="px-6 py-4 text-sm" onclick="document.querySelector('input[value=\\'${inv.orderNumber}\\']').click()">${formatWIB(inv.timestamp)}</td>
                             <td class="px-6 py-4 font-medium text-blue-600">${inv.orderNumber}</td>
                             <td class="px-6 py-4">${inv.customer}</td>
                             <td class="px-6 py-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs border">${inv.orderType}</span></td>
                             <td class="px-6 py-4">${new Date(inv.issueDate).toLocaleDateString('id-ID')}</td>
                             <td class="px-6 py-4 text-center font-bold">${inv.items.length}</td>
-                            <td class="px-6 py-4 text-center"><button onclick="viewCogsDetail('${dataStr}')" class="text-xs border border-blue-200 text-blue-600 px-3 py-1 rounded hover:bg-blue-50 font-medium">Rincian</button></td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="viewCogsDetail('${dataStr}')" class="text-xs border border-blue-200 text-blue-600 px-3 py-1 rounded hover:bg-blue-50 font-medium">Rincian</button>
+                            </td>
                         </tr>`;
                 }).join('');
                 tbody.innerHTML = htmlRows;
             }
+            
+            // Perbarui UI Master Checkbox setelah render ulang (misal karena filter/sort)
+            updateBulkUI();
         }
 
         function viewCogsDetail(str) {
@@ -430,33 +510,71 @@
             document.getElementById('cogsListView').classList.remove('hidden'); 
         }
 
-        async function triggerApplyCOGS(btn) {
+        // --- FUNGSI EKSEKUSI API: MASSAL (BULK) & SATUAN (SINGLE) ---
+        
+        // 1. Fungsi Untuk Eksekusi dari Tombol Checkbox Massal
+        async function triggerApplyBulkCOGS(btn) {
+            const arrInvoices = Array.from(selectedInvoices); // Ubah Set menjadi Array
+            if(arrInvoices.length === 0) return;
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Loading...`; 
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            
+            await executeAPI(arrInvoices, btn, originalText);
+        }
+
+        // 2. Fungsi Untuk Eksekusi dari dalam Layar Detail (Hanya 1 Invoice)
+        async function triggerApplySingleCOGS(btn) {
             if(!currentCogsDetail) return;
+            
+            const arrInvoices = [currentCogsDetail.orderNumber]; // Bungkus 1 invoice jadi array
+            
             const originalText = btn.innerHTML;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Calculating FIFO...`; 
             btn.disabled = true;
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             
+            const success = await executeAPI(arrInvoices, btn, originalText);
+            if(success) {
+                backToCogsList();
+            }
+        }
+
+        // 3. Core Logic Pemanggilan API (Menggunakan POST)
+        async function executeAPI(invoicesArray, btnElement, originalHtml) {
+            document.getElementById('loadingText').innerText = `Memproses & Menghitung ${invoicesArray.length} Invoice. Harap Tunggu...`;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+
             try {
-                const url = `${API_URL}?action=apply&inv=${currentCogsDetail.orderNumber}`;
-                const res = await fetch(url);
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'applyBulk',
+                        invs: invoicesArray
+                    })
+                });
+                
                 const json = await res.json();
                 
                 if(json.success) {
                     showModal('Berhasil!', json.message, 'success');
-                    
-                    backToCogsList();
-                    document.getElementById('loadingOverlay').classList.remove('hidden');
-                    fetchData(); 
+                    fetchData(); // Muat ulang data secara live
+                    return true;
                 } else {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
                     showModal('Gagal Posting', json.message, 'error');
+                    return false;
                 }
             } catch(e) {
-                showModal('System Error', "Terjadi kesalahan sistem: " + e, 'error');
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                showModal('System Error', "Terjadi kesalahan koneksi sistem: " + e, 'error');
+                return false;
             } finally {
-                btn.innerHTML = originalText; 
-                btn.disabled = false;
-                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                btnElement.innerHTML = originalHtml; 
+                btnElement.disabled = false;
+                btnElement.classList.remove('opacity-75', 'cursor-not-allowed');
             }
         }
     </script>
