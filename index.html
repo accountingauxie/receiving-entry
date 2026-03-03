@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Stock & COGS Portal</title>
+    <title>Smart COGS Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -40,12 +40,9 @@
             </button>
         </div>
         <nav class="p-4 space-y-2 flex-1">
-            <button onclick="switchModule('stock')" id="btnNavStock" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition bg-blue-50 text-blue-700 font-medium border border-blue-100">
-                <i class="fa-solid fa-boxes-stacked w-5"></i> Kartu Stock
-            </button>
-            <button onclick="switchModule('cogs')" id="btnNavCogs" class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition text-slate-600 hover:bg-slate-50 border border-transparent">
+            <div class="w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 bg-blue-50 text-blue-700 font-medium border border-blue-100 cursor-default">
                 <i class="fa-solid fa-file-invoice-dollar w-5"></i> Invoice COGS
-            </button>
+            </div>
         </nav>
         <div class="p-4 border-t border-slate-100 text-xs text-slate-400 text-center">System API v2.3 (Strict FIFO)</div>
     </aside>
@@ -56,7 +53,7 @@
                 <button onclick="toggleSidebar()" class="md:hidden text-slate-600 hover:text-blue-600 transition">
                     <i class="fa-solid fa-bars text-xl"></i>
                 </button>
-                <h1 id="pageTitle" class="text-xl font-bold text-slate-700">Kartu Stock</h1>
+                <h1 id="pageTitle" class="text-xl font-bold text-slate-700">Approval Invoice COGS</h1>
             </div>
             <span class="text-xs font-medium bg-green-100 text-green-700 py-1 px-2 md:px-3 rounded-full flex items-center gap-1 md:gap-2 border border-green-200">
                 <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> <span class="hidden md:inline">API Connected</span><span class="md:hidden">Connected</span>
@@ -70,61 +67,7 @@
                 <p class="text-slate-500 font-medium animate-pulse">Mengambil data Realtime...</p>
             </div>
 
-            <div id="moduleStock" class="fade-in">
-                <div id="stockListView">
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6 mb-6">
-                        <input type="text" id="searchStock" placeholder="Cari Kode / Nama Barang..." class="w-full p-3 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition">
-                    </div>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-                        <table class="w-full text-sm text-left text-slate-600 whitespace-nowrap">
-                            <thead class="bg-slate-50 border-b uppercase text-xs font-bold text-slate-700">
-                                <tr>
-                                    <th class="px-6 py-4 sortable" onclick="handleSort('stock', 'code', 'string')">Kode <i id="sort-stock-code" class="fa-solid fa-sort"></i></th>
-                                    <th class="px-6 py-4 sortable" onclick="handleSort('stock', 'name', 'string')">Nama Barang <i id="sort-stock-name" class="fa-solid fa-sort"></i></th>
-                                    <th class="px-6 py-4 sortable text-right" onclick="handleSort('stock', 'balance', 'number')">Stok Akhir <i id="sort-stock-balance" class="fa-solid fa-sort"></i></th>
-                                    <th class="px-6 py-4 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stockTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="stockDetailView" class="hidden">
-                    <button onclick="backToStockList()" class="mb-4 text-slate-500 hover:text-blue-600 flex items-center gap-2 text-sm font-medium"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                        <h2 id="detailItemName" class="text-xl md:text-2xl font-bold text-slate-800 break-words">Item Name</h2>
-                        <button onclick="downloadCSVStock()" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 text-sm flex items-center transition w-full md:w-auto justify-center"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-                        <div class="bg-white p-5 rounded-xl border-l-4 border-green-500 shadow-sm"><p class="text-xs font-bold text-slate-500">TOTAL MASUK</p><p id="kpiIn" class="text-2xl font-bold">0</p></div>
-                        <div class="bg-white p-5 rounded-xl border-l-4 border-red-500 shadow-sm"><p class="text-xs font-bold text-slate-500">TOTAL KELUAR</p><p id="kpiOut" class="text-2xl font-bold">0</p></div>
-                        <div class="bg-blue-600 p-5 rounded-xl shadow-lg text-white"><p class="text-xs font-bold text-blue-100">SALDO AKHIR</p><p id="kpiBalance" class="text-3xl font-bold">0</p></div>
-                    </div>
-
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-                        <table class="w-full text-sm text-left text-slate-600 whitespace-nowrap">
-                            <thead class="bg-slate-100 uppercase text-xs font-bold text-slate-700">
-                                <tr>
-                                    <th class="px-6 py-3">Tanggal</th>
-                                    <th class="px-6 py-3">Item Type</th>
-                                    <th class="px-6 py-3">KPC</th>
-                                    <th class="px-6 py-3">Inv Ref</th>
-                                    <th class="px-6 py-3">Status</th>
-                                    <th class="px-6 py-3 text-right">Qty</th>
-                                    <th class="px-6 py-3 text-right">Price</th>
-                                    <th class="px-6 py-3 text-right font-bold text-blue-700">Total</th>
-                                    <th class="px-6 py-3 text-right font-bold text-slate-800 bg-slate-200">Saldo (Rp)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stockDetailBody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div id="moduleCogs" class="hidden fade-in">
+            <div id="moduleCogs" class="fade-in">
                 <div id="cogsListView">
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6 mb-6">
                         <div class="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-end">
@@ -224,7 +167,7 @@
         </div>
     </div>
 
-<script>
+    <script>
         // --- JAVASCRIPT TAMBAHAN UNTUK SIDEBAR MOBILE ---
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -235,16 +178,13 @@
         }
 
         // --- KONFIGURASI URL API ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbzDk2esRmdJHeWL_UVi29RL2s4VulVchiQOf7jK8PNOSWt0bNCStGFtscuX6ozgI1W6/exec"; 
+        const API_URL = "https://script.google.com/macros/s/AKfycbzFCRHaVSWFQGnztaiOnGL4pcSb_sKwsR_natLbsdtzX2Wx9v2ImYXBtxn0C9geZWSw/exec"; 
         
-        let rawData = { stock: [], cogs: [] };
-        let groupedStock = {};
-        let summaryStock = [];
+        let rawData = { cogs: [] };
         let cogsList = [];
         let currentCogsDetail = null;
 
         let sortState = {
-            stock: { key: 'name', dir: 'asc' }, 
             cogs: { key: 'issueDate', dir: 'asc' } 
         };
 
@@ -293,42 +233,14 @@
                 
                 requestAnimationFrame(() => {
                     rawData = result;
-                    processStockData();
                     processCogsData();
                     document.getElementById('loadingOverlay').classList.add('hidden');
-                    
-                    updateSortIcons('stock', 'name', 'asc');
                     updateSortIcons('cogs', 'issueDate', 'asc');
                 });
 
             } catch (error) {
                 showModal('Kesalahan Koneksi', 'Gagal terhubung ke Server API. Pastikan URL benar atau refresh halaman.', 'error');
                 document.getElementById('loadingOverlay').innerHTML = `<p class="text-red-500 font-bold">Error Connection. Refresh page.</p>`;
-            }
-        }
-
-        function switchModule(mod) {
-            const stockBtn = document.getElementById('btnNavStock');
-            const cogsBtn = document.getElementById('btnNavCogs');
-            const stockView = document.getElementById('moduleStock');
-            const cogsView = document.getElementById('moduleCogs');
-            const title = document.getElementById('pageTitle');
-
-            if (mod === 'stock') {
-                stockView.classList.remove('hidden'); cogsView.classList.add('hidden');
-                stockBtn.classList.replace('text-slate-600','text-blue-700'); stockBtn.classList.replace('border-transparent','bg-blue-50');
-                cogsBtn.classList.replace('text-blue-700','text-slate-600'); cogsBtn.classList.replace('bg-blue-50','border-transparent');
-                title.innerText = "Kartu Stock (Realtime)";
-            } else {
-                cogsView.classList.remove('hidden'); stockView.classList.add('hidden');
-                cogsBtn.classList.replace('text-slate-600','text-blue-700'); cogsBtn.classList.replace('border-transparent','bg-blue-50');
-                stockBtn.classList.replace('text-blue-700','text-slate-600'); stockBtn.classList.replace('bg-blue-50','border-transparent');
-                title.innerText = "Approval Invoice COGS";
-            }
-            
-            // TERTUTUP OTOMATIS SAAT MENU DIKLIK (MOBILE)
-            if (window.innerWidth < 768) {
-                toggleSidebar();
             }
         }
 
@@ -342,7 +254,7 @@
             }
 
             const direction = sortState[module].dir === 'asc' ? 1 : -1;
-            const dataToSort = module === 'stock' ? summaryStock : cogsList;
+            const dataToSort = cogsList;
 
             dataToSort.sort((a, b) => {
                 let valA = a[key];
@@ -364,13 +276,7 @@
             });
 
             updateSortIcons(module, key, sortState[module].dir);
-
-            if(module === 'stock') {
-                const term = document.getElementById('searchStock').value.toLowerCase();
-                renderStockList(dataToSort.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
-            } else {
-                filterCogsData(); 
-            }
+            filterCogsData(); 
         }
 
         function updateSortIcons(module, activeKey, dir) {
@@ -385,130 +291,6 @@
                 activeIcon.className = dir === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
                 activeIcon.parentElement.classList.add('active-sort');
             }
-        }
-
-        // --- STOCK LOGIC ---
-        function processStockData() {
-            groupedStock = rawData.stock.reduce((acc, curr) => {
-                if(!acc[curr.itemName]) acc[curr.itemName] = [];
-                acc[curr.itemName].push(curr); return acc;
-            }, {});
-
-            summaryStock = Object.keys(groupedStock).map(key => {
-                const items = groupedStock[key];
-                let bal = 0;
-                items.forEach(i => {
-                    let qty = parseFloat(i.qty || 0);
-                    if (i.status === 'Positive') bal += qty;
-                    else bal -= Math.abs(qty);
-                });
-                return { name: key, code: items[0].itemCode, balance: bal };
-            });
-
-            summaryStock.sort((a,b) => a.name.localeCompare(b.name));
-            renderStockList(summaryStock);
-
-            document.getElementById('searchStock').addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                renderStockList(summaryStock.filter(i => i.name.toLowerCase().includes(term) || (i.code && i.code.toLowerCase().includes(term))));
-            });
-        }
-
-        function renderStockList(data) {
-            const tbody = document.getElementById('stockTableBody');
-            const htmlRows = data.map(i => `
-                <tr class="border-b hover:bg-slate-50">
-                    <td class="px-6 py-4 text-xs font-mono text-slate-500">${i.code || '-'}</td>
-                    <td class="px-6 py-4 font-medium">${i.name}</td>
-                    <td class="px-6 py-4 text-right font-bold text-blue-600">${i.balance.toLocaleString('id-ID')}</td>
-                    <td class="px-6 py-4 text-center"><button onclick="viewStockDetail('${i.name.replace(/'/g, "\\'")}')" class="text-blue-600 hover:underline">View</button></td>
-                </tr>
-            `).join('');
-            tbody.innerHTML = htmlRows;
-        }
-
-        function viewStockDetail(name) {
-            document.getElementById('stockListView').classList.add('hidden');
-            document.getElementById('stockDetailView').classList.remove('hidden');
-            
-            const decodedName = name.replace(/\\'/g, "'");
-            document.getElementById('detailItemName').innerText = decodedName;
-            
-            const data = groupedStock[decodedName].sort((a,b) => new Date(a.date) - new Date(b.date));
-            
-            let runBal = 0, totIn = 0, totOut = 0;
-            let runningRp = 0;
-
-            const tbody = document.getElementById('stockDetailBody');
-
-            data.forEach(r => {
-                let qty = parseFloat(r.qty || 0);
-                if(r.status === 'Positive') { 
-                    runBal += qty; 
-                    totIn += qty; 
-                } else { 
-                    let outVal = Math.abs(qty);
-                    runBal -= outVal; 
-                    totOut += outVal; 
-                }
-            });
-
-            document.getElementById('kpiIn').innerText = totIn.toLocaleString('id-ID');
-            document.getElementById('kpiOut').innerText = totOut.toLocaleString('id-ID');
-            document.getElementById('kpiBalance').innerText = runBal.toLocaleString('id-ID');
-
-            const htmlRows = data.map(r => {
-                let dateStr = r.date ? new Date(r.date).toLocaleDateString('id-ID') : "-";
-                const formatRp = (num) => "Rp " + parseFloat(num || 0).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-                const formatQty = (num) => parseFloat(num || 0).toLocaleString('id-ID');
-                const statusClass = r.status === 'Positive' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200';
-
-                let currentRowTotal = parseFloat(r.total || 0);
-                if (r.status === 'Positive') runningRp += currentRowTotal;
-                else runningRp -= currentRowTotal;
-
-                return `
-                    <tr class="bg-white border-b hover:bg-slate-50 transition">
-                        <td class="px-6 py-4 font-mono text-slate-500">${dateStr}</td>        
-                        <td class="px-6 py-4 font-medium">${r.itemType || '-'}</td>              
-                        <td class="px-6 py-4 font-bold text-slate-700">${r.kpc || '-'}</td> 
-                        <td class="px-6 py-4 text-sm text-slate-600">${r.invRef || '-'}</td>
-                        <td class="px-6 py-4">                                        
-                            <span class="px-2 py-1 rounded text-xs font-bold border ${statusClass}">${r.status}</span>
-                        </td>
-                        <td class="px-6 py-4 text-right font-medium">${formatQty(r.qty)}</td>  
-                        <td class="px-6 py-4 text-right text-slate-500 text-xs">${formatRp(r.price)}</td> 
-                        <td class="px-6 py-4 text-right font-bold text-blue-700">${formatRp(r.total)}</td> 
-                        <td class="px-6 py-4 text-right font-bold text-slate-800 bg-slate-50 border-l">${formatRp(runningRp)}</td>
-                    </tr>`;
-            }).join('');
-
-            tbody.innerHTML = htmlRows;
-        }
-
-        function backToStockList() { document.getElementById('stockDetailView').classList.add('hidden'); document.getElementById('stockListView').classList.remove('hidden'); }
-        
-        function downloadCSVStock() {
-            const rows = document.querySelectorAll("#stockDetailBody tr");
-            let csv = ["Tanggal,Item Type,KPC,Inv Ref,Status,Qty,Price,Total,Saldo Rp"];
-            
-            rows.forEach(r => {
-                let row = [], cols = r.querySelectorAll("td");
-                cols.forEach(c => {
-                    let text = c.innerText.replace(/(\r\n|\n|\r)/gm, "").trim();
-                    if(text.includes("Rp")) text = text.replace("Rp ", "").replace(/\./g, ""); 
-                    row.push(`"${text}"`);
-                });
-                csv.push(row.join(","));
-            });
-            
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(new Blob([csv.join("\n")], {type: "text/csv"}));
-            let itemName = document.getElementById('detailItemName').innerText.replace(/[^a-zA-Z0-9]/g, "_");
-            link.download = `Stock_${itemName}.csv`; 
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         }
 
         // --- COGS LOGIC & FILTER ---
@@ -643,7 +425,10 @@
             tbody.innerHTML = htmlRows;
         }
 
-        function backToCogsList() { document.getElementById('cogsDetailView').classList.add('hidden'); document.getElementById('cogsListView').classList.remove('hidden'); }
+        function backToCogsList() { 
+            document.getElementById('cogsDetailView').classList.add('hidden'); 
+            document.getElementById('cogsListView').classList.remove('hidden'); 
+        }
 
         async function triggerApplyCOGS(btn) {
             if(!currentCogsDetail) return;
